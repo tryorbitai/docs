@@ -1,0 +1,438 @@
+---
+title: "Installation"
+description: "Install and configure the **OrbitAI** Swift SDK for building AI-powered applications with autonomous multi-agents."
+---
+
+## Requirements
+
+Before installing **OrbitAI**, ensure your development environment meets these requirements:
+
+<CardGroup cols={2}>
+  <Card title="Swift 6.0+" icon="swift">
+    Latest Swift toolchain required
+  </Card>
+  <Card title="Xcode 15.0+" icon="apple">
+    For iOS/macOS development
+  </Card>
+  <Card title="macOS 13.3+" icon="desktop">
+    Required for MLX support
+  </Card>
+  <Card title="iOS 16.0+" icon="mobile">
+    Minimum iOS version supported
+  </Card>
+</CardGroup>
+
+### Platform Support
+
+**OrbitAI** supports multiple Apple platforms:
+
+| Platform | Minimum Version |
+|----------|----------------|
+| macOS | 13.3+ (required for MLX support) |
+| iOS | 16.0+ |
+| watchOS | 9.0+ |
+| tvOS | 16.0+ |
+| visionOS | 1.0+ |
+
+### Managed Dependencies
+
+**OrbitAI** automatically manages all required dependencies:
+
+- **GRDB.swift** - SQLite persistence
+- **Swift-JWT** - Authentication
+- **swift-log** - Structured logging
+- **mlx-swift** - ML embeddings and semantic search
+- **SwiftSoup** - HTML parsing and web scraping
+
+## Swift Package Manager Installation
+
+<Steps>
+  <Step title="Add Package Dependency in Xcode">
+    1. Open your Xcode project.
+    2. Navigate to **File → Add Package Dependencies...**
+    3. Enter the repository URL:
+    ```
+    https://github.com/tryorbitai/orbit-ai-swift
+    ```
+    4. Select version **1.0.0** or later.
+    5. Choose your target and click **Add Package**.
+  </Step>
+
+  <Step title="Or Add to Package.swift">
+    Add **OrbitAI** to your `Package.swift` file:
+
+    ```swift Package.swift
+    // swift-tools-version: 5.9
+    import PackageDescription
+
+    let package = Package(
+        name: "MyOrbitAIApp",
+        platforms: [
+            .macOS(.v13_3), // Required for MLX
+            .iOS(.v16)
+        ],
+        dependencies: [
+            .package(url: "https://github.com/tryorbitai/orbit-ai-swift.git", from: "1.0.0")
+        ],
+        targets: [
+            .executableTarget(
+                name: "MyOrbitAIApp",
+                dependencies: [
+                    .product(name: "OrbitAI", package: "orbit-ai")
+                ]
+            )
+        ]
+    )
+    ```
+  </Step>
+
+  <Step title="Import and Initialize">
+    Import **OrbitAI** in your Swift files and configure:
+
+    ```swift
+    import OrbitAI
+
+    // Initialize OrbitAI
+    OrbitAI.configure()
+    ```
+  </Step>
+</Steps>
+
+## Environment Variables Configuration
+
+**OrbitAI** uses environment variables for API keys and configuration. Set them up using one of these methods:
+
+<Tabs>
+  <Tab title="Xcode Scheme">
+    ### Configure in Xcode
+
+    1. Select your target scheme (**Product → Scheme → Edit Scheme...**)
+    2. Go to **Run → Arguments**
+    3. Add environment variables under **Environment Variables** section
+
+    Example variables:
+    ```
+    OPENAI_API_KEY = your-openai-api-key-here
+    ORBIT_LOG_LEVEL = info
+    ```
+  </Tab>
+
+  <Tab title=".env File">
+    ### Create .env File
+
+    Create a `.env` file in your project root:
+
+    ```bash .env
+    # LLM Provider API Keys
+    OPENAI_API_KEY=your-openai-api-key-here
+
+    # **OrbitAI** Configuration
+    ORBIT_LOG_LEVEL=info
+    ORBIT_DATABASE_PATH=./orbit_data.db
+    ORBIT_ENABLE_TELEMETRY=true
+
+    # Optional: Custom Settings
+    ORBIT_DEFAULT_MODEL=gpt-4o
+    ORBIT_MAX_TOKENS=4096
+    ```
+
+    <Warning>
+      Never commit `.env` files to version control. Add `.env` to your `.gitignore` file.
+    </Warning>
+  </Tab>
+
+  <Tab title="Command Line">
+    ### Export in Terminal
+
+    For command-line applications, export variables in your shell:
+
+    ```bash
+    export OPENAI_API_KEY="your-openai-api-key-here"
+    export ORBIT_LOG_LEVEL="info"
+    ```
+
+    Or run your app with inline variables:
+    ```bash
+    OPENAI_API_KEY="your-api-key" swift run MyApp
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration Variables Reference
+
+<AccordionGroup>
+  <Accordion title="LLM Provider API Keys" icon="key">
+    Configure API keys for different LLM providers:
+
+    | Variable | Provider | Required | Example |
+    |----------|----------|----------|--------|
+    | `OPENAI_API_KEY` | OpenAI | Yes* | `your-openai-key` |
+
+    *At least one provider key is required*.
+  </Accordion>
+
+  <Accordion title="Logging Configuration" icon="terminal">
+    Control logging behavior:
+
+    | Variable | Description | Default | Options |
+    |----------|-------------|---------|---------|
+    | `ORBIT_LOG_LEVEL` | Logging verbosity | `info` | `trace`, `debug`, `info`, `warning`, `error` |
+    | `ORBIT_LOG_FORMAT` | Log output format | `pretty` | `pretty`, `json` |
+    | `ORBIT_LOG_FILE` | Log file path | None | File path string |
+  </Accordion>
+
+  <Accordion title="Database & Storage" icon="database">
+    Configure data persistence:
+
+    | Variable | Description | Default |
+    |----------|-------------|---------|
+    | `ORBIT_DATABASE_PATH` | SQLite database location | `./orbit_data.db` |
+    | `ORBIT_MEMORY_STORAGE` | Memory storage path | `./orbit_memory/` |
+    | `ORBIT_CACHE_DIR` | Cache directory | `./orbit_cache/` |
+  </Accordion>
+
+  <Accordion title="Performance & Limits" icon="gauge">
+    Set performance parameters:
+
+    | Variable | Description | Default |
+    |----------|-------------|---------|
+    | `ORBIT_MAX_TOKENS` | Maximum tokens per request | `4096` |
+    | `ORBIT_TIMEOUT` | Request timeout (seconds) | `60` |
+    | `ORBIT_MAX_RETRIES` | Maximum retry attempts | `3` |
+    | `ORBIT_RATE_LIMIT` | Requests per minute | `60` |
+  </Accordion>
+
+  <Accordion title="Feature Flags" icon="flag">
+    Enable/disable features:
+
+    | Variable | Description | Default |
+    |----------|-------------|---------|
+    | `ORBIT_ENABLE_TELEMETRY` | Usage analytics | `true` |
+    | `ORBIT_ENABLE_MEMORY` | Agent memory system | `true` |
+    | `ORBIT_ENABLE_GUARDRAILS` | Safety checks | `true` |
+    | `ORBIT_ENABLE_TOOLS` | Tool integration | `true` |
+  </Accordion>
+</AccordionGroup>
+
+## macOS Security & Permissions
+
+<Warning>
+  **OrbitAI** may require specific permissions for certain features on macOS.
+</Warning>
+
+### Required Permissions
+
+Depending on the tools and features you use, you may need to grant:
+
+<CardGroup cols={2}>
+  <Card title="Network Access" icon="wifi">
+    Required for LLM API calls and web scraping tools
+  </Card>
+  <Card title="File System Access" icon="folder">
+    For knowledge base document ingestion and file operations
+  </Card>
+  <Card title="Calendar & Reminders" icon="calendar">
+    When using Apple ecosystem tools
+  </Card>
+  <Card title="Location Services" icon="location-dot">
+    For location-aware agent features
+  </Card>
+</CardGroup>
+
+### Granting Permissions
+
+1. Navigate to **System Settings → Privacy & Security**.
+2. Select the appropriate category (e.g., "Full Disk Access", "Automation").
+3. Add your application.
+4. Restart your application.
+
+<Info>
+  You'll be prompted for permissions when features requiring them are first accessed.
+</Info>
+
+## Verification & Testing
+
+Verify your installation with this simple test:
+
+```swift Test.swift
+import **OrbitAI**
+
+// Configure **OrbitAI**
+**OrbitAI**.configure()
+
+// Create a simple agent
+let testAgent = Agent(
+    role: "Test Assistant",
+    purpose: "Verify **OrbitAI** installation",
+    context: "Simple test agent"
+)
+
+// Create and run a test task
+let testTask = Task(
+    description: "Say 'Hello from **OrbitAI**!'",
+    expectedOutput: "A greeting message",
+    agent: testAgent
+)
+
+let orbit = try Orbit(
+    agents: [testAgent],
+    tasks: [testTask],
+    process: .sequential
+)
+
+let results = try await orbit.start()
+print("✅ **OrbitAI** is working! Result: \(results.output)")
+```
+
+Run the test:
+```bash
+swift run Test
+```
+
+Expected output:
+```
+✅ **OrbitAI** is working! Result: Hello from **OrbitAI**!
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Package Resolution Fails" icon="triangle-exclamation">
+    **Problem**: Xcode can't resolve the **OrbitAI** package
+
+    **Solutions**:
+    - Ensure you're using Xcode 15.0+
+    - Check your internet connection
+    - Try resetting package cache: **File → Packages → Reset Package Caches**
+    - Verify the repository URL is correct
+    - Check if the minimum platform version is met (macOS 13.3+)
+  </Accordion>
+
+  <Accordion title="MLX Dependencies Error" icon="triangle-exclamation">
+    **Problem**: MLX-related build errors
+
+    **Solutions**:
+    - Verify you're running on macOS 13.3 or later
+    - MLX requires Apple Silicon (M1/M2/M3) or compatible Intel Mac
+    - Ensure Xcode Command Line Tools are installed: `xcode-select --install`
+    - Try cleaning build folder: **Product → Clean Build Folder** (Shift + Cmd + K)
+  </Accordion>
+
+  <Accordion title="API Key Not Found" icon="triangle-exclamation">
+    **Problem**: "Missing API key" error at runtime
+
+    **Solutions**:
+    - Verify environment variables are set correctly
+    - Check spelling of variable names (e.g., `OPENAI_API_KEY`)
+    - Ensure `.env` file is in the correct directory
+    - For Xcode: Confirm environment variables are set in scheme settings
+    - Print environment variables to debug: `print(ProcessInfo.processInfo.environment)`
+  </Accordion>
+
+  <Accordion title="Permission Denied Errors" icon="triangle-exclamation">
+    **Problem**: macOS blocks file or network access
+
+    **Solutions**:
+    - Grant necessary permissions in System Settings → Privacy & Security
+    - For file access: Add app to "Full Disk Access" or "Files and Folders"
+    - For network: Check "Network" permissions
+    - Restart your app after granting permissions
+  </Accordion>
+
+  <Accordion title="Memory or Performance Issues" icon="triangle-exclamation">
+    **Problem**: High memory usage or slow performance
+
+    **Solutions**:
+    - Adjust `ORBIT_MAX_TOKENS` to a lower value
+    - Disable memory features if not needed: `ORBIT_ENABLE_MEMORY=false`
+    - Clear cache directory periodically
+    - Monitor agent execution with logging: `ORBIT_LOG_LEVEL=debug`
+    - Consider using lighter LLM models for development
+  </Accordion>
+</AccordionGroup>
+
+## Security Best Practices
+
+<Warning>
+  Protect your API keys and sensitive data.
+</Warning>
+
+### API Key Security
+
+<Steps>
+  <Step title="Never Hardcode Keys">
+    ❌ Don't do this:
+    ```swift
+    let apiKey = "hardcoded-api-key-here" // Bad!
+    ```
+
+    ✅ Do this instead:
+    ```swift
+    let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
+    ```
+  </Step>
+
+  <Step title="Use .gitignore">
+    Add sensitive files to `.gitignore`:
+    ```gitignore .gitignore
+    .env
+    .env.local
+    *.db
+    orbit_data.db
+    orbit_memory/
+    orbit_cache/
+    ```
+  </Step>
+
+  <Step title="Rotate Keys Regularly">
+    - Regenerate API keys periodically
+    - Use different keys for development and production
+    - Revoke compromised keys immediately
+  </Step>
+
+  <Step title="Implement Access Controls">
+    ```swift
+    // Use key management services
+    import Security
+
+    // Store keys in Keychain instead of environment
+    func getAPIKey() -> String? {
+        // Retrieve from Keychain
+        return KeychainManager.retrieve(key: "openai_api_key")
+    }
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quickstart Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Build your first **OrbitAI** application
+  </Card>
+  <Card
+    title="Core Components"
+    icon="puzzle-piece"
+    href="/index#core-components"
+  >
+    Learn about Agents, Tasks, and Orbits
+  </Card>
+  <Card
+    title="Agent Examples"
+    icon="robot"
+    href="/examples/agents"
+  >
+    Explore practical agent implementations
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    Detailed API documentation
+  </Card>
+</CardGroup>
