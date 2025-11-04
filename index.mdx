@@ -174,7 +174,7 @@ The **OrbitAI** system creates powerful AI applications through seamless integra
 
 #### 1. Initialization & Configuration
 ```swift
-**OrbitAI**.configure()
+OrbitAI.configure()
 let llmManager = LLMManager()
 try llmManager.addProvider(OpenAIProvider(apiKey: "your-key"))
 ```
@@ -182,44 +182,42 @@ try llmManager.addProvider(OpenAIProvider(apiKey: "your-key"))
 #### 2. Agent Creation & Specialization  
 Agents are created with specific roles and equipped with relevant tools and LLM access:
 ```swift
-let agent = Agent(
-    role: "Data Analyst",
-    purpose: "Analyze business data and generate insights", 
-    context: "Expert in statistical analysis and business intelligence",
-    tools: ["calculator", "fileRead", "webSearch"],
-    memory: true
+let recipeExtractor = Agent(
+    role: "Recipe Extractor",
+    purpose: "Extract recipe content from URLs", 
+    context: "Expert in web scraping and recipe data extraction",
+    tools: ["webScraper", "urlFetcher"]
 )
 ```
 
-#### 3. Knowledge & Memory Integration
+#### 3. Task Definition & Assignment
+Tasks are created with clear objectives and can leverage all system components:
+```swift
+let extractTask = Task(
+    description: "Extract recipe from https://example.com/chocolate-chip-cookies",
+    expectedOutput: "Plain text recipe with ingredients and instructions",
+    tools: ["webScraper", "urlFetcher"],
+    agent: recipeExtractor
+)
+```
+
+#### 4. Knowledge & Memory Integration
 Agents can access shared knowledge bases and maintain persistent memory:
 ```swift
 let knowledgeBase = KnowledgeBase()
-try await knowledgeBase.addSource(DirectorySource(path: "/documents"))
+try await knowledgeBase.addSource(DirectorySource(path: "/recipes"))
 
-agent.knowledgeBase = knowledgeBase
-agent.enableMemory(type: .longTerm)
-```
-
-#### 4. Task Definition & Assignment
-Tasks are created with clear objectives and can leverage all system components:
-```swift
-let task = Task(
-    description: "Analyze Q3 sales data and identify trends",
-    expectedOutput: "Executive summary with key insights and recommendations",
-    tools: ["fileRead", "calculator", "dataVisualization"],
-    guardrails: [.noSensitiveData, .factualAccuracy]
-)
+recipeExtractor.knowledgeBase = knowledgeBase
+recipeExtractor.enableMemory(type: .longTerm)
 ```
 
 #### 5. Orbit Orchestration  
 The Orbit coordinates everything together:
 ```swift
 let orbit = try Orbit(
-    agents: [analyst, researcher, writer],
-    tasks: [analysisTask, researchTask, reportTask],
-    process: .hierarchical, 
-    manager: seniorAnalyst,
+    agents: [recipeExtractor],
+    tasks: [extractTask],
+    process: .sequential,
     memory: true,
     usageMetrics: true
 )
