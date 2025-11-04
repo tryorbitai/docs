@@ -1,97 +1,306 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Overview"
+description: "A comprehensive `Swift` framework for building AI-powered applications with **autonomous multi-agents** that create, organize, and collaborate."
 ---
+
+## Introduction
+
+****OrbitAI**** provides a complete ecosystem for creating, managing, and orchestrating intelligent agents that can collaborate to solve complex tasks using Large Language Models (LLMs), tools, and knowledge bases.
+
+### What is **OrbitAI**?
+
+****OrbitAI**** introduce **autonomous agents** that can work individually or as teams to accomplish sophisticated workflows. Rather than traditional single-turn AI interactions, **OrbitAI** enables persistent, purpose-oriented agents that can:
+
+- **Reason and plan** complex multi-step solutions.
+- **Collaborate** with other agents in coordinated workflows.
+- **Learn and adapt** through persistent memory systems.
+- **Use tools** to interact with external systems and APIs.
+- **Access knowledge** through semantic search and retrieval systems.
+- **Operate safely** with built-in guardrails and validation.
+
+### How **OrbitAI** Works
+
+The **OrbitAI** architecture is built around the concept of **Orbits** - coordinated teams of agents working together to execute tasks. Here's how the system operates:
+
+1. **Agent Creation**: Define specialized agents with specific roles, purpose, and context.
+2. **Task Definition**: Create structured tasks with clear objectives and expected outputs.  
+3. **Orbit**: Combine agents and tasks into orchestrated workflows.
+4. **Execution**: The system coordinates agent collaboration, tool usage, and task completion.
+5. **Results**: Receive structured outputs with full execution context and metrics.
+
+```swift
+// Initialize **OrbitAI**
+**OrbitAI**.configure()
+
+// Create specialized agents
+let researcher = Agent(
+    role: "Research Analyst",
+    purpose: "Gather and analyze market information",
+    context: "Expert in market research and data analysis"
+)
+
+let writer = Agent(
+    role: "Content Creator", 
+    purpose: "Create compelling marketing content",
+    context: "Experienced copywriter and content strategist"
+)
+
+// Define tasks
+let researchTask = Task(
+    description: "Research AI market trends for Q4 2024",
+    expectedOutput: "Comprehensive market analysis with key insights"
+)
+
+let contentTask = Task(
+    description: "Create marketing content based on research findings", 
+    expectedOutput: "Marketing copy highlighting key market opportunities"
+)
+
+// Create and execute orbit
+let orbit = try Orbit(
+    agents: [researcher, writer],
+    tasks: [researchTask, contentTask], 
+    process: .sequential
+)
+
+let results = try await orbit.start()
+```
 
 ## Setting up
 
-Get your documentation site up and running in minutes.
+Get started with **OrbitAI** in your Swift project.
 
 <Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
+  title="Installation Guide"
+  icon="download"
+  href="/installation"
   horizontal
 >
-  Follow our three step quickstart guide.
+  Install **OrbitAI** and configure your development environment.
 </Card>
 
-## Make it yours
+## Core Components
 
-Design a docs site that looks great and empowers your users.
+**OrbitAI**'s architecture consists of nine primary components that work together to create a powerful AI application platform:
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+| Component | Purpose | Key Features |
+|-----------|---------|--------------|
+| **Orbits** | Orchestration engine that coordinates agent teams and task execution | Sequential/hierarchical processes, multi-agent coordination, execution management |
+| **Agents** | Autonomous AI entities with specific roles and capabilities | Role-based behavior, tool integration, memory systems, delegation support |
+| **Tasks** | Structured units of work with defined objectives and constraints | Flexible execution, dependency management, output formatting, validation |
+| **LLMs** | Large Language Model providers and management system | Multi-provider support (OpenAI, Anthropic, etc.), model selection, token management |
+| **Tools** | External capabilities and integrations available to agents | File operations, web search, calculations, API integrations, system tools |
+| **Process** | Execution strategies that determine how agents collaborate | Sequential (one-by-one) or hierarchical (manager-coordinated) workflows |
+| **KnowledgeBase** | Semantic information storage and retrieval system | Document ingestion, embedding-based search, RAG (Retrieval Augmented Generation) |
+| **Memory** | Persistent storage for agent learning and context retention | Short-term, long-term, entity, and contextual memory types |
+| **Guardrails** | Safety and validation framework for agent behavior | Content filtering, behavior constraints, output validation, compliance checks |
 
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
+### Detailed Component Analysis
 
 <Columns cols={2}>
   <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
+    title="Orbits"
+    icon="satellite"
+    href="/components/orbits"
   >
-    Use MDX to style your docs pages.
+    Central orchestration component managing teams of agents and coordinating task execution.
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Agents"
+    icon="robot"
+    href="/components/agents"
   >
-    Add sample code to demonstrate how to use your product.
+    Autonomous workers with unique roles, capabilities, and the ability to collaborate.
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Tasks"
+    icon="list-check"
+    href="/components/tasks"
   >
-    Display images and other media.
+    Structured work units with clear objectives, dependencies, and validation.
   </Card>
   <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
+    title="LLMs"
+    icon="brain"
+    href="/components/llms"
   >
-    Write once and reuse across your docs.
+    Provider abstraction and management for Large Language Models.
+  </Card>
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/components/tools"
+  >
+    External capabilities extending agent functionality with integrations.
+  </Card>
+  <Card
+    title="Process"
+    icon="diagram-project"
+    href="/components/process"
+  >
+    Collaboration patterns defining how agents work together.
+  </Card>
+  <Card
+    title="KnowledgeBase"
+    icon="database"
+    href="/components/knowledgebase"
+  >
+    Semantic information storage with vector-based search and RAG.
+  </Card>
+  <Card
+    title="Memory"
+    icon="brain-circuit"
+    href="/components/memory"
+  >
+    Persistent storage enabling agent learning across sessions.
+  </Card>
+  <Card
+    title="Guardrails"
+    icon="shield"
+    href="/components/guardrails"
+  >
+    Safety framework ensuring appropriate agent behavior.
   </Card>
 </Columns>
+
+## System Integration
+
+### How Components Work Together
+
+The **OrbitAI** system creates powerful AI applications through seamless integration of its components:
+
+#### 1. Initialization & Configuration
+```swift
+**OrbitAI**.configure()
+let llmManager = LLMManager()
+try llmManager.addProvider(OpenAIProvider(apiKey: "your-key"))
+```
+
+#### 2. Agent Creation & Specialization  
+Agents are created with specific roles and equipped with relevant tools and LLM access:
+```swift
+let agent = Agent(
+    role: "Data Analyst",
+    purpose: "Analyze business data and generate insights", 
+    context: "Expert in statistical analysis and business intelligence",
+    tools: ["calculator", "fileRead", "webSearch"],
+    memory: true
+)
+```
+
+#### 3. Knowledge & Memory Integration
+Agents can access shared knowledge bases and maintain persistent memory:
+```swift
+let knowledgeBase = KnowledgeBase()
+try await knowledgeBase.addSource(DirectorySource(path: "/documents"))
+
+agent.knowledgeBase = knowledgeBase
+agent.enableMemory(type: .longTerm)
+```
+
+#### 4. Task Definition & Assignment
+Tasks are created with clear objectives and can leverage all system components:
+```swift
+let task = Task(
+    description: "Analyze Q3 sales data and identify trends",
+    expectedOutput: "Executive summary with key insights and recommendations",
+    tools: ["fileRead", "calculator", "dataVisualization"],
+    guardrails: [.noSensitiveData, .factualAccuracy]
+)
+```
+
+#### 5. Orbit Orchestration  
+The Orbit coordinates everything together:
+```swift
+let orbit = try Orbit(
+    agents: [analyst, researcher, writer],
+    tasks: [analysisTask, researchTask, reportTask],
+    process: .hierarchical, 
+    manager: seniorAnalyst,
+    memory: true,
+    usageMetrics: true
+)
+```
+
+#### 6. Execution Flow
+During execution, components interact dynamically:
+
+- **LLM Provider**: Agents use configured LLM providers for reasoning and text generation
+- **Tool Integration**: Agents invoke tools as needed for task completion  
+- **Memory Access**: Agents store and retrieve relevant information
+- **Knowledge Query**: Agents search knowledge bases for additional context
+- **Guardrail Checking**: All outputs are validated against configured guardrails
+- **Task Coordination**: The process manages task dependencies and agent collaboration
+
+#### 7. Result Integration
+Final results combine outputs from all components:
+```swift
+let results = try await orbit.start()
+// Results include:
+// - Task outputs and agent contributions  
+// - Memory updates and learning
+// - Tool usage and external data
+// - Knowledge base queries and context
+// - Guardrail validation results
+// - Performance metrics and usage data
+```
+
+### Data Flow Architecture
+
+```
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│   User      │───▶│    Orbit     │───▶│   Agents    │
+│   Request   │    │ Orchestrator │    │  (Workers)  │
+└─────────────┘    └──────┬───────┘    └─────┬───────┘
+                          │                   │
+                          ▼                   ▼
+                 ┌─────────────────┐ ┌─────────────────┐
+                 │     Process     │ │      Tools      │
+                 │   Management    │ │  (External      │  
+                 └─────────────────┘ │ Capabilities)   │
+                          │          └─────────────────┘
+                          ▼                   │
+                 ┌─────────────────┐          │
+                 │      Tasks      │◀─────────┘
+                 │  (Work Units)   │
+                 └─────┬───────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │   LLM Provider  │
+              │    + Memory     │ 
+              │ + KnowledgeBase │
+              │ + Guardrails    │
+              └─────┬───────────┘
+                    │
+                    ▼
+              ┌─────────────────┐
+              │ Validated       │
+              │ Results         │
+              └─────────────────┘
+```
+
+### Key Integration Patterns
+
+1. **Memory-Knowledge Synergy**: Agents combine personal memory with shared knowledge bases for comprehensive context
+
+2. **Tool-LLM Integration**: LLM providers help agents select and use appropriate tools for task completion
+
+3. **Guardrail-Validation Pipeline**: All agent outputs pass through guardrail validation before task completion
+
+4. **Process-Agent Coordination**: Process types determine how agents communicate and coordinate work
+
+5. **Task-Memory Feedback**: Completed tasks contribute to agent memory for future improvement
+
+This integrated architecture enables **OrbitAI** to handle complex, multi-step workflows while maintaining safety, efficiency, and adaptability. The modular design allows developers to configure and extend the system for specific use cases while leveraging the full power of autonomous agent collaboration.
 
 ## Need inspiration?
 
 <Card
-  title="See complete examples"
+  title="Explore Agent Examples"
   icon="stars"
-  href="https://mintlify.com/customers"
+  href="/examples/agents"
+  horizontal
 >
-  Browse our showcase of exceptional documentation sites.
+  Browse practical examples of agents in action and learn best practices.
 </Card>

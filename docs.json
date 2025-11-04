@@ -1,12 +1,13 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "theme": "linden",
+  "name": "OrbitAI",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#0D47FF",
+    "light": "#0D47FF",
+    "dark": "#1283F7"
   },
+  "description": "Multi-agents that organize, create, and collaborate. For consumers. For developers. For the future.",
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
@@ -17,8 +18,8 @@
             "group": "Getting started",
             "pages": [
               "index",
-              "quickstart",
-              "development"
+              "installation",
+              "quickstart"
             ]
           },
           {
