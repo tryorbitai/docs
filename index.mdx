@@ -7,6 +7,18 @@ description: "A comprehensive `Swift` framework for building AI-powered applicat
 
 ****OrbitAI**** provides a complete ecosystem for creating, managing, and orchestrating intelligent agents that can collaborate to solve complex tasks using Large Language Models (LLMs), tools, and knowledge bases.
 
+```mermaid
+graph TD
+    A[User Request] --> B[Orbit Orchestrator]
+    B --> C[Agents - Workers]
+    B --> D[Process Management]
+    C --> E[Tools - External Capabilities]
+    D --> F[Tasks - Work Units]
+    E --> F
+    F --> G[LLM Provider + Memory + KnowledgeBase + Guardrails]
+    G --> H[Validated Results]
+```
+
 ### What is **OrbitAI**?
 
 ****OrbitAI**** introduce **autonomous agents** that can work individually or as teams to accomplish sophisticated workflows. Rather than traditional single-turn AI interactions, **OrbitAI** enables persistent, purpose-oriented agents that can:
@@ -226,12 +238,12 @@ let orbit = try Orbit(
 #### 6. Execution Flow
 During execution, components interact dynamically:
 
-- **LLM Provider**: Agents use configured LLM providers for reasoning and text generation
-- **Tool Integration**: Agents invoke tools as needed for task completion  
-- **Memory Access**: Agents store and retrieve relevant information
-- **Knowledge Query**: Agents search knowledge bases for additional context
-- **Guardrail Checking**: All outputs are validated against configured guardrails
-- **Task Coordination**: The process manages task dependencies and agent collaboration
+- **LLM Provider**: Agents use configured LLM providers for reasoning and text generation.
+- **Tool Integration**: Agents invoke tools as needed for task completion.  
+- **Memory Access**: Agents store and retrieve relevant information.
+- **Knowledge Query**: Agents search knowledge bases for additional context.
+- **Guardrail Checking**: All outputs are validated against configured guardrails.
+- **Task Coordination**: The process manages task dependencies and agent collaboration.
 
 #### 7. Result Integration
 Final results combine outputs from all components:
@@ -246,54 +258,19 @@ let results = try await orbit.start()
 // - Performance metrics and usage data
 ```
 
-### Data Flow Architecture
-
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│   User      │───▶│    Orbit     │───▶│   Agents    │
-│   Request   │    │ Orchestrator │    │  (Workers)  │
-└─────────────┘    └──────┬───────┘    └─────┬───────┘
-                          │                   │
-                          ▼                   ▼
-                 ┌─────────────────┐ ┌─────────────────┐
-                 │     Process     │ │      Tools      │
-                 │   Management    │ │  (External      │  
-                 └─────────────────┘ │ Capabilities)   │
-                          │          └─────────────────┘
-                          ▼                   │
-                 ┌─────────────────┐          │
-                 │      Tasks      │◀─────────┘
-                 │  (Work Units)   │
-                 └─────┬───────────┘
-                       │
-                       ▼
-              ┌─────────────────┐
-              │   LLM Provider  │
-              │    + Memory     │ 
-              │ + KnowledgeBase │
-              │ + Guardrails    │
-              └─────┬───────────┘
-                    │
-                    ▼
-              ┌─────────────────┐
-              │ Validated       │
-              │ Results         │
-              └─────────────────┘
-```
-
 ### Key Integration Patterns
 
-1. **Memory-Knowledge Synergy**: Agents combine personal memory with shared knowledge bases for comprehensive context
+1. **Memory-Knowledge Synergy**: Agents combine personal memory with shared knowledge bases for comprehensive context.
 
-2. **Tool-LLM Integration**: LLM providers help agents select and use appropriate tools for task completion
+2. **Tool-LLM Integration**: LLM providers help agents select and use appropriate tools for task completion.
 
-3. **Guardrail-Validation Pipeline**: All agent outputs pass through guardrail validation before task completion
+3. **Guardrail-Validation Pipeline**: All agent outputs pass through guardrail validation before task completion.
 
-4. **Process-Agent Coordination**: Process types determine how agents communicate and coordinate work
+4. **Process-Agent Coordination**: Process types determine how agents communicate and coordinate work.
 
-5. **Task-Memory Feedback**: Completed tasks contribute to agent memory for future improvement
+5. **Task-Memory Feedback**: Completed tasks contribute to agent memory for future improvement.
 
-This integrated architecture enables **OrbitAI** to handle complex, multi-step workflows while maintaining safety, efficiency, and adaptability. The modular design allows developers to configure and extend the system for specific use cases while leveraging the full power of autonomous agent collaboration.
+This enables **OrbitAI** to handle complex, multi-step workflows while maintaining safety, efficiency, and adaptability. The modular design allows developers to configure and extend the system for specific use cases while leveraging the full power of autonomous agent collaboration.
 
 ## Need inspiration?
 
