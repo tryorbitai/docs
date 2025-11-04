@@ -30,36 +30,39 @@ The **OrbitAI** architecture is built around the concept of **Orbits** - coordin
 
 ```swift
 // Initialize **OrbitAI**
-**OrbitAI**.configure()
+OrbitAI.configure()
 
 // Create specialized agents
-let researcher = Agent(
-    role: "Research Analyst",
-    purpose: "Gather and analyze market information",
-    context: "Expert in market research and data analysis"
+let recipeExtractor = Agent(
+    role: "Recipe Extractor",
+    purpose: "Extract recipe content from URLs",
+    context: "Expert in web scraping and recipe data extraction",
+    tools: ["webScraper", "urlFetcher"]
 )
 
-let writer = Agent(
-    role: "Content Creator", 
-    purpose: "Create compelling marketing content",
-    context: "Experienced copywriter and content strategist"
+let recipeFormatter = Agent(
+    role: "Recipe Formatter", 
+    purpose: "Convert plain text recipes into concise markdown format",
+    context: "Expert in recipe formatting and markdown syntax"
 )
 
 // Define tasks
-let researchTask = Task(
-    description: "Research AI market trends for Q4 2024",
-    expectedOutput: "Comprehensive market analysis with key insights"
+let extractTask = Task(
+    description: "Extract recipe from https://example.com/chocolate-chip-cookies",
+    expectedOutput: "Plain text recipe with ingredients and instructions",
+    agent: recipeExtractor
 )
 
-let contentTask = Task(
-    description: "Create marketing content based on research findings", 
-    expectedOutput: "Marketing copy highlighting key market opportunities"
+let formatTask = Task(
+    description: "Convert the extracted plain text into a clean, concise markdown recipe", 
+    expectedOutput: "Well-formatted markdown with sections for ingredients, instructions, prep time",
+    agent: recipeFormatter
 )
 
 // Create and execute orbit
 let orbit = try Orbit(
-    agents: [researcher, writer],
-    tasks: [researchTask, contentTask], 
+    agents: [recipeExtractor, recipeFormatter],
+    tasks: [extractTask, formatTask], 
     process: .sequential
 )
 
