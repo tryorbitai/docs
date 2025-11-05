@@ -1,0 +1,1723 @@
+---
+title: "Inputs"
+description: "Dynamic parameterization system for OrbitAI workflows using placeholders, metadata, and interpolation."
+---
+
+## Overview
+
+Orbit Inputs provide a powerful parameterization system that enables dynamic, reusable workflows. Instead of hardcoding values in task descriptions, you can use placeholders that are resolved at runtime with actual values provided through the `OrbitInput` structure.
+
+<CardGroup cols={3}>
+  <Card title="Dynamic Values" icon="wand-magic-sparkles">
+    Provide different values for each execution
+  </Card>
+  <Card title="Type Safety" icon="shield-check">
+    Strongly-typed metadata structure
+  </Card>
+  <Card title="Interpolation" icon="code">
+    Automatic placeholder resolution
+  </Card>
+  <Card title="Reusability" icon="recycle">
+    Same workflow, different parameters
+  </Card>
+  <Card title="Validation" icon="check-double">
+    Built-in type checking and validation
+  </Card>
+  <Card title="Flexibility" icon="arrows-maximize">
+    Support for complex nested data
+  </Card>
+</CardGroup>
+
+### What are Orbit Inputs?
+
+**Orbit Inputs** are runtime parameters passed to an orbit execution that:
+- Replace placeholders in task descriptions
+- Provide configuration values
+- Enable workflow customization
+- Support complex data structures
+- Maintain type safety
+
+<Info>
+  Think of Orbit Inputs like function parameters—they allow the same workflow to be executed with different values each time.
+</Info>
+
+### Key Benefits
+
+<AccordionGroup>
+  <Accordion title="Workflow Reusability" icon="recycle">
+    Create generic workflows that can be reused with different parameters:
+
+    ```swift
+    // One workflow definition
+    let task = ORTask(
+        description: "Analyze {company} stock performance in {year}",
+        expectedOutput: "Analysis report"
+    )
+
+    // Multiple executions with different inputs
+    let inputs1 = OrbitInput(Metadata([
+        "company": .string("Apple"),
+        "year": .int(2024)
+    ]))
+
+    let inputs2 = OrbitInput(Metadata([
+        "company": .string("Microsoft"),
+        "year": .int(2023)
+    ]))
+    ```
+  </Accordion>
+
+  <Accordion title="Dynamic Configuration" icon="sliders">
+    Adjust workflow behavior without changing code:
+
+    ```swift
+    let task = ORTask(
+        description: """
+        Generate report with {detail_level} detail.
+        Include {sections} sections.
+        Format: {output_format}
+        """,
+        expectedOutput: "Report"
+    )
+
+    // Different configurations
+    let detailedConfig = OrbitInput(Metadata([
+        "detail_level": .string("comprehensive"),
+        "sections": .int(10),
+        "output_format": .string("PDF")
+    ]))
+
+    let summaryConfig = OrbitInput(Metadata([
+        "detail_level": .string("summary"),
+        "sections": .int(3),
+        "output_format": .string("markdown")
+    ]))
+    ```
+  </Accordion>
+
+  <Accordion title="Type Safety" icon="shield-check">
+    Strongly-typed values prevent runtime errors:
+
+    ```swift
+    // Compile-time type safety
+    let inputs = OrbitInput(Metadata([
+        "count": .int(100),           // Integer
+        "threshold": .double(0.85),   // Double
+        "enabled": .bool(true),       // Boolean
+        "name": .string("Analysis")   // String
+    ]))
+
+    // Type mismatches caught early
+    ```
+  </Accordion>
+
+  <Accordion title="Complex Data Support" icon="diagram-project">
+    Handle nested and complex data structures:
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api": .dictionary([
+                "endpoint": .string("https://api.example.com"),
+                "timeout": .int(30),
+                "retries": .int(3)
+            ]),
+            "features": .array([
+                .string("analytics"),
+                .string("reporting"),
+                .string("alerts")
+            ])
+        ])
+    ]))
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Placeholders
+
+Placeholders are special markers in task descriptions that are replaced with actual values at runtime.
+
+### Placeholder Syntax
+
+<Tabs>
+  <Tab title="Basic Syntax">
+    **Format**: `{key}`
+
+    ```swift
+    // Simple placeholder
+    let task = ORTask(
+        description: "Analyze data for {company}",
+        expectedOutput: "Analysis report"
+    )
+
+    // Provide value
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp")
+    ]))
+
+    // Result: "Analyze data for TechCorp"
+    ```
+
+    **Rules**:
+    - Placeholders are case-sensitive
+    - Must match input keys exactly
+    - Can appear anywhere in text
+    - Multiple placeholders allowed
+
+    ```swift
+    // Multiple placeholders
+    let task = ORTask(
+        description: """
+        Analyze {company} in {industry} sector.
+        Focus on {metric} for {quarter} {year}.
+        """,
+        expectedOutput: "Report"
+    )
+    ```
+  </Tab>
+
+  <Tab title="Nested Placeholders">
+    **Format**: `{parent.child}`
+
+    ```swift
+    // Define nested structure
+    let inputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api": .dictionary([
+                "endpoint": .string("https://api.example.com"),
+                "version": .string("v2")
+            ]),
+            "settings": .dictionary([
+                "timeout": .int(30),
+                "maxResults": .int(100)
+            ])
+        ])
+    ]))
+
+    // Use nested placeholders
+    let task = ORTask(
+        description: """
+        Fetch data from {config.api.endpoint}/{config.api.version}
+        Timeout: {config.settings.timeout}s
+        Max results: {config.settings.maxResults}
+        """,
+        expectedOutput: "Dataset"
+    )
+
+    // Result:
+    // "Fetch data from https://api.example.com/v2
+    //  Timeout: 30s
+    //  Max results: 100"
+    ```
+
+    <Tip>
+      Use dot notation to access nested values: `{parent.child.grandchild}`
+    </Tip>
+  </Tab>
+
+  <Tab title="Array Access">
+    **Format**: `{array[index]}`
+
+    ```swift
+    // Define array input
+    let inputs = OrbitInput(Metadata([
+        "priorities": .array([
+            .string("accuracy"),
+            .string("speed"),
+            .string("cost")
+        ]),
+        "targets": .array([
+            .dictionary([
+                "name": .string("North America"),
+                "goal": .int(1000000)
+            ]),
+            .dictionary([
+                "name": .string("Europe"),
+                "goal": .int(750000)
+            ])
+        ])
+    ]))
+
+    // Access array elements
+    let task = ORTask(
+        description: """
+        Primary priority: {priorities[0]}
+        Secondary priority: {priorities[1]}
+
+        Target market: {targets[0].name}
+        Goal: {targets[0].goal}
+        """,
+        expectedOutput: "Strategy"
+    )
+
+    // Result:
+    // "Primary priority: accuracy
+    //  Secondary priority: speed
+    //  Target market: North America
+    //  Goal: 1000000"
+    ```
+
+    <Warning>
+      Array indices are 0-based. Out-of-bounds access will cause interpolation errors.
+    </Warning>
+  </Tab>
+
+  <Tab title="Default Values">
+    **Format**: `{key:default}`
+
+    ```swift
+    // Placeholders with defaults
+    let task = ORTask(
+        description: """
+        Analyze {company:ACME Corp} in {region:global} market.
+        Time period: {period:last quarter}
+        Detail level: {detail:standard}
+        """,
+        expectedOutput: "Analysis"
+    )
+
+    // Execute without inputs - uses defaults
+    let result1 = try await orbit.start()
+    // "Analyze ACME Corp in global market.
+    //  Time period: last quarter
+    //  Detail level: standard"
+
+    // Execute with partial inputs - overrides some defaults
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp"),
+        "detail": .string("comprehensive")
+    ]))
+    let result2 = try await orbit.start(inputs: inputs)
+    // "Analyze TechCorp in global market.
+    //  Time period: last quarter
+    //  Detail level: comprehensive"
+    ```
+
+    <Info>
+      Default values are useful for optional parameters that have sensible fallbacks.
+    </Info>
+  </Tab>
+</Tabs>
+
+### Placeholder Examples
+
+<AccordionGroup>
+  <Accordion title="Simple Substitution" icon="a">
+    ```swift
+    // Define task with placeholders
+    let task = ORTask(
+        description: """
+        Write a {length}-word article about {topic}.
+        Audience: {audience}
+        Tone: {tone}
+        """,
+        expectedOutput: "Article"
+    )
+
+    // Provide inputs
+    let inputs = OrbitInput(Metadata([
+        "length": .int(1500),
+        "topic": .string("AI in healthcare"),
+        "audience": .string("medical professionals"),
+        "tone": .string("professional and informative")
+    ]))
+
+    // Interpolated result:
+    // "Write a 1500-word article about AI in healthcare.
+    //  Audience: medical professionals
+    //  Tone: professional and informative"
+    ```
+  </Accordion>
+
+  <Accordion title="Complex Data" icon="diagram-project">
+    ```swift
+    // Define complex input structure
+    struct AnalysisConfig: Codable {
+        let company: String
+        let metrics: [String]
+        let timeframe: TimeFrame
+        let thresholds: Thresholds
+
+        struct TimeFrame: Codable {
+            let start: String
+            let end: String
+        }
+
+        struct Thresholds: Codable {
+            let minConfidence: Double
+            let maxRisk: Double
+        }
+    }
+
+    let config = AnalysisConfig(
+        company: "TechCorp",
+        metrics: ["revenue", "growth", "profit"],
+        timeframe: .init(start: "2024-01-01", end: "2024-12-31"),
+        thresholds: .init(minConfidence: 0.85, maxRisk: 0.3)
+    )
+
+    let inputs = try OrbitInput(from: config)
+
+    // Use in task
+    let task = ORTask(
+        description: """
+        Analyze {company} performance:
+        - Metrics: {metrics}
+        - Period: {timeframe.start} to {timeframe.end}
+        - Min confidence: {thresholds.minConfidence}
+        - Max risk: {thresholds.maxRisk}
+        """,
+        expectedOutput: "Analysis"
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Conditional Content" icon="code-branch">
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "includeCharts": .bool(true),
+        "includeData": .bool(false),
+        "format": .string("PDF")
+    ]))
+
+    let task = ORTask(
+        description: """
+        Generate report in {format} format.
+        {if includeCharts}Include visual charts and graphs.{endif}
+        {if includeData}Include raw data tables.{endif}
+        {if format=PDF}Ensure proper pagination.{endif}
+        """,
+        expectedOutput: "Report"
+    )
+
+    // Interpolated result:
+    // "Generate report in PDF format.
+    //  Include visual charts and graphs.
+    //  Ensure proper pagination."
+    ```
+
+    <Info>
+      Conditional syntax: `{if condition}content{endif}` and `{if key=value}content{endif}`
+    </Info>
+  </Accordion>
+</AccordionGroup>
+
+## Metadata Structure
+
+The underlying data structure for orbit inputs.
+
+### Metadata Type
+
+```swift
+public enum Metadata: Codable, Sendable {
+    case string(String)
+    case int(Int)
+    case double(Double)
+    case bool(Bool)
+    case array([Metadata])
+    case dictionary([String: Metadata])
+    case null
+
+    // Type-safe accessors
+    public var stringValue: String? { /* ... */ }
+    public var intValue: Int? { /* ... */ }
+    public var doubleValue: Double? { /* ... */ }
+    public var boolValue: Bool? { /* ... */ }
+    public var arrayValue: [Metadata]? { /* ... */ }
+    public var dictionaryValue: [String: Metadata]? { /* ... */ }
+}
+```
+
+### Creating Metadata
+
+<Tabs>
+  <Tab title="Direct Construction">
+    ```swift
+    // Simple values
+    let stringData = Metadata.string("Hello")
+    let intData = Metadata.int(42)
+    let doubleData = Metadata.double(3.14)
+    let boolData = Metadata.bool(true)
+
+    // Array
+    let arrayData = Metadata.array([
+        .string("item1"),
+        .string("item2"),
+        .int(100)
+    ])
+
+    // Dictionary
+    let dictData = Metadata.dictionary([
+        "name": .string("John"),
+        "age": .int(30),
+        "active": .bool(true)
+    ])
+
+    // Nested structures
+    let complexData = Metadata.dictionary([
+        "user": .dictionary([
+            "name": .string("Alice"),
+            "email": .string("alice@example.com"),
+            "preferences": .dictionary([
+                "theme": .string("dark"),
+                "notifications": .bool(true)
+            ])
+        ]),
+        "settings": .array([
+            .string("feature1"),
+            .string("feature2")
+        ])
+    ])
+    ```
+  </Tab>
+
+  <Tab title="From Codable">
+    ```swift
+    // Define structure
+    struct UserConfig: Codable {
+        let name: String
+        let age: Int
+        let email: String
+        let preferences: Preferences
+
+        struct Preferences: Codable {
+            let theme: String
+            let notifications: Bool
+        }
+    }
+
+    // Create instance
+    let config = UserConfig(
+        name: "Alice",
+        age: 30,
+        email: "alice@example.com",
+        preferences: .init(
+            theme: "dark",
+            notifications: true
+        )
+    )
+
+    // Convert to Metadata
+    let encoder = JSONEncoder()
+    let data = try encoder.encode(config)
+    let json = try JSONSerialization.jsonObject(with: data)
+    let metadata = try Metadata.from(json)
+
+    // Or use convenience initializer
+    let inputs = try OrbitInput(from: config)
+    ```
+  </Tab>
+
+  <Tab title="From JSON">
+    ```swift
+    // JSON string
+    let jsonString = """
+    {
+        "company": "TechCorp",
+        "year": 2024,
+        "metrics": ["revenue", "growth"],
+        "config": {
+            "threshold": 0.85,
+            "enabled": true
+        }
+    }
+    """
+
+    // Parse to Metadata
+    let data = jsonString.data(using: .utf8)!
+    let json = try JSONSerialization.jsonObject(with: data)
+    let metadata = try Metadata.from(json)
+
+    let inputs = OrbitInput(metadata)
+
+    // Access values
+    print(inputs.metadata["company"]?.stringValue)  // "TechCorp"
+    print(inputs.metadata["year"]?.intValue)        // 2024
+    ```
+  </Tab>
+
+  <Tab title="Dictionary Literal">
+    ```swift
+    // Using dictionary literal
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp"),
+        "year": .int(2024),
+        "quarter": .string("Q4"),
+        "metrics": .array([
+            .string("revenue"),
+            .string("growth"),
+            .string("profit")
+        ]),
+        "thresholds": .dictionary([
+            "minConfidence": .double(0.85),
+            "maxRisk": .double(0.3)
+        ]),
+        "features": .dictionary([
+            "analytics": .bool(true),
+            "reporting": .bool(true),
+            "alerts": .bool(false)
+        ])
+    ]))
+    ```
+  </Tab>
+</Tabs>
+
+### Type Accessors
+
+```swift
+let inputs = OrbitInput(Metadata([
+    "name": .string("Alice"),
+    "count": .int(42),
+    "rate": .double(3.14),
+    "enabled": .bool(true),
+    "items": .array([.string("a"), .string("b")]),
+    "config": .dictionary(["key": .string("value")])
+]))
+
+// Type-safe access
+if let name = inputs.metadata["name"]?.stringValue {
+    print("Name: \(name)")
+}
+
+if let count = inputs.metadata["count"]?.intValue {
+    print("Count: \(count)")
+}
+
+if let rate = inputs.metadata["rate"]?.doubleValue {
+    print("Rate: \(rate)")
+}
+
+if let enabled = inputs.metadata["enabled"]?.boolValue {
+    print("Enabled: \(enabled)")
+}
+
+if let items = inputs.metadata["items"]?.arrayValue {
+    for item in items {
+        print("Item: \(item.stringValue ?? "")")
+    }
+}
+
+if let config = inputs.metadata["config"]?.dictionaryValue {
+    print("Config: \(config)")
+}
+```
+
+## Interpolation Process
+
+How placeholders are resolved with actual values.
+
+### Interpolation Flow
+
+```
+Task Description with Placeholders
+    ↓
+"Analyze {company} in {year}"
+    ↓
+Interpolation Engine
+    ↓
+1. Parse Placeholders
+   - Identify: {company}, {year}
+    ↓
+2. Lookup Values
+   - company → "TechCorp"
+   - year → 2024
+    ↓
+3. Replace Placeholders
+   - "{company}" → "TechCorp"
+   - "{year}" → "2024"
+    ↓
+4. Validate Result
+   - Check for unresolved placeholders
+    ↓
+Interpolated Description
+    ↓
+"Analyze TechCorp in 2024"
+```
+
+### Interpolation Engine
+
+<Tabs>
+  <Tab title="Basic Interpolation">
+    ```swift
+    // Internal interpolation logic (simplified)
+    func interpolate(
+        template: String,
+        inputs: OrbitInput
+    ) throws -> String {
+        var result = template
+
+        // Find all placeholders
+        let pattern = "\\{([^}]+)\\}"
+        let regex = try NSRegularExpression(pattern: pattern)
+        let matches = regex.matches(
+            in: template,
+            range: NSRange(template.startIndex..., in: template)
+        )
+
+        // Replace each placeholder
+        for match in matches.reversed() {
+            guard let range = Range(match.range(at: 1), in: template) else {
+                continue
+            }
+
+            let placeholder = String(template[range])
+
+            // Parse placeholder (handle defaults, conditionals, etc.)
+            let (key, defaultValue) = parsePlaceholder(placeholder)
+
+            // Lookup value
+            if let value = inputs.metadata[key] {
+                let stringValue = convertToString(value)
+                result.replaceSubrange(match.range, with: stringValue)
+            } else if let defaultValue = defaultValue {
+                result.replaceSubrange(match.range, with: defaultValue)
+            } else {
+                throw OrbitAIError.missingInput(key)
+            }
+        }
+
+        return result
+    }
+    ```
+  </Tab>
+
+  <Tab title="Nested Interpolation">
+    ```swift
+    // Handle nested keys: {config.api.endpoint}
+    func resolveNestedKey(
+        key: String,
+        metadata: Metadata
+    ) -> Metadata? {
+        let components = key.split(separator: ".")
+
+        var current = metadata
+        for component in components {
+            guard let dict = current.dictionaryValue,
+                  let value = dict[String(component)] else {
+                return nil
+            }
+            current = value
+        }
+
+        return current
+    }
+
+    // Example usage
+    let inputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api": .dictionary([
+                "endpoint": .string("https://api.example.com")
+            ])
+        ])
+    ]))
+
+    let value = resolveNestedKey(
+        key: "config.api.endpoint",
+        metadata: inputs.metadata
+    )
+    // Returns: Metadata.string("https://api.example.com")
+    ```
+  </Tab>
+
+  <Tab title="Array Interpolation">
+    ```swift
+    // Handle array access: {items[0]}
+    func resolveArrayAccess(
+        key: String,
+        metadata: Metadata
+    ) throws -> Metadata? {
+        // Parse: "items[0]" → key="items", index=0
+        let pattern = "([^\\[]+)\\[(\\d+)\\]"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: key, range: NSRange(key.startIndex..., in: key)) else {
+            return nil
+        }
+
+        let arrayKey = String(key[Range(match.range(at: 1), in: key)!])
+        let indexString = String(key[Range(match.range(at: 2), in: key)!])
+        guard let index = Int(indexString) else {
+            throw OrbitAIError.invalidInput("Invalid array index")
+        }
+
+        // Get array
+        guard let dict = metadata.dictionaryValue,
+              let array = dict[arrayKey]?.arrayValue,
+              index >= 0 && index < array.count else {
+            throw OrbitAIError.invalidInput("Array access out of bounds")
+        }
+
+        return array[index]
+    }
+    ```
+  </Tab>
+
+  <Tab title="Type Conversion">
+    ```swift
+    // Convert Metadata to String
+    func convertToString(_ metadata: Metadata) -> String {
+        switch metadata {
+        case .string(let value):
+            return value
+        case .int(let value):
+            return String(value)
+        case .double(let value):
+            return String(value)
+        case .bool(let value):
+            return String(value)
+        case .array(let values):
+            // Convert array to comma-separated string
+            return values
+                .map { convertToString($0) }
+                .joined(separator: ", ")
+        case .dictionary(let dict):
+            // Convert to JSON string
+            if let jsonData = try? JSONEncoder().encode(dict),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                return jsonString
+            }
+            return "{...}"
+        case .null:
+            return "null"
+        }
+    }
+
+    // Examples
+    convertToString(.string("hello"))     // "hello"
+    convertToString(.int(42))             // "42"
+    convertToString(.double(3.14))        // "3.14"
+    convertToString(.bool(true))          // "true"
+    convertToString(.array([.int(1), .int(2)]))  // "1, 2"
+    ```
+  </Tab>
+</Tabs>
+
+### Interpolation Order
+
+<Steps>
+  <Step title="Parse Template">
+    Identify all placeholders in the task description:
+
+    ```swift
+    let description = """
+    Analyze {company} performance in {year}.
+    Focus on {metrics[0]} and {metrics[1]}.
+    Threshold: {config.threshold}
+    """
+
+    // Identified placeholders:
+    // - {company}
+    // - {year}
+    // - {metrics[0]}
+    // - {metrics[1]}
+    // - {config.threshold}
+    ```
+  </Step>
+
+  <Step title="Resolve Values">
+    Look up each placeholder in the input metadata:
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp"),
+        "year": .int(2024),
+        "metrics": .array([
+            .string("revenue"),
+            .string("growth")
+        ]),
+        "config": .dictionary([
+            "threshold": .double(0.85)
+        ])
+    ]))
+
+    // Resolution:
+    // {company} → "TechCorp"
+    // {year} → "2024"
+    // {metrics[0]} → "revenue"
+    // {metrics[1]} → "growth"
+    // {config.threshold} → "0.85"
+    ```
+  </Step>
+
+  <Step title="Replace Placeholders">
+    Substitute resolved values in the template:
+
+    ```swift
+    // After interpolation:
+    let interpolated = """
+    Analyze TechCorp performance in 2024.
+    Focus on revenue and growth.
+    Threshold: 0.85
+    """
+    ```
+  </Step>
+
+  <Step title="Validate Result">
+    Check for any unresolved placeholders:
+
+    ```swift
+    // Check for remaining placeholders
+    let unresolvedPattern = "\\{[^}]+\\}"
+    if let range = interpolated.range(of: unresolvedPattern, options: .regularExpression) {
+        let unresolved = String(interpolated[range])
+        throw OrbitAIError.missingInput(
+            "Unresolved placeholder: \(unresolved)"
+        )
+    }
+    ```
+  </Step>
+</Steps>
+
+## Error Handling
+
+### Common Input Errors
+
+<CardGroup cols={2}>
+  <Card title="Missing Input" icon="circle-exclamation">
+    **Error**: Required placeholder has no value
+
+    ```swift
+    let task = ORTask(
+        description: "Analyze {company} data",
+        expectedOutput: "Report"
+    )
+
+    // Error: No inputs provided
+    do {
+        let result = try await orbit.start()
+    } catch OrbitAIError.missingInput(let key) {
+        print("Missing input: \(key)")
+        // "Missing input: company"
+    }
+    ```
+
+    **Solution**: Provide all required inputs or use defaults
+  </Card>
+
+  <Card title="Type Mismatch" icon="circle-xmark">
+    **Error**: Incorrect value type
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "count": .string("not a number")  // Should be int
+    ]))
+
+    let task = ORTask(
+        description: "Process {count} items",
+        expectedOutput: "Result"
+    )
+
+    // May cause issues during processing
+    ```
+
+    **Solution**: Use correct types in metadata
+  </Card>
+
+  <Card title="Invalid Path" icon="map">
+    **Error**: Nested key doesn't exist
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api": .dictionary([
+                "url": .string("https://api.example.com")
+            ])
+        ])
+    ]))
+
+    // Error: Wrong path
+    let task = ORTask(
+        description: "Connect to {config.api.endpoint}",
+        // Should be: {config.api.url}
+        expectedOutput: "Connection"
+    )
+    ```
+
+    **Solution**: Verify nested paths match structure
+  </Card>
+
+  <Card title="Array Out of Bounds" icon="list-ol">
+    **Error**: Array index doesn't exist
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "items": .array([
+            .string("first"),
+            .string("second")
+        ])
+    ]))
+
+    // Error: Index 2 doesn't exist (only 0 and 1)
+    let task = ORTask(
+        description: "Process {items[2]}",
+        expectedOutput: "Result"
+    )
+    ```
+
+    **Solution**: Ensure indices are within bounds
+  </Card>
+</CardGroup>
+
+### Error Recovery
+
+<Tabs>
+  <Tab title="Validation Before Execution">
+    ```swift
+    func validateInputs(
+        tasks: [ORTask],
+        inputs: OrbitInput
+    ) throws {
+        // Extract all placeholders from tasks
+        var requiredKeys: Set<String> = []
+
+        for task in tasks {
+            let pattern = "\\{([^}:]+)"
+            let regex = try NSRegularExpression(pattern: pattern)
+            let matches = regex.matches(
+                in: task.description,
+                range: NSRange(task.description.startIndex..., in: task.description)
+            )
+
+            for match in matches {
+                if let range = Range(match.range(at: 1), in: task.description) {
+                    let key = String(task.description[range])
+                    requiredKeys.insert(key)
+                }
+            }
+        }
+
+        // Check if all required keys are provided
+        for key in requiredKeys {
+            if inputs.metadata[key] == nil {
+                throw OrbitAIError.missingInput(
+                    "Required input '\(key)' not provided"
+                )
+            }
+        }
+    }
+
+    // Usage
+    do {
+        try validateInputs(tasks: orbit.tasks, inputs: inputs)
+        let result = try await orbit.start(inputs: inputs)
+    } catch {
+        print("Validation failed: \(error)")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Default Value Fallback">
+    ```swift
+    // Use defaults for missing values
+    let task = ORTask(
+        description: """
+        Analyze {company:ACME Corp} performance.
+        Period: {period:last quarter}
+        Detail: {detail:standard}
+        """,
+        expectedOutput: "Analysis"
+    )
+
+    // Execute without inputs - uses all defaults
+    let result1 = try await orbit.start()
+
+    // Execute with partial inputs - uses some defaults
+    let partialInputs = OrbitInput(Metadata([
+        "company": .string("TechCorp")
+    ]))
+    let result2 = try await orbit.start(inputs: partialInputs)
+    ```
+  </Tab>
+
+  <Tab title="Type Coercion">
+    ```swift
+    func coerceType(_ metadata: Metadata, to type: String) -> Metadata? {
+        switch type {
+        case "string":
+            switch metadata {
+            case .string(let value):
+                return metadata
+            case .int(let value):
+                return .string(String(value))
+            case .double(let value):
+                return .string(String(value))
+            case .bool(let value):
+                return .string(String(value))
+            default:
+                return nil
+            }
+
+        case "int":
+            switch metadata {
+            case .int(let value):
+                return metadata
+            case .string(let value):
+                if let intValue = Int(value) {
+                    return .int(intValue)
+                }
+            case .double(let value):
+                return .int(Int(value))
+            default:
+                break
+            }
+            return nil
+
+        default:
+            return nil
+        }
+    }
+
+    // Usage
+    let stringValue = Metadata.string("42")
+    if let intValue = coerceType(stringValue, to: "int") {
+        print(intValue.intValue)  // 42
+    }
+    ```
+  </Tab>
+
+  <Tab title="Error Messages">
+    ```swift
+    // Provide helpful error messages
+    func interpolateWithErrors(
+        template: String,
+        inputs: OrbitInput
+    ) -> Result<String, InterpolationError> {
+        do {
+            let result = try interpolate(template, inputs: inputs)
+            return .success(result)
+        } catch {
+            // Identify specific error
+            if let placeholder = findFirstUnresolved(template) {
+                return .failure(.missingInput(
+                    key: placeholder,
+                    suggestion: suggestSimilarKey(
+                        placeholder,
+                        availableKeys: Array(inputs.metadata.keys)
+                    )
+                ))
+            } else {
+                return .failure(.unknown(error))
+            }
+        }
+    }
+
+    func suggestSimilarKey(
+        _ key: String,
+        availableKeys: [String]
+    ) -> String? {
+        // Simple Levenshtein distance or fuzzy matching
+        let similar = availableKeys.filter { available in
+            levenshteinDistance(key, available) <= 2
+        }
+        return similar.first
+    }
+
+    // Usage
+    switch interpolateWithErrors(template, inputs: inputs) {
+    case .success(let result):
+        print(result)
+    case .failure(.missingInput(let key, let suggestion)):
+        print("Missing input: \(key)")
+        if let suggestion = suggestion {
+            print("Did you mean: \(suggestion)?")
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### Input Design
+
+<CardGroup cols={2}>
+  <Card title="Descriptive Keys" icon="tag">
+    **Do**: Use clear, descriptive key names
+
+    ```swift
+    // Good
+    let inputs = OrbitInput(Metadata([
+        "targetCompany": .string("TechCorp"),
+        "analysisYear": .int(2024),
+        "reportFormat": .string("PDF")
+    ]))
+
+    // Bad
+    let inputs = OrbitInput(Metadata([
+        "c": .string("TechCorp"),
+        "y": .int(2024),
+        "f": .string("PDF")
+    ]))
+    ```
+  </Card>
+
+  <Card title="Consistent Naming" icon="arrows-left-right">
+    **Do**: Follow naming conventions
+
+    ```swift
+    // Good: camelCase
+    let inputs = OrbitInput(Metadata([
+        "companyName": .string("TechCorp"),
+        "yearStart": .int(2024),
+        "includeCharts": .bool(true)
+    ]))
+
+    // Avoid: Mixed conventions
+    let inputs = OrbitInput(Metadata([
+        "company_name": .string("TechCorp"),
+        "YearStart": .int(2024),
+        "include-charts": .bool(true)
+    ]))
+    ```
+  </Card>
+
+  <Card title="Type Appropriateness" icon="check">
+    **Do**: Use appropriate types
+
+    ```swift
+    // Good
+    let inputs = OrbitInput(Metadata([
+        "count": .int(100),           // Numbers as int/double
+        "threshold": .double(0.85),
+        "enabled": .bool(true),       // Flags as bool
+        "name": .string("Analysis")   // Text as string
+    ]))
+
+    // Bad
+    let inputs = OrbitInput(Metadata([
+        "count": .string("100"),      // Number as string
+        "enabled": .string("true"),   // Bool as string
+        "threshold": .int(1)          // Should be double
+    ]))
+    ```
+  </Card>
+
+  <Card title="Documentation" icon="book">
+    **Do**: Document expected inputs
+
+    ```swift
+    /**
+     Creates an analysis orbit.
+
+     Required inputs:
+     - company: String - Company name to analyze
+     - year: Int - Analysis year (2020-2024)
+     - metrics: Array<String> - Metrics to include
+
+     Optional inputs:
+     - format: String - Output format (default: "PDF")
+     - detail: String - Detail level (default: "standard")
+     */
+    func createAnalysisOrbit(
+        agents: [Agent],
+        tasks: [ORTask]
+    ) async throws -> Orbit {
+        // ...
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Placeholder Usage
+
+<Steps>
+  <Step title="Use Meaningful Placeholders">
+    ```swift
+    // Good: Self-documenting
+    let task = ORTask(
+        description: """
+        Generate {reportType} report for {companyName}.
+        Include data from {startDate} to {endDate}.
+        Focus on {primaryMetric} and {secondaryMetric}.
+        """,
+        expectedOutput: "Report"
+    )
+
+    // Bad: Unclear
+    let task = ORTask(
+        description: """
+        Generate {type} report for {name}.
+        Include data from {d1} to {d2}.
+        Focus on {m1} and {m2}.
+        """,
+        expectedOutput: "Report"
+    )
+    ```
+  </Step>
+
+  <Step title="Provide Sensible Defaults">
+    ```swift
+    // For optional parameters
+    let task = ORTask(
+        description: """
+        Analyze data with {detail:standard} detail.
+        Format output as {format:markdown}.
+        Include {sections:5} sections.
+        """,
+        expectedOutput: "Analysis"
+    )
+
+    // Users can override defaults or use as-is
+    ```
+  </Step>
+
+  <Step title="Group Related Inputs">
+    ```swift
+    // Good: Structured grouping
+    let inputs = OrbitInput(Metadata([
+        "company": .dictionary([
+            "name": .string("TechCorp"),
+            "industry": .string("Technology"),
+            "founded": .int(2010)
+        ]),
+        "analysis": .dictionary([
+            "startDate": .string("2024-01-01"),
+            "endDate": .string("2024-12-31"),
+            "metrics": .array([
+                .string("revenue"),
+                .string("growth")
+            ])
+        ])
+    ]))
+
+    // Access: {company.name}, {analysis.startDate}, etc.
+    ```
+  </Step>
+
+  <Step title="Validate Input Completeness">
+    ```swift
+    // Before execution, check all required inputs
+    func validateInputs(
+        orbit: Orbit,
+        inputs: OrbitInput
+    ) throws {
+        let requiredKeys = extractRequiredKeys(orbit.tasks)
+
+        for key in requiredKeys {
+            if inputs.metadata[key] == nil {
+                throw OrbitAIError.missingInput(
+                    "Required input '\(key)' not provided. " +
+                    "Please provide this value before executing."
+                )
+            }
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Type Safety
+
+<AccordionGroup>
+  <Accordion title="Use Codable Structs" icon="code">
+    ```swift
+    // Define typed input structure
+    struct AnalysisInputs: Codable {
+        let company: String
+        let year: Int
+        let metrics: [String]
+        let thresholds: Thresholds
+
+        struct Thresholds: Codable {
+            let minConfidence: Double
+            let maxRisk: Double
+        }
+    }
+
+    // Create and validate at compile-time
+    let inputs = AnalysisInputs(
+        company: "TechCorp",
+        year: 2024,
+        metrics: ["revenue", "growth"],
+        thresholds: .init(minConfidence: 0.85, maxRisk: 0.3)
+    )
+
+    // Convert to OrbitInput
+    let orbitInputs = try OrbitInput(from: inputs)
+
+    // Type errors caught by compiler
+    // let badInputs = AnalysisInputs(
+    //     company: 123,  // Error: Cannot convert Int to String
+    //     year: "2024"   // Error: Cannot convert String to Int
+    // )
+    ```
+  </Accordion>
+
+  <Accordion title="Type Guards" icon="shield">
+    ```swift
+    // Validate types at runtime
+    func validateInputTypes(
+        inputs: OrbitInput,
+        schema: [String: MetadataType]
+    ) throws {
+        for (key, expectedType) in schema {
+            guard let value = inputs.metadata[key] else {
+                continue  // Missing handled separately
+            }
+
+            let actualType = value.type
+            if actualType != expectedType {
+                throw OrbitAIError.invalidInput(
+                    "Input '\(key)' expected type \(expectedType), " +
+                    "got \(actualType)"
+                )
+            }
+        }
+    }
+
+    enum MetadataType {
+        case string, int, double, bool, array, dictionary
+    }
+
+    // Usage
+    let schema: [String: MetadataType] = [
+        "company": .string,
+        "year": .int,
+        "threshold": .double,
+        "enabled": .bool,
+        "metrics": .array
+    ]
+
+    try validateInputTypes(inputs: inputs, schema: schema)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Placeholder Not Resolving" icon="circle-question">
+    **Symptoms**: `{placeholder}` appears literally in output
+
+    **Common Causes**:
+    1. Key mismatch (case-sensitive)
+    2. Input not provided
+    3. Wrong nested path
+    4. Syntax error in placeholder
+
+    **Solutions**:
+    ```swift
+    // Check exact key match
+    let task = ORTask(
+        description: "Analyze {Company}",  // Capital C
+        expectedOutput: "Report"
+    )
+
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp")  // Lowercase c - won't match!
+    ]))
+
+    // Fix: Match case exactly
+    let inputs = OrbitInput(Metadata([
+        "Company": .string("TechCorp")  // Now matches
+    ]))
+
+    // Or fix task
+    let task = ORTask(
+        description: "Analyze {company}",  // Lowercase to match
+        expectedOutput: "Report"
+    )
+    ```
+
+    **Debug Steps**:
+    ```swift
+    // 1. Print available keys
+    print("Available keys:", inputs.metadata.keys)
+
+    // 2. Extract placeholders from task
+    let placeholders = extractPlaceholders(task.description)
+    print("Required placeholders:", placeholders)
+
+    // 3. Check for missing
+    for placeholder in placeholders {
+        if inputs.metadata[placeholder] == nil {
+            print("Missing: \(placeholder)")
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Nested Path Not Found" icon="sitemap">
+    **Symptoms**: Error accessing nested values
+
+    **Common Causes**:
+    1. Incorrect path syntax
+    2. Missing intermediate keys
+    3. Wrong structure
+
+    **Solutions**:
+    ```swift
+    // Define structure
+    let inputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api": .dictionary([
+                "endpoint": .string("https://api.example.com"),
+                "version": .string("v2")
+            ])
+        ])
+    ]))
+
+    // Wrong: Missing level
+    // {config.endpoint} ❌
+
+    // Correct: Full path
+    // {config.api.endpoint} ✅
+
+    // Debug nested structure
+    func printStructure(_ metadata: Metadata, indent: Int = 0) {
+        let spacing = String(repeating: "  ", count: indent)
+
+        switch metadata {
+        case .dictionary(let dict):
+            for (key, value) in dict {
+                print("\(spacing)\(key):")
+                printStructure(value, indent: indent + 1)
+            }
+        default:
+            print("\(spacing)\(metadata)")
+        }
+    }
+
+    // Print to see structure
+    printStructure(inputs.metadata)
+    // Output:
+    // config:
+    //   api:
+    //     endpoint:
+    //       https://api.example.com
+    //     version:
+    //       v2
+    ```
+  </Accordion>
+
+  <Accordion title="Array Index Out of Bounds" icon="list">
+    **Symptoms**: Error accessing array element
+
+    **Common Causes**:
+    1. Index too large
+    2. Empty array
+    3. Wrong array key
+
+    **Solutions**:
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "items": .array([
+            .string("first"),
+            .string("second")
+        ])
+    ]))
+
+    // Check array size first
+    if let array = inputs.metadata["items"]?.arrayValue {
+        print("Array size: \(array.count)")  // 2 (indices 0, 1)
+
+        // Safe access
+        if array.count > 2 {
+            // {items[2]} would be safe
+        } else {
+            // Use default or adjust
+        }
+    }
+
+    // Use conditional access
+    let task = ORTask(
+        description: """
+        Primary: {items[0]}
+        {if items[1]}Secondary: {items[1]}{endif}
+        {if items[2]}Tertiary: {items[2]}{endif}
+        """,
+        expectedOutput: "List"
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Type Conversion Issues" icon="arrows-rotate">
+    **Symptoms**: Unexpected string representations
+
+    **Common Causes**:
+    1. Implicit type conversion
+    2. Array/dictionary to string
+    3. Number formatting
+
+    **Solutions**:
+    ```swift
+    // Control number formatting
+    let inputs = OrbitInput(Metadata([
+        "price": .double(1234.56)
+    ]))
+
+    // In task
+    let task = ORTask(
+        description: "Price: ${price}",
+        expectedOutput: "Info"
+    )
+    // Result: "Price: $1234.56"
+
+    // For custom formatting, pre-format
+    let formattedInputs = OrbitInput(Metadata([
+        "price": .string("$1,234.56")  // Pre-formatted
+    ]))
+
+    // Arrays convert to comma-separated
+    let arrayInputs = OrbitInput(Metadata([
+        "tags": .array([
+            .string("ai"),
+            .string("ml"),
+            .string("data")
+        ])
+    ]))
+
+    // In task: {tags}
+    // Result: "ai, ml, data"
+
+    // For custom format, pre-join
+    let tags = ["ai", "ml", "data"]
+    let customFormat = tags.joined(separator: " | ")
+    let formattedInputs = OrbitInput(Metadata([
+        "tags": .string(customFormat)
+    ]))
+    // Result: "ai | ml | data"
+    ```
+  </Accordion>
+
+  <Accordion title="Missing Required Inputs" icon="triangle-exclamation">
+    **Symptoms**: Execution fails with missing input error
+
+    **Solutions**:
+    ```swift
+    // Create input validator
+    struct InputValidator {
+        let requiredKeys: [String]
+        let optionalKeys: [String]
+
+        func validate(_ inputs: OrbitInput) throws {
+            for key in requiredKeys {
+                guard inputs.metadata[key] != nil else {
+                    throw OrbitAIError.missingInput(
+                        "Required input '\(key)' not provided"
+                    )
+                }
+            }
+        }
+
+        func printMissing(_ inputs: OrbitInput) {
+            let missing = requiredKeys.filter {
+                inputs.metadata[$0] == nil
+            }
+
+            if !missing.isEmpty {
+                print("Missing required inputs:")
+                for key in missing {
+                    print("  - \(key)")
+                }
+            }
+        }
+    }
+
+    // Usage
+    let validator = InputValidator(
+        requiredKeys: ["company", "year", "metrics"],
+        optionalKeys: ["format", "detail"]
+    )
+
+    // Validate before execution
+    do {
+        try validator.validate(inputs)
+        let result = try await orbit.start(inputs: inputs)
+    } catch {
+        validator.printMissing(inputs)
+        // Missing required inputs:
+        //   - company
+        //   - metrics
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Performance with Large Inputs" icon="gauge">
+    **Symptoms**: Slow interpolation with many placeholders
+
+    **Solutions**:
+    ```swift
+    // Cache interpolation results
+    actor InterpolationCache {
+        private var cache: [String: String] = [:]
+
+        func get(_ key: String) -> String? {
+            return cache[key]
+        }
+
+        func set(_ key: String, value: String) {
+            cache[key] = value
+        }
+
+        func clear() {
+            cache.removeAll()
+        }
+    }
+
+    // Use cache for repeated interpolations
+    let cache = InterpolationCache()
+
+    func interpolateWithCache(
+        template: String,
+        inputs: OrbitInput,
+        cache: InterpolationCache
+    ) async throws -> String {
+        // Check cache
+        if let cached = await cache.get(template) {
+            return cached
+        }
+
+        // Interpolate
+        let result = try interpolate(template, inputs: inputs)
+
+        // Cache result
+        await cache.set(template, value: result)
+
+        return result
+    }
+
+    // Or pre-interpolate static parts
+    // Only interpolate dynamic sections
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Outputs"
+    icon="file-export"
+    href="/Outputs"
+  >
+    Learn about orbit outputs
+  </Card>
+
+  <Card
+    title="Tasks"
+    icon="list-check"
+    href="/tasks"
+  >
+    Use inputs in task definitions
+  </Card>
+
+  <Card
+    title="Orbits"
+    icon="satellite"
+    href="/orbits"
+  >
+    Execute orbits with inputs
+  </Card>
+
+  <Card
+    title="Metadata"
+    icon="database"
+    href="/metadata"
+  >
+    Deep dive into metadata structure
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
