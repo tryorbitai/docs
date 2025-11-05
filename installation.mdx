@@ -39,7 +39,6 @@ Before installing **OrbitAI**, ensure your development environment meets these r
 **OrbitAI** automatically manages all required dependencies:
 
 - **GRDB.swift** - SQLite persistence
-- **Swift-JWT** - Authentication
 - **swift-log** - Structured logging
 - **mlx-swift** - ML embeddings and semantic search
 - **SwiftSoup** - HTML parsing and web scraping
@@ -255,21 +254,21 @@ Depending on the tools and features you use, you may need to grant:
 Verify your installation with this simple test:
 
 ```swift Test.swift
-import **OrbitAI**
+import OrbitAI
 
-// Configure **OrbitAI**
-**OrbitAI**.configure()
+// Configure OrbitAI
+OrbitAI.configure()
 
 // Create a simple agent
 let testAgent = Agent(
     role: "Test Assistant",
-    purpose: "Verify **OrbitAI** installation",
+    purpose: "Verify OrbitAI installation",
     context: "Simple test agent"
 )
 
 // Create and run a test task
 let testTask = Task(
-    description: "Say 'Hello from **OrbitAI**!'",
+    description: "Say 'Hello from OrbitAI!'",
     expectedOutput: "A greeting message",
     agent: testAgent
 )
@@ -281,7 +280,7 @@ let orbit = try Orbit(
 )
 
 let results = try await orbit.start()
-print("✅ **OrbitAI** is working! Result: \(results.output)")
+print("✅ OrbitAI is working! Result: \(results.output)")
 ```
 
 Run the test:
@@ -291,7 +290,7 @@ swift run Test
 
 Expected output:
 ```
-✅ **OrbitAI** is working! Result: Hello from **OrbitAI**!
+✅ OrbitAI is working! Result: Hello from OrbitAI!
 ```
 
 ## Troubleshooting
