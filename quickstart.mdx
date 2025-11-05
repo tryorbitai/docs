@@ -1,6 +1,6 @@
 ---
 title: "Quickstart"
-description: "Build your first AI agent workflow with OrbitAI in minutes - from setup to execution"
+description: "Build your first AI agent workflow with OrbitAI in minutes - from setup to execution."
 ---
 
 ## Build Your First Agent from Scratch
@@ -16,25 +16,6 @@ Welcome to OrbitAI! This guide will walk you through building a complete multi-a
   </Card>
   <Card title="Shopping List" icon="cart-shopping">
     Generates organized shopping lists from recipes
-  </Card>
-</CardGroup>
-
-## Prerequisites
-
-Before you begin, ensure you have the following:
-
-<CardGroup cols={2}>
-  <Card title="Swift 6.0+" icon="swift">
-    Latest Swift toolchain installed
-  </Card>
-  <Card title="Xcode 15.0+" icon="apple">
-    For iOS/macOS development
-  </Card>
-  <Card title="API Keys" icon="key">
-    OpenAI or Anthropic API key
-  </Card>
-  <Card title="Swift Knowledge" icon="code">
-    Basic async/await patterns
   </Card>
 </CardGroup>
 
@@ -85,12 +66,6 @@ Before you begin, ensure you have the following:
     ```bash .env
     # Required: At least one LLM provider
     OPENAI_API_KEY=your-openai-api-key-here
-    # OR
-    ANTHROPIC_API_KEY=your-anthropic-api-key-here
-
-    # Optional: OrbitAI configurations
-    ORBITAI_DISABLE_STREAMING=false
-    ORBITAI_MAX_SHELL_OUTPUT_BYTES=65536
     ```
 
     <Warning>
@@ -105,10 +80,10 @@ Before you begin, ensure you have the following:
   <Accordion title="Agents" icon="robot">
     **Agents** are autonomous AI entities with specific roles and capabilities:
     
-    - **Role**: What the agent represents (e.g., "Meal Planner")
-    - **Purpose**: The agent's primary goal
-    - **Context**: Background information that shapes behavior
-    - **Tools**: Available capabilities (web search, calculations, etc.)
+    - **Role**: What the agent represents (e.g., "Meal Planner").
+    - **Purpose**: The agent's primary goal.
+    - **Context**: Background information that shapes behavior.
+    - **Tools**: Available capabilities (web search, read files, etc.)
 
     Agents can work independently or collaborate with other agents in coordinated workflows.
   </Accordion>
@@ -116,10 +91,10 @@ Before you begin, ensure you have the following:
   <Accordion title="Tasks" icon="list-check">
     **Tasks** define specific work to be completed:
     
-    - **Description**: What needs to be done
-    - **Expected Output**: Format and content requirements
-    - **Agent Assignment**: Which agent handles the task
-    - **Dependencies**: Tasks that must complete first
+    - **Description**: What needs to be done.
+    - **Expected Output**: Format and content requirements.
+    - **Agent Assignment**: Which agent handles the task.
+    - **Dependencies**: Tasks that must complete first.
 
     Tasks can reference outputs from previous tasks to create complex workflows.
   </Accordion>
@@ -127,9 +102,9 @@ Before you begin, ensure you have the following:
   <Accordion title="Orbits" icon="satellite">
     **Orbits** orchestrate agents and tasks into workflows:
     
-    - **Process Type**: Sequential (one after another) or Hierarchical (manager delegates)
-    - **Execution Flow**: How tasks are coordinated
-    - **Resource Management**: Memory, knowledge bases, tool access
+    - **Process Type**: Sequential (one after another) or Hierarchical (manager delegates).
+    - **Execution Flow**: How tasks are coordinated.
+    - **Resource Management**: Memory, knowledge bases, tool access.
 
     Orbits manage the entire execution lifecycle and provide detailed metrics.
   </Accordion>
@@ -195,14 +170,11 @@ Define three specialized agents for your workflow:
             - Seasonal ingredient availability
             - Budget-conscious meal planning
             - Family-friendly meal options
-            
-            Your goal is to create practical, healthy, and delicious meal plans that fit the user's 
+
+            Your goal is to create practical, healthy, and delicious meal plans that fit the user's
             lifestyle, preferences, and constraints.
             """,
-            llmID: .openAI,
-            tools: ["calculator", "textProcessing"],
             verbose: true,
-            memory: true,
             temperature: 0.7
         )
     }
@@ -213,7 +185,7 @@ Define three specialized agents for your workflow:
     ```swift
     private func createRecipeResearchAgent() -> Agent {
         return Agent(
-            role: "Recipe Research Specialist", 
+            role: "Recipe Research Specialist",
             purpose: "Find, analyze, and adapt recipes based on meal planning requirements",
             context: """
             You are a culinary expert and recipe researcher with deep knowledge of:
@@ -222,14 +194,12 @@ Define three specialized agents for your workflow:
             - Ingredient substitutions and alternatives
             - Cooking time and difficulty assessments
             - Recipe scaling and portion adjustments
-            
+
             Your expertise helps find the perfect recipes that match meal plans while considering
             cooking skill level, available time, and ingredient accessibility.
             """,
-            llmID: .openAI,
-            tools: ["webSearch", "textProcessing", "calculator"],
+            tools: ["webSearch"],
             verbose: true,
-            memory: true,
             temperature: 0.6
         )
     }
@@ -249,14 +219,11 @@ Define three specialized agents for your workflow:
             - Brand recommendations and alternatives
             - Budget optimization strategies
             - Storage and freshness considerations
-            
+
             You create well-organized shopping lists that minimize store visits, reduce waste,
             and optimize the shopping experience.
             """,
-            llmID: .openAI,
-            tools: ["calculator", "textProcessing", "jsonParse"],
             verbose: true,
-            memory: false,  // Shopping lists don't need persistent memory
             temperature: 0.3  // More deterministic for list organization
         )
     }
@@ -569,31 +536,31 @@ When you run the application, you'll see:
 
 <CardGroup cols={2}>
   <Card title="Agent Design" icon="robot">
-    - **Single Responsibility**: One clear purpose per agent
-    - **Clear Context**: Detailed background information
-    - **Appropriate Tools**: Only assign needed tools
-    - **Temperature**: Lower for structured, higher for creative
+    - **Single Responsibility**: One clear purpose per agent.
+    - **Clear Context**: Detailed background information.
+    - **Appropriate Tools**: Only assign needed tools.
+    - **Temperature**: Lower for structured, higher for creative.
   </Card>
 
   <Card title="Task Definition" icon="list-check">
-    - **Be Specific**: Explicit descriptions
-    - **Define Output**: Clear format and structure
-    - **Set Constraints**: Realistic time limits
-    - **Use Dependencies**: Chain task outputs
+    - **Be Specific**: Explicit descriptions.
+    - **Define Output**: Clear format and structure.
+    - **Set Constraints**: Realistic time limits.
+    - **Use Dependencies**: Chain task outputs.
   </Card>
 
   <Card title="Error Handling" icon="shield">
-    - **Try-Catch Blocks**: Handle specific errors
-    - **Retry Logic**: Implement for transient failures
-    - **Graceful Degradation**: Fallback strategies
-    - **Verbose Logging**: Debug mode for troubleshooting
+    - **Try-Catch Blocks**: Handle specific errors.
+    - **Retry Logic**: Implement for transient failures.
+    - **Graceful Degradation**: Fallback strategies.
+    - **Verbose Logging**: Debug mode for troubleshooting.
   </Card>
 
   <Card title="Resource Management" icon="gauge">
-    - **Rate Limiting**: Prevent API throttling
-    - **Timeouts**: Set appropriate limits
-    - **Caching**: Reduce redundant API calls
-    - **Metrics**: Track usage and costs
+    - **Rate Limiting**: Prevent API throttling.
+    - **Timeouts**: Set appropriate limits.
+    - **Caching**: Reduce redundant API calls.
+    - **Metrics**: Track usage and costs.
   </Card>
 </CardGroup>
 
@@ -601,7 +568,7 @@ When you run the application, you'll see:
 
 <AccordionGroup>
   <Accordion title="Authentication Errors" icon="key">
-    **Problem**: Invalid API key or authentication failed
+    **Problem**: Invalid API key or authentication failed.
 
     **Solution**: Check your environment variables:
     ```bash
@@ -612,7 +579,7 @@ When you run the application, you'll see:
   </Accordion>
 
   <Accordion title="Task Timeout Issues" icon="clock">
-    **Problem**: Task execution exceeded maximum time limit
+    **Problem**: Task execution exceeded maximum time limit.
 
     **Solution**: Increase the timeout or simplify the task:
     ```swift
@@ -625,7 +592,7 @@ When you run the application, you'll see:
   </Accordion>
 
   <Accordion title="Memory Issues" icon="memory">
-    **Problem**: Unable to process large outputs
+    **Problem**: Unable to process large outputs.
 
     **Solution**: Use streaming or chunked processing:
     ```swift
@@ -637,7 +604,7 @@ When you run the application, you'll see:
   </Accordion>
 
   <Accordion title="Tool Execution Failures" icon="wrench">
-    **Problem**: Tool execution failed
+    **Problem**: Tool execution failed.
 
     **Solution**: Check tool availability:
     ```swift
@@ -656,7 +623,7 @@ Congratulations on building your first OrbitAI agent system! Here's what to expl
 
 <CardGroup cols={2}>
   <Card
-    title="Explore Components"
+    title="Agents"
     icon="puzzle-piece"
     href="/index#core-components"
   >
@@ -670,24 +637,8 @@ Congratulations on building your first OrbitAI agent system! Here's what to expl
   >
     Browse practical agent implementations
   </Card>
-
-  <Card
-    title="Advanced Features"
-    icon="rocket"
-    href="/advanced/features"
-  >
-    Flows, guardrails, and optimization
-  </Card>
-
-  <Card
-    title="API Reference"
-    icon="book"
-    href="/api-reference/introduction"
-  >
-    Complete API documentation
-  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** Join our [GitHub Discussions](https://github.com/tryorbitai/orbit-ai/discussions) or check out the [Issue Tracker](https://github.com/tryorbitai/orbit-ai/issues) for support.
+  **Need help?** Join our [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check out the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues) for support.
 </Note>
