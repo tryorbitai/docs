@@ -1,0 +1,2086 @@
+---
+title: "Orbits"
+description: "The orchestration layer that coordinates agents and tasks into complete, intelligent workflows."
+---
+
+## Overview
+
+Orbits are the top-level orchestration constructs in OrbitAI that bring together agents, tasks, and processes into cohesive, executable workflows. An orbit manages the complete lifecycle of multi-agent execution, from initialization through task distribution to result aggregation.
+
+<CardGroup cols={3}>
+  <Card title="Orchestration" icon="satellite">
+    Coordinates multiple agents and tasks
+  </Card>
+  <Card title="Lifecycle Management" icon="rotate">
+    Manages execution from start to finish
+  </Card>
+  <Card title="LLM Integration" icon="microchip">
+    Automatic LLM provider setup
+  </Card>
+  <Card title="Memory Systems" icon="brain">
+    Shared and agent-specific memory
+  </Card>
+  <Card title="Context Flow" icon="water">
+    Manages data flow between tasks
+  </Card>
+  <Card title="Telemetry" icon="chart-line">
+    Comprehensive metrics and monitoring
+  </Card>
+</CardGroup>
+
+### What is an Orbit?
+
+An **Orbit** is a complete workflow system that:
+- **Manages agents**: Configures and coordinates AI agents
+- **Executes tasks**: Runs tasks according to process type
+- **Handles state**: Tracks execution progress and results
+- **Provides infrastructure**: LLM providers, memory, tools, knowledge bases
+- **Monitors performance**: Collects metrics and usage data
+- **Ensures reliability**: Error handling and recovery mechanisms
+
+<Info>
+  Think of an Orbit as a "project" or "workflow instance" that contains everything needed to execute a multi-agent system.
+</Info>
+
+### Key Characteristics
+
+<AccordionGroup>
+  <Accordion title="Self-Contained" icon="box">
+    Orbits encapsulate all necessary components—agents, tasks, LLM providers, memory, and tools—making them portable and reusable.
+  </Accordion>
+
+  <Accordion title="Process-Driven" icon="gears">
+    Execution follows one of three process types (Sequential, Hierarchical, Flow-Based), providing predictable orchestration patterns.
+  </Accordion>
+
+  <Accordion title="Context-Aware" icon="layer-group">
+    Maintains execution context that flows through tasks, enabling agents to build upon previous work and share information.
+  </Accordion>
+
+  <Accordion title="Observable" icon="eye">
+    Provides comprehensive visibility into execution through verbose logging, metrics, and telemetry integration.
+  </Accordion>
+</AccordionGroup>
+
+## Orbit Lifecycle
+
+Understanding the orbit lifecycle helps you manage execution and handle edge cases effectively.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   ORBIT LIFECYCLE                    │
+└─────────────────────────────────────────────────────┘
+
+1. INITIALIZATION
+   ├─ Create Orbit instance
+   ├─ Validate configuration
+   ├─ Setup LLM providers
+   ├─ Initialize memory systems
+   └─ Register tools
+         ↓
+2. READY
+   ├─ Orbit configured and ready
+   ├─ Waiting for start() call
+   └─ All components initialized
+         ↓
+3. RUNNING
+   ├─ Executing tasks
+   ├─ Agents processing work
+   ├─ Context flowing
+   └─ Metrics collecting
+         ↓
+4. COMPLETING
+   ├─ Final tasks finishing
+   ├─ Aggregating results
+   └─ Collecting final metrics
+         ↓
+5. COMPLETED / FAILED
+   ├─ OrbitOutput generated
+   ├─ Resources cleaned up
+   └─ Final state recorded
+```
+
+### Lifecycle States
+
+<Tabs>
+  <Tab title="Initialization">
+    **Phase**: Orbit construction and setup
+
+    **Activities**:
+    - Validate required parameters
+    - Create internal components
+    - Setup LLM manager
+    - Initialize memory systems
+    - Register tools with ToolsHandler
+    - Prepare knowledge bases
+    - Validate agent configurations
+    - Validate task configurations
+
+    **Code Example**:
+    ```swift
+    // Initialization phase
+    let orbit = try await Orbit.create(
+        name: "Data Analysis Pipeline",
+        description: "Analyze customer data and generate insights",
+        agents: [dataAgent, analysisAgent, reportAgent],
+        tasks: [extractTask, analyzeTask, reportTask],
+        process: .sequential,
+        verbose: true,
+        memory: true,
+        usageMetrics: true
+    )
+    // Orbit is now in READY state
+    ```
+
+    **Common Errors**:
+    - Missing required parameters
+    - Invalid agent configurations
+    - LLM provider setup failures
+    - Tool registration issues
+
+    <Warning>
+      Initialization errors are thrown immediately—catch and handle them before attempting execution.
+    </Warning>
+  </Tab>
+
+  <Tab title="Ready">
+    **Phase**: Orbit configured and awaiting execution
+
+    **State**:
+    - All components initialized
+    - Agents registered
+    - Tasks validated
+    - LLM providers ready
+    - Memory systems active
+
+    **Available Operations**:
+    ```swift
+    // Inspect configuration
+    let agentCount = await orbit.getAgents().count
+    let taskCount = orbit.tasks.count
+    let processType = orbit.process
+
+    // Add additional configuration
+    let customProvider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: apiKey
+    )
+    await orbit.configureLLMProvider(customProvider)
+
+    // Add knowledge sources
+    await orbit.addKnowledgeSource("./docs/guide.pdf")
+    ```
+
+    **Transition to Running**:
+    ```swift
+    // Start execution
+    let result = try await orbit.start()
+    // Orbit transitions to RUNNING state
+    ```
+  </Tab>
+
+  <Tab title="Running">
+    **Phase**: Active task execution
+
+    **Activities**:
+    - Task execution engine running
+    - Agents processing tasks
+    - Tools being called
+    - Memory being accessed/updated
+    - Context flowing between tasks
+    - Metrics being collected
+    - Telemetry events being recorded
+
+    **Monitoring**:
+    ```swift
+    // During execution (in another task/thread)
+    Task {
+        while await orbit.isRunning() {
+            let status = await orbit.getExecutionStatus()
+            print("Active tasks: \(status.activeTasks)")
+            print("Completed: \(status.completedTasks)")
+            print("Queued: \(status.queuedTasks)")
+
+            try await Task.sleep(for: .seconds(5))
+        }
+    }
+    ```
+
+    **State Management**:
+    - Task states updated in real-time
+    - Context accumulates results
+    - Memory systems record information
+    - Metrics aggregate continuously
+
+    <Info>
+      The RUNNING state persists until all tasks complete or an unrecoverable error occurs.
+    </Info>
+  </Tab>
+
+  <Tab title="Completing">
+    **Phase**: Final task completion and result aggregation
+
+    **Activities**:
+    - Last tasks finishing execution
+    - Results being aggregated
+    - Final metrics calculated
+    - Memory being persisted (if enabled)
+    - Telemetry final events sent
+    - OrbitOutput being constructed
+
+    **Duration**: Usually brief (milliseconds to seconds)
+
+    **Code Path**:
+    ```swift
+    // Internal orbit completion logic
+    private func completeExecution(
+        taskResults: [TaskResult]
+    ) async throws -> OrbitOutput {
+        // Aggregate all task outputs
+        let outputs = taskResults.compactMap { $0.output }
+
+        // Calculate final metrics
+        let totalMetrics = calculateTotalMetrics(outputs)
+
+        // Persist memory if enabled
+        if memory {
+            await memoryStorage.persist()
+        }
+
+        // Create output
+        return OrbitOutput(
+            taskOutputs: outputs,
+            usageMetrics: totalMetrics,
+            executionTime: totalExecutionTime
+        )
+    }
+    ```
+  </Tab>
+
+  <Tab title="Completed/Failed">
+    **Phase**: Execution finished
+
+    **Completed State**:
+    - All tasks executed successfully
+    - OrbitOutput contains results
+    - Metrics finalized
+    - Resources cleaned up
+
+    ```swift
+    let result = try await orbit.start()
+    // Success - orbit in COMPLETED state
+
+    print("Tasks completed: \(result.taskOutputs.count)")
+    print("Total tokens: \(result.usageMetrics.totalTokens)")
+    print("Execution time: \(result.executionTime)s")
+    ```
+
+    **Failed State**:
+    - Task execution failed
+    - Error captured
+    - Partial results may be available
+    - Cleanup performed
+
+    ```swift
+    do {
+        let result = try await orbit.start()
+    } catch let error as OrbitAIError {
+        // Error - orbit in FAILED state
+        print("Orbit failed: \(error)")
+
+        // Check partial results
+        let completedTasks = orbit.tasks.filter {
+            $0.status == .completed
+        }
+        print("Completed before failure: \(completedTasks.count)")
+    }
+    ```
+
+    <Warning>
+      Once in COMPLETED or FAILED state, an orbit cannot be restarted. Create a new orbit instance for re-execution.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Parameters and Configuration
+
+### Core Parameters
+
+<Tabs>
+  <Tab title="Required">
+    | Parameter | Type | Description |
+    |-----------|------|-------------|
+    | `name` | `String` | Human-readable name for the orbit |
+    | `agents` | `[Agent]` | Array of agents available for task execution |
+    | `tasks` | `[ORTask]` | Array of tasks to execute |
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Content Creation Workflow",
+        agents: [researcher, writer, editor],
+        tasks: [researchTask, writeTask, editTask]
+    )
+    ```
+
+    <Info>
+      These three parameters are the minimum required to create a functioning orbit.
+    </Info>
+  </Tab>
+
+  <Tab title="Process & Execution">
+    | Parameter | Type | Default | Description |
+    |-----------|------|---------|-------------|
+    | `process` | `Process` | `.sequential` | Execution orchestration pattern |
+    | `manager` | `Agent?` | `nil` | Manager agent (for hierarchical) |
+    | `verbose` | `Bool` | `false` | Enable detailed logging |
+    | `maxConcurrentTasks` | `Int?` | `3` | Max parallel tasks (flow-based) |
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Parallel Processing",
+        agents: workers,
+        tasks: processingTasks,
+        process: .sequential,        // or .hierarchical
+        manager: coordinatorAgent,   // required for hierarchical
+        verbose: true,               // detailed logs
+        maxConcurrentTasks: 5        // parallel execution limit
+    )
+    ```
+  </Tab>
+
+  <Tab title="Memory & Knowledge">
+    | Parameter | Type | Default | Description |
+    |-----------|------|---------|-------------|
+    | `memory` | `Bool` | `false` | Enable short-term memory |
+    | `longTermMemory` | `Bool` | `false` | Enable long-term memory |
+    | `entityMemory` | `Bool` | `false` | Track named entities |
+    | `memoryConfig` | `MemoryConfiguration?` | `nil` | Memory system config |
+    | `knowledgeSources` | `[String]?` | `nil` | Knowledge base file paths |
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Knowledge-Based Assistant",
+        agents: [assistant],
+        tasks: assistanceTasks,
+        memory: true,
+        longTermMemory: true,
+        entityMemory: true,
+        knowledgeSources: [
+            "./docs/product-guide.pdf",
+            "./data/faq.json",
+            "./policies/company-policies.md"
+        ]
+    )
+    ```
+
+    <Tip>
+      Memory systems enable agents to learn from interactions and maintain context across sessions.
+    </Tip>
+  </Tab>
+
+  <Tab title="Monitoring & Output">
+    | Parameter | Type | Default | Description |
+    |-----------|------|---------|-------------|
+    | `usageMetrics` | `Bool` | `true` | Collect usage metrics |
+    | `stepCallback` | `String?` | `nil` | Callback for execution steps |
+    | `outputDirectory` | `String?` | `nil` | Directory for output files |
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Monitored Workflow",
+        agents: agents,
+        tasks: tasks,
+        usageMetrics: true,           // track token usage
+        stepCallback: "onStepComplete", // execution callback
+        outputDirectory: "./outputs"   // save outputs
+    )
+
+    // Callback implementation
+    func onStepComplete(step: ExecutionStep) {
+        print("Step: \(step.description)")
+        print("Agent: \(step.agentId)")
+        print("Duration: \(step.duration)s")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Additional Config">
+    | Parameter | Type | Default | Description |
+    |-----------|------|---------|-------------|
+    | `description` | `String?` | `nil` | Orbit description |
+    | `id` | `OrbitAIID?` | Auto-generated | Custom orbit ID |
+    | `cacheHandler` | `CacheHandler?` | `nil` | Custom cache implementation |
+    | `telemetryManager` | `TelemetryManager?` | Shared | Custom telemetry manager |
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Custom Orbit",
+        description: "Specialized workflow with custom config",
+        agents: agents,
+        tasks: tasks,
+        id: OrbitAIID(uuidString: "custom-orbit-id"),
+        cacheHandler: customCache,
+        telemetryManager: customTelemetry
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Creating and Configuring Orbits
+
+### Basic Creation
+
+<Steps>
+  <Step title="Define Agents">
+    Create agents with appropriate roles and capabilities:
+
+    ```swift
+    let researcher = Agent(
+        role: "Research Analyst",
+        purpose: "Conduct thorough research on topics",
+        context: "Expert researcher with analytical skills",
+        tools: ["web_search", "data_analyzer"]
+    )
+
+    let writer = Agent(
+        role: "Content Writer",
+        purpose: "Create engaging, well-written content",
+        context: "Professional writer with storytelling skills",
+        tools: ["content_optimizer", "grammar_checker"]
+    )
+    ```
+  </Step>
+
+  <Step title="Define Tasks">
+    Create tasks with clear descriptions and expected outputs:
+
+    ```swift
+    let researchTask = ORTask(
+        description: "Research current trends in AI for healthcare",
+        expectedOutput: "Comprehensive research report with sources",
+        agent: researcher.id
+    )
+
+    let writingTask = ORTask(
+        description: "Write article based on research: {task_0_output}",
+        expectedOutput: "1500-word article in markdown",
+        agent: writer.id,
+        context: [researchTask.id]
+    )
+    ```
+  </Step>
+
+  <Step title="Create Orbit">
+    Bring agents and tasks together:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Article Creation Pipeline",
+        description: "Research and write articles on AI topics",
+        agents: [researcher, writer],
+        tasks: [researchTask, writingTask],
+        process: .sequential,
+        verbose: true
+    )
+    ```
+  </Step>
+
+  <Step title="Execute">
+    Start the orbit and get results:
+
+    ```swift
+    let result = try await orbit.start()
+
+    // Access outputs
+    for (index, output) in result.taskOutputs.enumerated() {
+        print("Task \(index): \(output.rawOutput)")
+    }
+
+    // Check metrics
+    print("Total tokens: \(result.usageMetrics.totalTokens)")
+    print("Execution time: \(result.executionTime)s")
+    ```
+  </Step>
+</Steps>
+
+### Advanced Configuration
+
+<Tabs>
+  <Tab title="Custom LLM Setup">
+    Configure specific LLM providers:
+
+    ```swift
+    // Create orbit
+    let orbit = try await Orbit.create(
+        name: "Custom LLM Workflow",
+        agents: agents,
+        tasks: tasks
+    )
+
+    // Add primary provider
+    let openAIProvider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: openAIKey
+    )
+    await orbit.configureLLMProvider(
+        openAIProvider,
+        asDefault: true
+    )
+
+    // Add fallback provider
+    let anthropicProvider = AnthropicProvider(
+        model: .claude35Sonnet,
+        apiKey: anthropicKey
+    )
+    await orbit.configureLLMProvider(anthropicProvider)
+
+    // Execute with configured providers
+    let result = try await orbit.start()
+    ```
+  </Tab>
+
+  <Tab title="Memory Configuration">
+    Setup advanced memory systems:
+
+    ```swift
+    // Configure memory
+    let memoryConfig = MemoryConfiguration(
+        maxMemoryItems: 100,
+        persistencePath: "./memory/orbit-memory",
+        embeddingModel: "text-embedding-ada-002",
+        similarityThreshold: 0.75,
+        compressionEnabled: true,
+        autoSummarize: true
+    )
+
+    let orbit = try await Orbit.create(
+        name: "Memory-Enhanced Workflow",
+        agents: agents,
+        tasks: tasks,
+        memory: true,
+        longTermMemory: true,
+        entityMemory: true,
+        memoryConfig: memoryConfig
+    )
+    ```
+  </Tab>
+
+  <Tab title="Knowledge Sources">
+    Add external knowledge:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Knowledge-Based System",
+        agents: [knowledgeAgent],
+        tasks: queryTasks,
+        knowledgeSources: [
+            // PDF documents
+            "./docs/product-manual.pdf",
+            "./docs/api-reference.pdf",
+
+            // Markdown files
+            "./wiki/getting-started.md",
+            "./wiki/advanced-topics.md",
+
+            // JSON data
+            "./data/product-catalog.json",
+            "./data/customer-segments.json",
+
+            // Plain text
+            "./data/faq.txt",
+            "./policies/terms-of-service.txt"
+        ]
+    )
+
+    // Or add sources after creation
+    await orbit.addKnowledgeSource("./new-doc.pdf")
+    ```
+  </Tab>
+
+  <Tab title="Tool Registration">
+    Register custom tools:
+
+    ```swift
+    // Create orbit
+    let orbit = try await Orbit.create(
+        name: "Custom Tools Workflow",
+        agents: agents,
+        tasks: tasks
+    )
+
+    // Register custom tools
+    let toolsHandler = ToolsHandler.shared
+    await toolsHandler.registerTool(CustomDatabaseTool())
+    await toolsHandler.registerTool(CustomAPITool())
+    await toolsHandler.registerTool(CustomAnalysisTool())
+
+    // Agents can now use these tools
+    let agent = Agent(
+        role: "Data Processor",
+        purpose: "Process data using custom tools",
+        context: "Specialist in custom data operations",
+        tools: [
+            "custom_database",
+            "custom_api",
+            "custom_analysis"
+        ]
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Execution Process
+
+### Execution Flow
+
+<Tabs>
+  <Tab title="Sequential">
+    ```
+    orbit.start()
+        ↓
+    Initialize LLM Manager
+        ↓
+    Load Knowledge Sources
+        ↓
+    Setup Memory Systems
+        ↓
+    Create Task Execution Engine
+        ↓
+    Execute Task 1 (Agent A)
+        ↓
+    Update Context with Output 1
+        ↓
+    Execute Task 2 (Agent B)
+        ↓
+    Update Context with Output 2
+        ↓
+    Execute Task 3 (Agent C)
+        ↓
+    Update Context with Output 3
+        ↓
+    Aggregate Results
+        ↓
+    Calculate Metrics
+        ↓
+    Return OrbitOutput
+    ```
+
+    **Characteristics**:
+    - Strict linear execution
+    - Each task waits for previous
+    - Context builds sequentially
+    - Predictable timing
+  </Tab>
+
+  <Tab title="Hierarchical">
+    ```
+    orbit.start()
+        ↓
+    Initialize Infrastructure
+        ↓
+    Manager Agent Analyzes Workflow
+        ↓
+    Manager Creates Execution Plan
+        ↓
+    ┌────────────────┼────────────────┐
+    │                │                │
+    Manager Delegates:
+    Task 1 → Agent A
+    Task 2 → Agent B
+    Task 3 → Agent C
+        ↓                ↓                ↓
+    Execute in Parallel/Sequence (Manager decides)
+        ↓                ↓                ↓
+    └────────────────┼────────────────┘
+        ↓
+    Manager Validates Results
+        ↓
+    Manager Coordinates Next Phase
+        ↓
+    Aggregate and Return Results
+    ```
+
+    **Characteristics**:
+    - Manager-driven coordination
+    - Dynamic task assignment
+    - Quality validation
+    - Adaptive execution
+  </Tab>
+
+  <Tab title="Flow-Based">
+    ```
+    orbit.start()
+        ↓
+    Initialize Infrastructure
+        ↓
+    Build Dependency Graph
+        ↓
+    Topological Sort Tasks
+        ↓
+    Identify Parallelizable Tasks
+        ↓
+    Execute Independent Tasks in Parallel
+    ┌────────┬────────┬────────┐
+    Task 1   Task 2   Task 3
+    (No dependencies)
+    └────────┴────────┴────────┘
+        ↓
+    Execute Dependent Tasks
+    (After dependencies complete)
+        ↓
+    Continue Until All Complete
+        ↓
+    Aggregate and Return Results
+    ```
+
+    **Characteristics**:
+    - Dependency-driven
+    - Maximum parallelization
+    - Topologically sorted
+    - Efficient execution
+  </Tab>
+</Tabs>
+
+### Execution Context
+
+The execution context flows through tasks:
+
+```swift
+public struct TaskExecutionContext: Sendable {
+    // Previous task outputs
+    public var taskOutputs: [TaskOutput]
+
+    // Orbit-level inputs
+    public var inputs: Metadata
+
+    // Shared memory
+    public var memory: MemoryStorage?
+
+    // Knowledge base access
+    public var knowledgeBase: KnowledgeBase?
+
+    // Available tools
+    public var availableTools: [String]
+}
+```
+
+**Context Flow Example**:
+```swift
+// Task 1 executes
+let output1 = TaskOutput(rawOutput: "Research findings...")
+
+// Context updated
+context.taskOutputs.append(output1)
+
+// Task 2 receives context with output1
+// Can reference via {task_0_output}
+
+// Task 2 executes
+let output2 = TaskOutput(rawOutput: "Article based on research...")
+
+// Context updated again
+context.taskOutputs.append(output2)
+
+// Task 3 receives both outputs
+// Can reference {task_0_output} and {task_1_output}
+```
+
+## Inputs and Interpolation
+
+### OrbitInput
+
+Provide dynamic inputs to orbits:
+
+<Tabs>
+  <Tab title="Basic Usage">
+    ```swift
+    // Define task with placeholders
+    let task = ORTask(
+        description: """
+        Analyze {industry} market for {product} in {region}.
+        Focus on {timeframe} trends.
+        """,
+        expectedOutput: "Market analysis report"
+    )
+
+    let orbit = try await Orbit.create(
+        name: "Market Analysis",
+        agents: [analyst],
+        tasks: [task]
+    )
+
+    // Provide inputs at runtime
+    let inputs = OrbitInput(Metadata([
+        "industry": .string("healthcare"),
+        "product": .string("AI diagnostics"),
+        "region": .string("North America"),
+        "timeframe": .string("2024 Q4")
+    ]))
+
+    let result = try await orbit.start(inputs: inputs)
+    // Task description becomes:
+    // "Analyze healthcare market for AI diagnostics in North America.
+    //  Focus on 2024 Q4 trends."
+    ```
+  </Tab>
+
+  <Tab title="Typed Inputs">
+    ```swift
+    // Define input structure
+    struct AnalysisInputs: Codable {
+        let industry: String
+        let product: String
+        let region: String
+        let timeframe: String
+        let budget: Double
+        let priorities: [String]
+    }
+
+    // Create inputs
+    let inputData = AnalysisInputs(
+        industry: "healthcare",
+        product: "AI diagnostics",
+        region: "North America",
+        timeframe: "2024 Q4",
+        budget: 50000.0,
+        priorities: ["accuracy", "speed", "cost"]
+    )
+
+    // Convert to OrbitInput
+    let inputs = try OrbitInput(from: inputData)
+
+    // Use in tasks
+    let task = ORTask(
+        description: """
+        Market analysis for {product} in {industry}.
+        Region: {region}
+        Period: {timeframe}
+        Budget: ${budget}
+        Priorities: {priorities}
+        """,
+        expectedOutput: "Detailed analysis"
+    )
+    ```
+  </Tab>
+
+  <Tab title="Complex Inputs">
+    ```swift
+    // Nested and complex data structures
+    let complexInputs = OrbitInput(Metadata([
+        "config": .dictionary([
+            "api_endpoint": .string("https://api.example.com"),
+            "timeout": .int(30),
+            "retries": .int(3)
+        ]),
+        "filters": .array([
+            .string("active"),
+            .string("verified"),
+            .string("premium")
+        ]),
+        "thresholds": .dictionary([
+            "min_confidence": .double(0.85),
+            "max_results": .int(100)
+        ])
+    ]))
+
+    // Access in task descriptions
+    let task = ORTask(
+        description: """
+        Fetch data from {config.api_endpoint}
+        Apply filters: {filters}
+        Confidence threshold: {thresholds.min_confidence}
+        Max results: {thresholds.max_results}
+        """,
+        expectedOutput: "Filtered dataset"
+    )
+    ```
+  </Tab>
+
+  <Tab title="Default Values">
+    ```swift
+    // Define tasks with default values
+    let task = ORTask(
+        description: """
+        Analyze {industry:technology} market in {region:global}.
+        Period: {timeframe:last quarter}
+        """,
+        expectedOutput: "Analysis report"
+    )
+
+    // Execute without inputs - uses defaults
+    let result1 = try await orbit.start()
+    // "Analyze technology market in global.
+    //  Period: last quarter"
+
+    // Execute with partial inputs - overrides some defaults
+    let inputs = OrbitInput(Metadata([
+        "industry": .string("healthcare")
+    ]))
+    let result2 = try await orbit.start(inputs: inputs)
+    // "Analyze healthcare market in global.
+    //  Period: last quarter"
+    ```
+  </Tab>
+</Tabs>
+
+### Variable Interpolation
+
+<AccordionGroup>
+  <Accordion title="Task Output References" icon="link">
+    Reference previous task outputs:
+
+    ```swift
+    let task1 = ORTask(
+        description: "Research AI trends",
+        expectedOutput: "Research report"
+    )
+
+    let task2 = ORTask(
+        description: """
+        Write article based on:
+        {task_0_output}
+        """,
+        expectedOutput: "Article",
+        context: [task1.id]
+    )
+
+    let task3 = ORTask(
+        description: """
+        Edit article for publication.
+        Original research: {task_0_output}
+        Article draft: {task_1_output}
+        """,
+        expectedOutput: "Final article",
+        context: [task1.id, task2.id]
+    )
+    ```
+
+    **Variable Format**:
+    - `{task_0_output}` - First task
+    - `{task_1_output}` - Second task
+    - `{task_N_output}` - Nth task
+  </Accordion>
+
+  <Accordion title="Orbit Inputs" icon="arrow-right-to-bracket">
+    Reference orbit-level inputs:
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "company": .string("TechCorp"),
+        "year": .int(2024),
+        "quarter": .string("Q4")
+    ]))
+
+    let task = ORTask(
+        description: """
+        Analyze {company} performance for {year} {quarter}.
+        """,
+        expectedOutput: "Performance report"
+    )
+
+    let result = try await orbit.start(inputs: inputs)
+    // "Analyze TechCorp performance for 2024 Q4."
+    ```
+  </Accordion>
+
+  <Accordion title="Conditional Interpolation" icon="code-branch">
+    Use conditional values:
+
+    ```swift
+    let inputs = OrbitInput(Metadata([
+        "mode": .string("detailed"),
+        "include_charts": .bool(true)
+    ]))
+
+    let task = ORTask(
+        description: """
+        Generate report in {mode} mode.
+        {if include_charts}Include visualizations and charts.{endif}
+        {if mode=detailed}Provide comprehensive analysis with examples.{endif}
+        """,
+        expectedOutput: "Report"
+    )
+    ```
+
+    <Info>
+      Conditional interpolation is processed before task execution.
+    </Info>
+  </Accordion>
+</AccordionGroup>
+
+## Outputs
+
+### OrbitOutput Structure
+
+```swift
+public struct OrbitOutput: Codable, Sendable {
+    // Task execution results
+    public let taskOutputs: [TaskOutput]
+
+    // Aggregated usage metrics
+    public let usageMetrics: UsageMetrics
+
+    // Total execution time
+    public let executionTime: TimeInterval
+
+    // Orbit metadata
+    public let orbitId: OrbitAIID
+    public let orbitName: String
+
+    // Completion timestamp
+    public let completedAt: Date
+}
+```
+
+### Accessing Results
+
+<Tabs>
+  <Tab title="Basic Access">
+    ```swift
+    let result = try await orbit.start()
+
+    // Access task outputs
+    print("Total tasks: \(result.taskOutputs.count)")
+
+    for (index, output) in result.taskOutputs.enumerated() {
+        print("\n=== Task \(index) ===")
+        print("Output: \(output.rawOutput)")
+        print("Agent: \(output.agentId)")
+        print("Tokens: \(output.usageMetrics.totalTokens)")
+    }
+
+    // Access metrics
+    print("\n=== Metrics ===")
+    print("Total tokens: \(result.usageMetrics.totalTokens)")
+    print("Execution time: \(result.executionTime)s")
+    ```
+  </Tab>
+
+  <Tab title="Structured Outputs">
+    ```swift
+    // Define output type
+    struct AnalysisReport: Codable, Sendable {
+        let summary: String
+        let findings: [String]
+        let recommendations: [String]
+    }
+
+    // Task with structured output
+    let task = ORTask.withStructuredOutput(
+        description: "Analyze data and generate report",
+        expectedType: AnalysisReport.self,
+        agent: analyst.id
+    )
+
+    let result = try await orbit.start()
+
+    // Decode structured output
+    if let taskOutput = result.taskOutputs.first {
+        let report = try taskOutput.decode(as: AnalysisReport.self)
+
+        print("Summary: \(report.summary)")
+        print("Findings: \(report.findings.count)")
+        print("Recommendations: \(report.recommendations.count)")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Error Results">
+    ```swift
+    do {
+        let result = try await orbit.start()
+        // Success case
+        print("Success: \(result.taskOutputs.count) tasks completed")
+
+    } catch let error as OrbitAIError {
+        // Error case
+        print("Orbit failed: \(error)")
+
+        // Check partial results
+        let tasks = await orbit.getTasks()
+        let completed = tasks.filter { $0.status == .completed }
+        let failed = tasks.filter { $0.status == .failed }
+
+        print("Completed: \(completed.count)")
+        print("Failed: \(failed.count)")
+
+        // Access completed outputs
+        for task in completed {
+            if let result = task.result?.output {
+                print("Task \(task.id): \(result.rawOutput)")
+            }
+        }
+
+        // Identify failed task
+        for task in failed {
+            print("Failed task: \(task.description)")
+            if let error = task.result?.error {
+                print("Error: \(error)")
+            }
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Exporting Results">
+    ```swift
+    let result = try await orbit.start()
+
+    // Export to JSON
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .prettyPrinted
+    let jsonData = try encoder.encode(result)
+    try jsonData.write(to: URL(fileURLWithPath: "./results.json"))
+
+    // Export individual outputs
+    for (index, output) in result.taskOutputs.enumerated() {
+        let filename = "./output_task_\(index).txt"
+        try output.rawOutput.write(
+            toFile: filename,
+            atomically: true,
+            encoding: .utf8
+        )
+    }
+
+    // Generate summary report
+    let summary = """
+    Orbit: \(result.orbitName)
+    Tasks: \(result.taskOutputs.count)
+    Tokens: \(result.usageMetrics.totalTokens)
+    Time: \(result.executionTime)s
+    Completed: \(result.completedAt)
+    """
+    try summary.write(
+        toFile: "./summary.txt",
+        atomically: true,
+        encoding: .utf8
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Monitoring and Telemetry
+
+### Real-Time Monitoring
+
+<Tabs>
+  <Tab title="Execution Status">
+    ```swift
+    // Monitor orbit execution
+    let orbit = try await Orbit.create(
+        name: "Long-Running Workflow",
+        agents: agents,
+        tasks: tasks,
+        verbose: true
+    )
+
+    // Start execution in background
+    Task {
+        do {
+            let result = try await orbit.start()
+            print("Orbit completed!")
+        } catch {
+            print("Orbit failed: \(error)")
+        }
+    }
+
+    // Monitor progress
+    while await orbit.isRunning() {
+        let status = await orbit.getExecutionStatus()
+
+        print("Status Update:")
+        print("  Queued: \(status.queuedTasks)")
+        print("  Active: \(status.activeTasks)")
+        print("  Completed: \(status.completedTasks)")
+        print("  Failed: \(status.failedTasks)")
+        print("  Progress: \(status.completionPercentage)%")
+
+        try await Task.sleep(for: .seconds(5))
+    }
+    ```
+  </Tab>
+
+  <Tab title="Agent Metrics">
+    ```swift
+    // Get per-agent metrics
+    let agents = await orbit.getAgents()
+
+    for agent in agents {
+        let metrics = await agent.totalUsageMetrics
+
+        print("\n=== \(agent.role) ===")
+        print("Executions: \(await agent.executionCount)")
+        print("Avg time: \(await agent.averageExecutionTime)s")
+        print("Total tokens: \(metrics.totalTokens)")
+        print("Success rate: \(metrics.successfulRequests)/\(metrics.totalRequests)")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Task Progress">
+    ```swift
+    // Monitor individual tasks
+    let tasks = await orbit.getTasks()
+
+    for task in tasks {
+        print("\nTask: \(task.description)")
+        print("Status: \(task.status)")
+
+        if let startTime = task.startTime {
+            print("Started: \(startTime)")
+        }
+
+        if let endTime = task.endTime {
+            print("Ended: \(endTime)")
+            print("Duration: \(task.executionTime ?? 0)s")
+        }
+
+        if let metrics = task.usageMetrics {
+            print("Tokens: \(metrics.totalTokens)")
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Custom Telemetry">
+    ```swift
+    // Integrate with custom telemetry
+    let customTelemetry = CustomTelemetryManager()
+
+    let orbit = try await Orbit.create(
+        name: "Monitored Workflow",
+        agents: agents,
+        tasks: tasks,
+        telemetryManager: customTelemetry,
+        stepCallback: "onStepComplete"
+    )
+
+    // Callback receives execution events
+    func onStepComplete(step: ExecutionStep) {
+        // Log to custom system
+        customTelemetry.logEvent(
+            name: "task.step.completed",
+            properties: [
+                "orbit": step.orbitId,
+                "task": step.taskId,
+                "agent": step.agentId,
+                "duration": step.duration
+            ]
+        )
+
+        // Update dashboard
+        dashboardService.updateProgress(
+            orbitId: step.orbitId,
+            progress: step.progressPercentage
+        )
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Metrics Collection
+
+<AccordionGroup>
+  <Accordion title="Usage Metrics" icon="chart-bar">
+    ```swift
+    // Enable metrics collection
+    let orbit = try await Orbit.create(
+        name: "Tracked Workflow",
+        agents: agents,
+        tasks: tasks,
+        usageMetrics: true  // Default: true
+    )
+
+    let result = try await orbit.start()
+
+    // Access aggregated metrics
+    let metrics = result.usageMetrics
+
+    print("Token Usage:")
+    print("  Prompt: \(metrics.promptTokens)")
+    print("  Completion: \(metrics.completionTokens)")
+    print("  Total: \(metrics.totalTokens)")
+
+    print("\nAPI Calls:")
+    print("  Successful: \(metrics.successfulRequests)")
+    print("  Total: \(metrics.totalRequests)")
+    print("  Success rate: \((Double(metrics.successfulRequests) / Double(metrics.totalRequests)) * 100)%")
+
+    // Calculate costs (example for OpenAI)
+    let inputCost = Double(metrics.promptTokens) * 0.00001  // $0.01 per 1K
+    let outputCost = Double(metrics.completionTokens) * 0.00003  // $0.03 per 1K
+    let totalCost = inputCost + outputCost
+
+    print("\nEstimated Cost: $\(String(format: "%.4f", totalCost))")
+    ```
+  </Accordion>
+
+  <Accordion title="Performance Metrics" icon="gauge-high">
+    ```swift
+    let result = try await orbit.start()
+
+    print("Performance Metrics:")
+    print("  Total execution: \(result.executionTime)s")
+
+    // Per-task timing
+    for (index, output) in result.taskOutputs.enumerated() {
+        if let task = orbit.tasks[safe: index] {
+            print("  Task \(index): \(task.executionTime ?? 0)s")
+        }
+    }
+
+    // Identify bottlenecks
+    let sortedTasks = result.taskOutputs.enumerated().sorted {
+        guard let time1 = orbit.tasks[safe: $0.offset]?.executionTime,
+              let time2 = orbit.tasks[safe: $1.offset]?.executionTime else {
+            return false
+        }
+        return time1 > time2
+    }
+
+    print("\nSlowest tasks:")
+    for (index, _) in sortedTasks.prefix(3) {
+        if let task = orbit.tasks[safe: index] {
+            print("  \(task.description): \(task.executionTime ?? 0)s")
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Tool Usage Metrics" icon="wrench">
+    ```swift
+    let result = try await orbit.start()
+
+    // Aggregate tool usage across all tasks
+    var toolStats: [String: (count: Int, totalTime: TimeInterval)] = [:]
+
+    for output in result.taskOutputs {
+        for toolUsage in output.toolsUsed {
+            if var stats = toolStats[toolUsage.toolName] {
+                stats.count += 1
+                stats.totalTime += toolUsage.executionTime
+                toolStats[toolUsage.toolName] = stats
+            } else {
+                toolStats[toolUsage.toolName] = (1, toolUsage.executionTime)
+            }
+        }
+    }
+
+    print("Tool Usage Statistics:")
+    for (tool, stats) in toolStats.sorted(by: { $0.value.count > $1.value.count }) {
+        let avgTime = stats.totalTime / Double(stats.count)
+        print("  \(tool): \(stats.count) calls, avg \(String(format: "%.2f", avgTime))s")
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+### Error Types
+
+<CardGroup cols={2}>
+  <Card title="Configuration Errors" icon="gear">
+    **When**: During orbit creation
+
+    ```swift
+    do {
+        let orbit = try await Orbit.create(
+            name: "Test",
+            agents: [],  // Empty!
+            tasks: []    // Empty!
+        )
+    } catch OrbitAIError.configuration(let msg) {
+        print("Config error: \(msg)")
+    }
+    ```
+
+    **Common Causes**:
+    - Missing required parameters
+    - Invalid agent configurations
+    - Empty agents or tasks arrays
+  </Card>
+
+  <Card title="Execution Errors" icon="circle-exclamation">
+    **When**: During orbit.start()
+
+    ```swift
+    do {
+        let result = try await orbit.start()
+    } catch OrbitAIError.taskExecutionFailed(let msg) {
+        print("Execution failed: \(msg)")
+    }
+    ```
+
+    **Common Causes**:
+    - Task execution failures
+    - Agent errors
+    - Tool failures
+    - Timeout exceeded
+  </Card>
+
+  <Card title="LLM Errors" icon="microchip">
+    **When**: LLM provider issues
+
+    ```swift
+    do {
+        let result = try await orbit.start()
+    } catch OrbitAIError.llmRateLimitExceeded(let msg) {
+        print("Rate limited: \(msg)")
+        // Implement backoff
+    } catch OrbitAIError.llmRequestFailed(let msg) {
+        print("LLM error: \(msg)")
+    }
+    ```
+
+    **Common Causes**:
+    - Rate limits
+    - API key issues
+    - Provider unavailability
+    - Token limits exceeded
+  </Card>
+
+  <Card title="Resource Errors" icon="server">
+    **When**: Resource constraints
+
+    ```swift
+    do {
+        let result = try await orbit.start()
+    } catch OrbitAIError.memoryExhausted {
+        print("Out of memory")
+    } catch OrbitAIError.timeout {
+        print("Execution timeout")
+    }
+    ```
+
+    **Common Causes**:
+    - Memory constraints
+    - Timeout limits
+    - Disk space issues
+  </Card>
+</CardGroup>
+
+### Error Recovery Strategies
+
+<Tabs>
+  <Tab title="Retry Logic">
+    ```swift
+    func executeOrbitWithRetry(
+        orbit: Orbit,
+        maxRetries: Int = 3
+    ) async throws -> OrbitOutput {
+        var lastError: Error?
+
+        for attempt in 1...maxRetries {
+            do {
+                return try await orbit.start()
+            } catch let error as OrbitAIError {
+                lastError = error
+
+                switch error {
+                case .llmRateLimitExceeded:
+                    // Exponential backoff
+                    let delay = pow(2.0, Double(attempt))
+                    print("Rate limited, retrying in \(delay)s...")
+                    try await Task.sleep(for: .seconds(delay))
+
+                case .taskExecutionFailed(let msg) where msg.contains("timeout"):
+                    // Increase timeout for retry
+                    print("Timeout, increasing limits for retry...")
+                    // Would need to recreate orbit with higher limits
+
+                default:
+                    // Other errors - don't retry
+                    throw error
+                }
+            }
+        }
+
+        throw lastError ?? OrbitAIError.taskExecutionFailed("Max retries exceeded")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Fallback Providers">
+    ```swift
+    do {
+        // Try primary provider
+        let orbit = try await Orbit.create(
+            name: "Workflow",
+            agents: agents,
+            tasks: tasks
+        )
+
+        let primaryProvider = try OpenAIProvider(
+            model: .gpt4o,
+            apiKey: openAIKey
+        )
+        await orbit.configureLLMProvider(primaryProvider, asDefault: true)
+
+        let result = try await orbit.start()
+
+    } catch OrbitAIError.llmRequestFailed {
+        print("Primary provider failed, using fallback...")
+
+        // Retry with fallback provider
+        let newOrbit = try await Orbit.create(
+            name: "Workflow",
+            agents: agents,
+            tasks: tasks
+        )
+
+        let fallbackProvider = AnthropicProvider(
+            model: .claude35Sonnet,
+            apiKey: anthropicKey
+        )
+        await newOrbit.configureLLMProvider(fallbackProvider, asDefault: true)
+
+        let result = try await newOrbit.start()
+    }
+    ```
+  </Tab>
+
+  <Tab title="Partial Results">
+    ```swift
+    do {
+        let result = try await orbit.start()
+        return result
+
+    } catch {
+        print("Orbit failed, recovering partial results...")
+
+        // Get completed tasks
+        let tasks = await orbit.getTasks()
+        let completed = tasks.filter { $0.status == .completed }
+
+        if completed.isEmpty {
+            throw error  // Nothing to recover
+        }
+
+        print("Recovered \(completed.count) completed tasks")
+
+        // Extract outputs
+        let outputs = completed.compactMap { $0.result?.output }
+
+        // Create partial result
+        let partialResult = OrbitOutput(
+            taskOutputs: outputs,
+            usageMetrics: calculatePartialMetrics(outputs),
+            executionTime: calculatePartialTime(tasks),
+            orbitId: orbit.id,
+            orbitName: orbit.name,
+            completedAt: Date()
+        )
+
+        return partialResult
+    }
+    ```
+  </Tab>
+
+  <Tab title="Graceful Degradation">
+    ```swift
+    struct RobustOrbitExecutor {
+        func execute(orbit: Orbit) async -> Result<OrbitOutput, OrbitError> {
+            do {
+                let result = try await orbit.start()
+                return .success(result)
+
+            } catch let error as OrbitAIError {
+                // Log error
+                logger.error("Orbit execution failed: \(error)")
+
+                // Attempt recovery
+                if let recovery = await attemptRecovery(orbit: orbit, error: error) {
+                    return .success(recovery)
+                }
+
+                // Return detailed error
+                return .failure(OrbitError.executionFailed(
+                    underlying: error,
+                    partialResults: await extractPartialResults(orbit),
+                    failedTask: await identifyFailedTask(orbit)
+                ))
+            }
+        }
+
+        private func attemptRecovery(
+            orbit: Orbit,
+            error: OrbitAIError
+        ) async -> OrbitOutput? {
+            // Implement recovery strategies
+            switch error {
+            case .llmRateLimitExceeded:
+                // Wait and retry
+                try? await Task.sleep(for: .seconds(60))
+                return try? await orbit.start()
+
+            case .taskExecutionFailed:
+                // Try to recover partial results
+                return await createPartialOutput(orbit)
+
+            default:
+                return nil
+            }
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### Orbit Design
+
+<CardGroup cols={2}>
+  <Card title="Appropriate Scope" icon="bullseye">
+    **Do**: Create focused orbits for specific workflows
+
+    ```swift
+    // Good: Focused workflow
+    let contentOrbit = Orbit.create(
+        name: "Content Creation",
+        agents: [researcher, writer, editor],
+        tasks: [research, write, edit]
+    )
+    ```
+
+    **Don't**: Create monolithic orbits
+
+    ```swift
+    // Bad: Too many responsibilities
+    let everythingOrbit = Orbit.create(
+        name: "Everything",
+        agents: [50 different agents],
+        tasks: [100 different tasks]
+    )
+    ```
+  </Card>
+
+  <Card title="Agent Specialization" icon="user-gear">
+    **Do**: Assign specialized agents to relevant tasks
+
+    ```swift
+    let codeAgent = Agent(
+        role: "Senior Developer",
+        purpose: "Write production code",
+        context: "Expert in Swift",
+        tools: ["code_generator", "linter"]
+    )
+
+    let codeTask = ORTask(
+        description: "Implement authentication",
+        agent: codeAgent.id
+    )
+    ```
+
+    **Don't**: Use generic agents for everything
+
+    ```swift
+    let genericAgent = Agent(
+        role: "Helper",
+        purpose: "Do stuff"
+    )
+    ```
+  </Card>
+
+  <Card title="Memory Management" icon="brain">
+    **Do**: Enable memory only when needed
+
+    ```swift
+    // Conversational: needs memory
+    let chatOrbit = Orbit.create(
+        name: "Chat",
+        agents: [chatAgent],
+        tasks: chatTasks,
+        memory: true
+    )
+
+    // One-off: no memory needed
+    let reportOrbit = Orbit.create(
+        name: "Report",
+        agents: [reportAgent],
+        tasks: [reportTask],
+        memory: false
+    )
+    ```
+  </Card>
+
+  <Card title="Error Boundaries" icon="shield-halved">
+    **Do**: Implement proper error handling
+
+    ```swift
+    do {
+        let result = try await orbit.start()
+        await processSuccess(result)
+    } catch {
+        await handleFailure(error)
+        await notifyStakeholders(error)
+        await cleanupResources()
+    }
+    ```
+
+    **Don't**: Ignore errors
+
+    ```swift
+    // Bad
+    try? await orbit.start()
+    ```
+  </Card>
+</CardGroup>
+
+### Performance Optimization
+
+<Steps>
+  <Step title="Choose Appropriate Process">
+    ```swift
+    // Sequential: for linear workflows
+    let simpleWorkflow = Orbit.create(
+        process: .sequential
+    )
+
+    // Hierarchical: for complex coordination
+    let complexWorkflow = Orbit.create(
+        process: .hierarchical,
+        manager: coordinator
+    )
+
+    // Flow-based: for parallel opportunities
+    let parallelWorkflow = Orbit.create(
+        process: .flowBased  // Not a real enum, just for illustration
+    )
+    // Use TaskFlow for flow-based execution
+    ```
+  </Step>
+
+  <Step title="Optimize Task Granularity">
+    ```swift
+    // Good: Balanced task size
+    let tasks = [
+        extractDataTask,      // ~30s
+        transformDataTask,    // ~45s
+        analyzeDataTask,      // ~60s
+        reportTask           // ~20s
+    ]
+
+    // Bad: Too granular (high overhead)
+    let tooManyTasks = [
+        loadFile1, loadFile2, loadFile3,  // Each 1s
+        parseFile1, parseFile2, parseFile3,
+        // ... 50 more tiny tasks
+    ]
+
+    // Bad: Too coarse (long blocking)
+    let tooFewTasks = [
+        doEverythingTask  // 30 minutes
+    ]
+    ```
+  </Step>
+
+  <Step title="Configure Concurrency">
+    ```swift
+    // Set appropriate limits
+    let orbit = Orbit.create(
+        name: "Parallel Processing",
+        agents: agents,
+        tasks: tasks,
+        maxConcurrentTasks: 5  // Balance parallelism vs resources
+    )
+
+    // Consider:
+    // - API rate limits (e.g., 60 req/min)
+    // - Memory constraints
+    // - CPU availability
+    ```
+  </Step>
+
+  <Step title="Monitor and Tune">
+    ```swift
+    let result = try await orbit.start()
+
+    // Analyze performance
+    print("Total time: \(result.executionTime)s")
+
+    // Identify bottlenecks
+    for (index, output) in result.taskOutputs.enumerated() {
+        if let task = orbit.tasks[safe: index] {
+            let time = task.executionTime ?? 0
+            if time > 60 {  // Tasks over 1 minute
+                print("Slow task: \(task.description) (\(time)s)")
+            }
+        }
+    }
+
+    // Optimize based on findings
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Orbit Fails to Initialize" icon="circle-exclamation">
+    **Symptoms**: Errors during `Orbit.create()`
+
+    **Common Causes**:
+    - Missing required parameters
+    - Invalid agent/task configurations
+    - LLM provider setup failure
+
+    **Solutions**:
+    ```swift
+    do {
+        let orbit = try await Orbit.create(
+            name: "Test Orbit",
+            agents: agents,
+            tasks: tasks
+        )
+    } catch OrbitAIError.configuration(let message) {
+        print("Configuration error: \(message)")
+
+        // Check specific issues
+        if agents.isEmpty {
+            print("Error: No agents provided")
+        }
+        if tasks.isEmpty {
+            print("Error: No tasks provided")
+        }
+
+        // Validate agent configs
+        for agent in agents {
+            if agent.role.isEmpty {
+                print("Error: Agent missing role")
+            }
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Tasks Not Executing" icon="pause">
+    **Symptoms**: Orbit starts but tasks don't run
+
+    **Common Causes**:
+    - Agent assignment issues
+    - Missing tools
+    - LLM provider not configured
+
+    **Solutions**:
+    ```swift
+    // Verify agents have necessary tools
+    for agent in agents {
+        let tools = await agent.getToolNames()
+        print("\(agent.role) tools: \(tools)")
+    }
+
+    // Verify LLM provider
+    let llmManager = await orbit.getLLMManager()
+    let providers = await llmManager.getAvailableProviders()
+    print("Available providers: \(providers)")
+
+    if providers.isEmpty {
+        // Configure provider
+        let provider = try OpenAIProvider.fromEnvironment(
+            model: .gpt4o
+        )
+        await orbit.configureLLMProvider(provider, asDefault: true)
+    }
+
+    // Enable verbose logging
+    let orbit = try await Orbit.create(
+        name: "Debug Orbit",
+        agents: agents,
+        tasks: tasks,
+        verbose: true  // See what's happening
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Context Variables Not Resolving" icon="brackets-curly">
+    **Symptoms**: `{variable}` appears literally in outputs
+
+    **Common Causes**:
+    - Missing context declaration
+    - Wrong variable names
+    - Inputs not provided
+
+    **Solutions**:
+    ```swift
+    // Ensure context is declared
+    let task = ORTask(
+        description: "Process: {task_0_output}",
+        expectedOutput: "Result",
+        context: [previousTask.id]  // Required!
+    )
+
+    // Provide orbit inputs
+    let inputs = OrbitInput(Metadata([
+        "variable": .string("value")
+    ]))
+    let result = try await orbit.start(inputs: inputs)
+
+    // Verify variable names match
+    // Description: "Analyze {industry}"
+    // Input key must be: "industry"
+    ```
+  </Accordion>
+
+  <Accordion title="High Memory Usage" icon="memory">
+    **Symptoms**: Memory consumption growing excessively
+
+    **Common Causes**:
+    - Memory enabled unnecessarily
+    - Large outputs accumulating
+    - Knowledge bases loaded but not needed
+
+    **Solutions**:
+    ```swift
+    // Disable unnecessary memory
+    let orbit = Orbit.create(
+        name: "Lightweight Orbit",
+        agents: agents,
+        tasks: tasks,
+        memory: false,           // Disable if not needed
+        longTermMemory: false,
+        entityMemory: false
+    )
+
+    // Configure memory limits
+    let memoryConfig = MemoryConfiguration(
+        maxMemoryItems: 50,      // Limit storage
+        compressionEnabled: true, // Auto-summarize
+        pruneOldItems: true      // Remove old entries
+    )
+
+    // Extract only needed data
+    let summaryTask = ORTask(
+        description: "Summarize key points from research",
+        expectedOutput: "5 bullet points"  // Compact output
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Slow Execution" icon="hourglass">
+    **Symptoms**: Orbit takes much longer than expected
+
+    **Common Causes**:
+    - Sequential execution when parallel possible
+    - Large context windows
+    - Inefficient tool usage
+    - No concurrency limits set
+
+    **Solutions**:
+    ```swift
+    // Use flow-based for parallelization
+    let taskFlow = TaskFlow(
+        tasks: independentTasks
+    )
+
+    let engine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 5  // Enable parallelism
+    )
+
+    // Optimize context
+    let task = ORTask(
+        description: "Use summary: {task_1_output}",
+        context: [summaryTask.id]  // Reference specific task, not all
+    )
+
+    // Enable context window management
+    let agent = Agent(
+        role: "Agent",
+        purpose: "Process efficiently",
+        context: "...",
+        respectContextWindow: true  // Auto-prune context
+    )
+
+    // Profile execution
+    let result = try await orbit.start()
+    for (i, output) in result.taskOutputs.enumerated() {
+        if let task = orbit.tasks[safe: i] {
+            print("Task \(i): \(task.executionTime ?? 0)s")
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Inconsistent Results" icon="shuffle">
+    **Symptoms**: Different outputs for same inputs
+
+    **Common Causes**:
+    - High temperature settings
+    - Non-deterministic tools
+    - Memory state differences
+    - Random LLM sampling
+
+    **Solutions**:
+    ```swift
+    // Lower temperature for consistency
+    let agent = Agent(
+        role: "Data Processor",
+        purpose: "Process data consistently",
+        context: "Deterministic processing",
+        temperature: 0.0  // Fully deterministic
+    )
+
+    // Use structured outputs
+    struct ProcessingResult: Codable, Sendable {
+        let status: String
+        let count: Int
+    }
+
+    let task = ORTask.withStructuredOutput(
+        description: "Process data",
+        expectedType: ProcessingResult.self,
+        agent: agent.id
+    )
+
+    // Disable memory for stateless execution
+    let orbit = Orbit.create(
+        name: "Stateless Orbit",
+        agents: [agent],
+        tasks: [task],
+        memory: false  // No state
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Agents"
+    icon="robot"
+    href="/agents"
+  >
+    Configure agents for orbits
+  </Card>
+
+  <Card
+    title="Tasks"
+    icon="list-check"
+    href="/tasks"
+  >
+    Define tasks for execution
+  </Card>
+
+  <Card
+    title="Processes"
+    icon="diagram-project"
+    href="/processes"
+  >
+    Choose the right process type
+  </Card>
+
+  <Card
+    title="Examples"
+    icon="code"
+    href="/examples"
+  >
+    See complete orbit examples
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
