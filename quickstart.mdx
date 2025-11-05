@@ -1,80 +1,693 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Build your first AI agent workflow with OrbitAI in minutes - from setup to execution"
 ---
 
-## Get started in three steps
+## Build Your First Agent from Scratch
 
-Get your documentation site running locally and make your first customization.
+Welcome to OrbitAI! This guide will walk you through building a complete multi-agent system using a practical recipe preparation workflow. You'll create specialized AI agents that work together to plan meals, find recipes, and generate shopping lists.
 
-### Step 1: Set up your local environment
+<CardGroup cols={3}>
+  <Card title="Meal Planner" icon="calendar">
+    Analyzes dietary preferences and creates personalized meal plans
+  </Card>
+  <Card title="Recipe Researcher" icon="magnifying-glass">
+    Finds and analyzes recipes for planned meals
+  </Card>
+  <Card title="Shopping List" icon="cart-shopping">
+    Generates organized shopping lists from recipes
+  </Card>
+</CardGroup>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Prerequisites
 
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, ensure you have the following:
 
 <CardGroup cols={2}>
+  <Card title="Swift 6.0+" icon="swift">
+    Latest Swift toolchain installed
+  </Card>
+  <Card title="Xcode 15.0+" icon="apple">
+    For iOS/macOS development
+  </Card>
+  <Card title="API Keys" icon="key">
+    OpenAI or Anthropic API key
+  </Card>
+  <Card title="Swift Knowledge" icon="code">
+    Basic async/await patterns
+  </Card>
+</CardGroup>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Installation & Setup
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+<Steps>
+  <Step title="Create a New Swift Package">
+    Initialize a new Swift executable package for your recipe prep system:
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    ```bash
+    mkdir RecipePrepOrbit
+    cd RecipePrepOrbit
+    swift package init --type executable
+    ```
+  </Step>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+  <Step title="Add OrbitAI Dependency">
+    Edit your `Package.swift` file to include OrbitAI:
 
+    ```swift Package.swift
+    // swift-tools-version: 6.0
+    import PackageDescription
+
+    let package = Package(
+        name: "RecipePrepOrbit",
+        platforms: [
+            .macOS(.v13),
+            .iOS(.v16)
+        ],
+        dependencies: [
+            .package(url: "https://github.com/tryorbitai/orbit-ai.git", from: "1.0.0")
+        ],
+        targets: [
+            .executableTarget(
+                name: "RecipePrepOrbit",
+                dependencies: [
+                    .product(name: "OrbitAI", package: "orbit-ai")
+                ]
+            )
+        ]
+    )
+    ```
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Create a `.env` file in your project root with your API credentials:
+
+    ```bash .env
+    # Required: At least one LLM provider
+    OPENAI_API_KEY=your-openai-api-key-here
+    # OR
+    ANTHROPIC_API_KEY=your-anthropic-api-key-here
+
+    # Optional: OrbitAI configurations
+    ORBITAI_DISABLE_STREAMING=false
+    ORBITAI_MAX_SHELL_OUTPUT_BYTES=65536
+    ```
+
+    <Warning>
+      Never commit your `.env` file to version control. Add it to `.gitignore`!
+    </Warning>
+  </Step>
+</Steps>
+
+## Understanding Core Concepts
+
+<AccordionGroup>
+  <Accordion title="Agents" icon="robot">
+    **Agents** are autonomous AI entities with specific roles and capabilities:
+    
+    - **Role**: What the agent represents (e.g., "Meal Planner")
+    - **Purpose**: The agent's primary goal
+    - **Context**: Background information that shapes behavior
+    - **Tools**: Available capabilities (web search, calculations, etc.)
+
+    Agents can work independently or collaborate with other agents in coordinated workflows.
+  </Accordion>
+
+  <Accordion title="Tasks" icon="list-check">
+    **Tasks** define specific work to be completed:
+    
+    - **Description**: What needs to be done
+    - **Expected Output**: Format and content requirements
+    - **Agent Assignment**: Which agent handles the task
+    - **Dependencies**: Tasks that must complete first
+
+    Tasks can reference outputs from previous tasks to create complex workflows.
+  </Accordion>
+
+  <Accordion title="Orbits" icon="satellite">
+    **Orbits** orchestrate agents and tasks into workflows:
+    
+    - **Process Type**: Sequential (one after another) or Hierarchical (manager delegates)
+    - **Execution Flow**: How tasks are coordinated
+    - **Resource Management**: Memory, knowledge bases, tool access
+
+    Orbits manage the entire execution lifecycle and provide detailed metrics.
+  </Accordion>
+</AccordionGroup>
+
+## Step-by-Step Implementation
+
+### Step 1: Initialize OrbitAI
+
+Create your main entry point in `Sources/RecipePrepOrbit/main.swift`:
+
+```swift main.swift
+import Foundation
+import OrbitAI
+
+@main
+struct RecipePrepApp {
+    static func main() async throws {
+        // Initialize OrbitAI framework
+        OrbitAI.configure()
+        
+        // Set up LLM manager with OpenAI provider
+        let llmManager = LLMManager(
+            enableMetrics: true,
+            enableCaching: true,
+            defaultTimeout: 30,
+            cacheTTL: 120,
+            cacheCapacity: 256
+        )
+        
+        // Configure OpenAI provider from environment
+        let openAIProvider = try OpenAIProvider.fromEnvironment(model: .gpt4o)
+        try await llmManager.addProvider(openAIProvider)
+        
+        print("🚀 OrbitAI Recipe Prep System Starting...")
+        
+        // Create and run the recipe prep workflow
+        let workflow = RecipePrepWorkflow()
+        try await workflow.execute()
+    }
+}
+```
+
+<Info>
+  The LLM manager handles all communication with AI providers, including caching, metrics, and error handling.
+</Info>
+
+### Step 2: Create Specialized Agents
+
+Define three specialized agents for your workflow:
+
+<Tabs>
+  <Tab title="Meal Planner Agent">
+    ```swift
+    private func createMealPlannerAgent() -> Agent {
+        return Agent(
+            role: "Meal Planning Specialist",
+            purpose: "Create personalized meal plans based on dietary preferences and constraints",
+            context: """
+            You are an expert nutritionist and meal planning specialist with extensive knowledge of:
+            - Dietary requirements and restrictions (vegetarian, vegan, gluten-free, keto, etc.)
+            - Nutritional balance and meal composition
+            - Seasonal ingredient availability
+            - Budget-conscious meal planning
+            - Family-friendly meal options
+            
+            Your goal is to create practical, healthy, and delicious meal plans that fit the user's 
+            lifestyle, preferences, and constraints.
+            """,
+            llmID: .openAI,
+            tools: ["calculator", "textProcessing"],
+            verbose: true,
+            memory: true,
+            temperature: 0.7
+        )
+    }
+    ```
+  </Tab>
+
+  <Tab title="Recipe Research Agent">
+    ```swift
+    private func createRecipeResearchAgent() -> Agent {
+        return Agent(
+            role: "Recipe Research Specialist", 
+            purpose: "Find, analyze, and adapt recipes based on meal planning requirements",
+            context: """
+            You are a culinary expert and recipe researcher with deep knowledge of:
+            - International cuisines and cooking techniques
+            - Recipe adaptation for dietary restrictions
+            - Ingredient substitutions and alternatives
+            - Cooking time and difficulty assessments
+            - Recipe scaling and portion adjustments
+            
+            Your expertise helps find the perfect recipes that match meal plans while considering
+            cooking skill level, available time, and ingredient accessibility.
+            """,
+            llmID: .openAI,
+            tools: ["webSearch", "textProcessing", "calculator"],
+            verbose: true,
+            memory: true,
+            temperature: 0.6
+        )
+    }
+    ```
+  </Tab>
+
+  <Tab title="Shopping List Agent">
+    ```swift
+    private func createShoppingListAgent() -> Agent {
+        return Agent(
+            role: "Shopping List Organizer",
+            purpose: "Generate organized, efficient shopping lists from recipe requirements",
+            context: """
+            You are a shopping and organization expert specializing in:
+            - Grocery store layout optimization
+            - Ingredient quantity calculation and consolidation
+            - Brand recommendations and alternatives
+            - Budget optimization strategies
+            - Storage and freshness considerations
+            
+            You create well-organized shopping lists that minimize store visits, reduce waste,
+            and optimize the shopping experience.
+            """,
+            llmID: .openAI,
+            tools: ["calculator", "textProcessing", "jsonParse"],
+            verbose: true,
+            memory: false,  // Shopping lists don't need persistent memory
+            temperature: 0.3  // More deterministic for list organization
+        )
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  **Temperature Settings**: Use lower values (0.1-0.3) for structured tasks like list organization, and higher values (0.7-0.9) for creative tasks like meal planning.
+</Tip>
+
+### Step 3: Define Workflow Tasks
+
+Create tasks with proper dependencies:
+
+```swift
+private func createWorkflowTasks(
+    mealPlannerAgent: Agent,
+    recipeResearchAgent: Agent,
+    shoppingListAgent: Agent
+) -> (ORTask, ORTask, ORTask) {
+    
+    // Task 1: Meal Planning
+    let planningTask = ORTask(
+        description: """
+        Create a 7-day meal plan for a family of 4 with the following requirements:
+        - 2 adults, 2 children (ages 8 and 12)
+        - Budget: $150 per week
+        - Dietary preferences: Reduce processed foods, include more vegetables
+        - Allergies: One child has a mild nut allergy
+        - Cooking time: Maximum 45 minutes per meal on weekdays, unlimited on weekends
+        - Must include: 7 breakfasts, 7 lunches, 7 dinners
+        
+        Consider seasonal ingredients (current season), nutritional balance, 
+        and variety in cuisines and flavors.
+        """,
+        expectedOutput: """
+        A detailed 7-day meal plan formatted as follows:
+        - Day-by-day breakdown (Monday through Sunday)
+        - Each day should include breakfast, lunch, and dinner
+        - Estimated prep time for each meal
+        - Nutritional highlights
+        - Special notes for dietary considerations
+        - Total estimated weekly cost
+        """,
+        agent: await mealPlannerAgent.id,
+        outputFormat: .markdown,
+        maxExecutionTime: 120,
+        guardrails: [.noHarmfulContent]
+    )
+    
+    // Task 2: Recipe Research (depends on meal planning)
+    let researchTask = ORTask(
+        description: """
+        Based on the meal plan from the previous task, research and provide detailed recipes 
+        for each meal.
+        
+        Previous meal plan: {task_0_output}
+        
+        Research priority should be given to meals that are:
+        - Family-friendly and kid-approved
+        - Use common, easily-found ingredients
+        - Have good nutritional balance
+        - Fit within the time constraints specified
+        """,
+        expectedOutput: """
+        A comprehensive recipe collection with step-by-step instructions, 
+        ingredient lists, and cooking tips for each meal.
+        """,
+        agent: await recipeResearchAgent.id,
+        context: [planningTask.id],  // Depends on meal planning task
+        outputFormat: .markdown,
+        maxExecutionTime: 180,
+        guardrails: [.noHarmfulContent]
+    )
+    
+    // Task 3: Shopping List Generation (depends on recipe research)
+    let shoppingTask = ORTask(
+        description: """
+        Create an organized shopping list based on all the recipes from the previous task.
+        
+        Recipe collection: {task_1_output}
+        
+        Requirements:
+        1. Consolidate duplicate ingredients across all recipes
+        2. Calculate total quantities needed for the week
+        3. Organize by grocery store sections
+        4. Include estimated prices and total budget
+        """,
+        expectedOutput: """
+        A comprehensive shopping list organized by store sections with quantities, 
+        estimated prices, and shopping tips.
+        """,
+        agent: await shoppingListAgent.id,
+        context: [researchTask.id],  // Depends on recipe research task
+        outputFormat: .markdown,
+        maxExecutionTime: 90,
+        guardrails: [.noHarmfulContent]
+    )
+    
+    return (planningTask, researchTask, shoppingTask)
+}
+```
+
+<Note>
+  Tasks can reference previous task outputs using `{task_N_output}` syntax in their descriptions. This enables powerful chaining of agent workflows.
+</Note>
+
+### Step 4: Create and Execute the Orbit
+
+Bring everything together by creating the orbit:
+
+```swift
+func execute() async throws {
+    print("👨‍🍳 Building Recipe Preparation Orbit...")
+    
+    // Create specialized agents
+    let mealPlannerAgent = createMealPlannerAgent()
+    let recipeResearchAgent = createRecipeResearchAgent()
+    let shoppingListAgent = createShoppingListAgent()
+    
+    // Define the workflow tasks
+    let (planningTask, researchTask, shoppingTask) = createWorkflowTasks(
+        mealPlannerAgent: mealPlannerAgent,
+        recipeResearchAgent: recipeResearchAgent,
+        shoppingListAgent: shoppingListAgent
+    )
+    
+    // Create the orbit
+    let orbit = try await Orbit.create(
+        name: "Recipe Prep Orbit",
+        description: "Multi-agent system for meal planning and preparation",
+        agents: [mealPlannerAgent, recipeResearchAgent, shoppingListAgent],
+        tasks: [planningTask, researchTask, shoppingTask],
+        process: .sequential,
+        verbose: true,
+        memory: true,
+        usageMetrics: true
+    )
+    
+    print("🎯 Executing Recipe Prep Workflow...")
+    
+    // Execute the orbit and get results
+    let result = try await orbit.start()
+    
+    // Display results
+    await displayResults(result)
+}
+```
+
+### Step 5: Build and Run
+
+Execute your first agent workflow:
+
+```bash
+# Build the project
+swift build
+
+# Run your recipe prep workflow
+swift run
+```
+
+## Expected Output
+
+When you run the application, you'll see:
+
+```
+🚀 OrbitAI Recipe Prep System Starting...
+👨‍🍳 Building Recipe Preparation Orbit...
+🎯 Executing Recipe Prep Workflow...
+
+[Agent: Meal Planning Specialist] Starting task: Create a 7-day meal plan...
+[Agent: Meal Planning Specialist] Task completed successfully
+
+[Agent: Recipe Research Specialist] Starting task: Research detailed recipes...
+[Agent: Recipe Research Specialist] Using context from previous task...
+[Agent: Recipe Research Specialist] Task completed successfully
+
+[Agent: Shopping List Organizer] Starting task: Generate organized shopping list...
+[Agent: Shopping List Organizer] Using context from recipe collection...
+[Agent: Shopping List Organizer] Task completed successfully
+
+🎉 Recipe Prep Workflow Complete!
+=====================================
+📊 Execution Summary:
+   • Total tokens used: 4,521
+   • Completion tokens: 3,089
+   • Prompt tokens: 1,432
+
+✅ Results saved to local files!
+```
+
+## Advanced Features
+
+<AccordionGroup>
+  <Accordion title="Memory and Knowledge Bases" icon="brain">
+    Enhance your agents with persistent memory and knowledge sources:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Recipe Prep Orbit",
+        agents: agents,
+        tasks: tasks,
+        process: .sequential,
+        verbose: true,
+        memory: true,                    // Enable short-term memory
+        longTermMemory: true,            // Enable long-term memory
+        entityMemory: true,              // Track named entities
+        knowledgeSources: [              // Add knowledge sources
+            "./nutrition-guidelines.pdf",
+            "./family-preferences.txt"
+        ]
+    )
+    ```
+
+    Memory enables agents to learn from past interactions and maintain context across sessions.
+  </Accordion>
+
+  <Accordion title="Custom Tools" icon="wrench">
+    Create custom tools for specialized functionality:
+
+    ```swift
+    final class RecipeDBTool: BaseTool {
+        override var name: String { "recipe_database" }
+        override var description: String { "Search and retrieve recipes from database" }
+        
+        override var parametersSchema: JSONSchema {
+            JSONSchema(
+                type: .object,
+                properties: [
+                    "query": JSONSchema(type: .string, description: "Recipe search query"),
+                    "max_cook_time": JSONSchema(type: .integer, description: "Max cooking time in minutes")
+                ],
+                required: ["query"]
+            )
+        }
+        
+        override func execute(with parameters: Metadata) async throws -> ToolResult {
+            guard let query = parameters["query"]?.stringValue else {
+                throw OrbitAIError.invalidToolParameters("Missing query parameter")
+            }
+            
+            let recipes = searchRecipeDatabase(query: query)
+            
+            var resultData = Metadata()
+            resultData["recipes"] = .array(recipes.map { .string($0) })
+            
+            return ToolResult(success: true, data: resultData)
+        }
+    }
+
+    // Register the custom tool
+    let toolsHandler = ToolsHandler.shared
+    await toolsHandler.registerTool(RecipeDBTool())
+    ```
+
+    Custom tools extend agent capabilities with domain-specific functionality.
+  </Accordion>
+
+  <Accordion title="Structured Output" icon="table">
+    Use structured output for JSON data:
+
+    ```swift
+    struct ShoppingList: Codable, Sendable {
+        struct Item: Codable, Sendable {
+            let name: String
+            let quantity: String
+            let estimatedPrice: Double
+            let section: String
+        }
+        
+        let totalEstimatedCost: Double
+        let items: [Item]
+    }
+
+    // Create task with structured output
+    let structuredTask = ORTask.withStructuredOutput(
+        description: "Generate shopping list...",
+        expectedType: ShoppingList.self,
+        agent: await shoppingListAgent.id
+    )
+    ```
+
+    Structured output ensures consistent, parseable results from your agents.
+  </Accordion>
+
+  <Accordion title="Performance Monitoring" icon="chart-line">
+    Track detailed metrics and performance:
+
+    ```swift
+    // Access orbit metrics after execution
+    let metrics = await orbit.getUsageMetrics()
+    print("🔍 Detailed Metrics:")
+    print("   • Execution time: \(metrics.executionTime) seconds")
+    print("   • Successful requests: \(metrics.successfulRequests)")
+    print("   • Average response time: \(metrics.averageResponseTime)")
+
+    // Agent-specific metrics
+    for agent in await orbit.getAgents() {
+        let agentMetrics = await agent.totalUsageMetrics
+        print("   • \(agent.role): \(agentMetrics.totalTokens) tokens")
+    }
+    ```
+
+    Metrics help you optimize performance and track resource usage.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Agent Design" icon="robot">
+    - **Single Responsibility**: One clear purpose per agent
+    - **Clear Context**: Detailed background information
+    - **Appropriate Tools**: Only assign needed tools
+    - **Temperature**: Lower for structured, higher for creative
+  </Card>
+
+  <Card title="Task Definition" icon="list-check">
+    - **Be Specific**: Explicit descriptions
+    - **Define Output**: Clear format and structure
+    - **Set Constraints**: Realistic time limits
+    - **Use Dependencies**: Chain task outputs
+  </Card>
+
+  <Card title="Error Handling" icon="shield">
+    - **Try-Catch Blocks**: Handle specific errors
+    - **Retry Logic**: Implement for transient failures
+    - **Graceful Degradation**: Fallback strategies
+    - **Verbose Logging**: Debug mode for troubleshooting
+  </Card>
+
+  <Card title="Resource Management" icon="gauge">
+    - **Rate Limiting**: Prevent API throttling
+    - **Timeouts**: Set appropriate limits
+    - **Caching**: Reduce redundant API calls
+    - **Metrics**: Track usage and costs
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication Errors" icon="key">
+    **Problem**: Invalid API key or authentication failed
+
+    **Solution**: Check your environment variables:
+    ```bash
+    echo $OPENAI_API_KEY  # Should display your API key
+    ```
+
+    Ensure the `.env` file is in the correct directory and properly formatted.
+  </Accordion>
+
+  <Accordion title="Task Timeout Issues" icon="clock">
+    **Problem**: Task execution exceeded maximum time limit
+
+    **Solution**: Increase the timeout or simplify the task:
+    ```swift
+    let task = ORTask(
+        description: "...",
+        expectedOutput: "...",
+        maxExecutionTime: 180  // Increase from default
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Memory Issues" icon="memory">
+    **Problem**: Unable to process large outputs
+
+    **Solution**: Use streaming or chunked processing:
+    ```swift
+    let llmManager = LLMManager(
+        enableStreaming: true,
+        chunkSize: 1024
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Tool Execution Failures" icon="wrench">
+    **Problem**: Tool execution failed
+
+    **Solution**: Check tool availability:
+    ```swift
+    let handler = ToolsHandler.shared
+    let isAvailable = await handler.isToolAvailable(named: "webSearch")
+    if !isAvailable {
+        print("Tool not available, using alternative approach")
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Congratulations on building your first OrbitAI agent system! Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card
+    title="Explore Components"
+    icon="puzzle-piece"
+    href="/index#core-components"
+  >
+    Learn about Agents, Tasks, Orbits, and more
+  </Card>
+
+  <Card
+    title="Agent Examples"
+    icon="lightbulb"
+    href="/examples/agents"
+  >
+    Browse practical agent implementations
+  </Card>
+
+  <Card
+    title="Advanced Features"
+    icon="rocket"
+    href="/advanced/features"
+  >
+    Flows, guardrails, and optimization
+  </Card>
+
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    Complete API documentation
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Need help?** Join our [GitHub Discussions](https://github.com/tryorbitai/orbit-ai/discussions) or check out the [Issue Tracker](https://github.com/tryorbitai/orbit-ai/issues) for support.
 </Note>
