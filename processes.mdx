@@ -1,0 +1,1735 @@
+---
+title: "Processes"
+description: "Orchestration patterns that define how tasks are executed and coordinated across agents in OrbitAI workflows."
+---
+
+## Overview
+
+Processes are execution orchestration patterns in OrbitAI that determine how tasks are assigned to agents and in what order they execute. The process type fundamentally shapes how work flows through your agent system, from simple sequential chains to complex hierarchical coordination.
+
+<CardGroup cols={3}>
+  <Card title="Sequential" icon="arrow-right">
+    Tasks execute one after another in order
+  </Card>
+  <Card title="Hierarchical" icon="diagram-project">
+    Manager coordinates and delegates tasks
+  </Card>
+  <Card title="Flow-Based" icon="share-nodes">
+    Dependency-driven execution with parallelization
+  </Card>
+  <Card title="Context Flow" icon="water">
+    Information flows between tasks
+  </Card>
+  <Card title="Dynamic Assignment" icon="shuffle">
+    Intelligent agent selection per task
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation">
+    Configurable failure strategies
+  </Card>
+</CardGroup>
+
+### Key Characteristics
+
+<AccordionGroup>
+  <Accordion title="Deterministic Execution" icon="route">
+    Processes provide predictable execution patterns with well-defined task ordering and agent assignment strategies.
+  </Accordion>
+
+  <Accordion title="Context Management" icon="layer-group">
+    Each process type manages how context and results flow between tasks, enabling tasks to build upon previous outputs.
+  </Accordion>
+
+  <Accordion title="Agent Coordination" icon="users-gear">
+    Processes determine how multiple agents work together, from simple turn-taking to sophisticated delegation patterns.
+  </Accordion>
+
+  <Accordion title="Scalability" icon="arrows-maximize">
+    Different process types offer different scalability characteristics, from simple sequential execution to complex parallel workflows.
+  </Accordion>
+</AccordionGroup>
+
+## Process Types
+
+OrbitAI supports multiple process types, each suited for different workflow patterns:
+
+### Sequential Process
+
+The simplest and most common process type where tasks execute one after another.
+
+<Tabs>
+  <Tab title="Overview">
+    **Sequential Process** executes tasks in a strict linear order, with each task completing before the next begins.
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Content Creation Pipeline",
+        agents: [researcher, writer, editor],
+        tasks: [researchTask, writingTask, editingTask],
+        process: .sequential,  // Tasks execute in order
+        verbose: true
+    )
+    ```
+
+    **Execution Flow:**
+    ```
+    Task 1 (Research) → Complete
+        ↓
+    Task 2 (Writing) → Complete
+        ↓
+    Task 3 (Editing) → Complete
+        ↓
+    Workflow Complete
+    ```
+
+    <Info>
+      Sequential is the default process type and works well for most workflows where tasks have clear dependencies.
+    </Info>
+  </Tab>
+
+  <Tab title="Characteristics">
+    ### Key Features
+
+    <CardGroup cols={2}>
+      <Card title="Linear Execution" icon="arrow-right">
+        Tasks execute strictly in order
+      </Card>
+      <Card title="Context Building" icon="layer-plus">
+        Each task can access previous outputs
+      </Card>
+      <Card title="Simple Debugging" icon="bug">
+        Easy to trace execution flow
+      </Card>
+      <Card title="Predictable Timing" icon="clock">
+        Total time = sum of task times
+      </Card>
+    </CardGroup>
+
+    ### Agent Assignment
+
+    In sequential process:
+    1. If task has explicit agent assignment → use that agent
+    2. Otherwise → use intelligent agent selection based on:
+       - Tool compatibility
+       - Role relevance
+       - Previous performance
+       - Current availability
+
+    ### Context Flow
+
+    ```swift
+    // Task 1 executes first
+    let task1 = ORTask(
+        description: "Research AI trends in healthcare",
+        expectedOutput: "Research findings"
+    )
+
+    // Task 2 accesses Task 1's output via {task_0_output}
+    let task2 = ORTask(
+        description: "Write article based on: {task_0_output}",
+        expectedOutput: "Article draft",
+        context: [task1.id]
+    )
+
+    // Task 3 accesses both previous outputs
+    let task3 = ORTask(
+        description: """
+        Edit article for publication.
+        Research: {task_0_output}
+        Draft: {task_1_output}
+        """,
+        expectedOutput: "Published article",
+        context: [task1.id, task2.id]
+    )
+    ```
+  </Tab>
+
+  <Tab title="Use Cases">
+    ### Best For
+
+    ✅ **Content Creation Pipelines**
+    ```swift
+    // Research → Write → Edit → Publish
+    let contentPipeline = [
+        researchTask,
+        draftTask,
+        editTask,
+        publishTask
+    ]
+    ```
+
+    ✅ **Data Processing Workflows**
+    ```swift
+    // Extract → Transform → Load → Validate
+    let etlWorkflow = [
+        extractTask,
+        transformTask,
+        loadTask,
+        validateTask
+    ]
+    ```
+
+    ✅ **Report Generation**
+    ```swift
+    // Gather Data → Analyze → Visualize → Generate Report
+    let reportingWorkflow = [
+        dataGatheringTask,
+        analysisTask,
+        visualizationTask,
+        reportTask
+    ]
+    ```
+
+    ✅ **Quality Assurance Chains**
+    ```swift
+    // Create → Review → Test → Approve
+    let qaWorkflow = [
+        creationTask,
+        reviewTask,
+        testingTask,
+        approvalTask
+    ]
+    ```
+
+    ### Not Ideal For
+
+    ❌ **Independent Parallel Tasks**
+    - Tasks that don't depend on each other
+    - Could execute simultaneously
+
+    ❌ **Complex Dependencies**
+    - Multiple branching paths
+    - Conditional execution based on results
+
+    ❌ **Dynamic Task Generation**
+    - Tasks created based on previous results
+    - Unknown task count at start
+  </Tab>
+
+  <Tab title="Example">
+    ```swift
+    import OrbitAI
+
+    // Define agents
+    let researcher = Agent(
+        role: "Research Specialist",
+        purpose: "Conduct thorough market research",
+        context: "Expert researcher with analytical skills",
+        tools: ["web_search", "data_analyzer"]
+    )
+
+    let writer = Agent(
+        role: "Content Writer",
+        purpose: "Create engaging, well-structured content",
+        context: "Professional writer with SEO expertise",
+        tools: ["content_optimizer", "grammar_checker"]
+    )
+
+    let editor = Agent(
+        role: "Senior Editor",
+        purpose: "Review and refine content for publication",
+        context: "Experienced editor with keen eye for quality",
+        tools: ["style_checker", "fact_validator"]
+    )
+
+    // Define sequential tasks
+    let researchTask = ORTask(
+        description: """
+        Research current trends in AI for healthcare.
+        Focus on:
+        - Recent developments
+        - Key players and innovations
+        - Market size and growth projections
+        """,
+        expectedOutput: "Comprehensive research report with sources",
+        agent: researcher.id
+    )
+
+    let writingTask = ORTask(
+        description: """
+        Write a 1500-word article based on the research.
+        Research data: {task_0_output}
+
+        Include:
+        - Engaging introduction
+        - Key findings with examples
+        - Future outlook
+        - Compelling conclusion
+        """,
+        expectedOutput: "Article draft in markdown format",
+        agent: writer.id,
+        context: [researchTask.id]
+    )
+
+    let editingTask = ORTask(
+        description: """
+        Edit and refine the article for publication.
+        Article draft: {task_1_output}
+
+        Focus on:
+        - Grammar and style
+        - Fact accuracy
+        - Flow and readability
+        - SEO optimization
+        """,
+        expectedOutput: "Publication-ready article",
+        agent: editor.id,
+        context: [writingTask.id]
+    )
+
+    // Create sequential orbit
+    let orbit = try await Orbit.create(
+        name: "Article Creation Pipeline",
+        description: "End-to-end article creation workflow",
+        agents: [researcher, writer, editor],
+        tasks: [researchTask, writingTask, editingTask],
+        process: .sequential,
+        verbose: true
+    )
+
+    // Execute workflow
+    let result = try await orbit.start()
+
+    // Access results
+    if let finalArticle = result.taskOutputs.last?.rawOutput {
+        print("Published Article:")
+        print(finalArticle)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Hierarchical Process
+
+Advanced process type where a manager agent coordinates and delegates tasks to worker agents.
+
+<Tabs>
+  <Tab title="Overview">
+    **Hierarchical Process** introduces a manager-worker pattern where a designated manager agent:
+    - Analyzes the overall workflow
+    - Decides task assignment strategies
+    - Delegates tasks to appropriate worker agents
+    - Coordinates execution and monitors progress
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Complex Project",
+        agents: [workerAgent1, workerAgent2, workerAgent3],
+        tasks: complexTasks,
+        process: .hierarchical,
+        manager: managerAgent,  // Manager coordinates
+        verbose: true
+    )
+    ```
+
+    **Execution Flow:**
+    ```
+    Manager Agent (Orchestrator)
+        ↓
+    Analyzes workflow and tasks
+        ↓
+    ┌───────┼───────┐
+    ↓       ↓       ↓
+    Worker  Worker  Worker
+    Agent 1 Agent 2 Agent 3
+        ↓       ↓       ↓
+    Task 1  Task 2  Task 3
+        ↓       ↓       ↓
+    └───────┼───────┘
+        ↓
+    Manager validates results
+        ↓
+    Workflow Complete
+    ```
+
+    <Warning>
+      Hierarchical process requires a manager agent with `allowDelegation: true` configured.
+    </Warning>
+  </Tab>
+
+  <Tab title="Characteristics">
+    ### Key Features
+
+    <CardGroup cols={2}>
+      <Card title="Intelligent Delegation" icon="diagram-project">
+        Manager decides optimal task assignment
+      </Card>
+      <Card title="Dynamic Coordination" icon="gears">
+        Adapts to agent availability and capability
+      </Card>
+      <Card title="Quality Control" icon="shield-check">
+        Manager can validate outputs
+      </Card>
+      <Card title="Scalability" icon="arrows-maximize">
+        Handles many agents and complex workflows
+      </Card>
+    </CardGroup>
+
+    ### Manager Agent Requirements
+
+    ```swift
+    let manager = Agent(
+        role: "Project Manager",
+        purpose: "Coordinate complex multi-agent workflows",
+        context: """
+        Experienced project manager with expertise in:
+        - Task decomposition and delegation
+        - Agent capability assessment
+        - Quality assurance
+        - Timeline management
+        """,
+        allowDelegation: true,  // Required for hierarchical
+        tools: [
+            "task_delegator",
+            "progress_tracker",
+            "quality_validator"
+        ]
+    )
+    ```
+
+    ### Delegation Strategy
+
+    The manager agent uses sophisticated reasoning to:
+    1. **Analyze tasks**: Understand requirements and complexity
+    2. **Evaluate agents**: Assess capabilities and current load
+    3. **Optimize assignment**: Match tasks to best-suited agents
+    4. **Monitor progress**: Track execution and handle issues
+    5. **Validate outputs**: Ensure quality standards are met
+  </Tab>
+
+  <Tab title="Use Cases">
+    ### Best For
+
+    ✅ **Complex Multi-Team Projects**
+    ```swift
+    // Manager coordinates design, development, and testing teams
+    let projectOrbit = Orbit.create(
+        name: "Software Development Project",
+        agents: [
+            designAgent1, designAgent2,
+            devAgent1, devAgent2, devAgent3,
+            testAgent1, testAgent2
+        ],
+        tasks: projectTasks,
+        process: .hierarchical,
+        manager: scrumMaster
+    )
+    ```
+
+    ✅ **Dynamic Workload Distribution**
+    ```swift
+    // Manager distributes tasks based on agent availability
+    let distributedWorkflow = Orbit.create(
+        name: "Data Processing Pipeline",
+        agents: workerAgents,  // Variable number of workers
+        tasks: processingTasks,
+        process: .hierarchical,
+        manager: coordinatorAgent
+    )
+    ```
+
+    ✅ **Quality-Critical Workflows**
+    ```swift
+    // Manager validates each step before proceeding
+    let qualityWorkflow = Orbit.create(
+        name: "Medical Report Generation",
+        agents: [dataAnalyst, reportWriter, validator],
+        tasks: reportTasks,
+        process: .hierarchical,
+        manager: seniorPhysician  // Validates medical accuracy
+    )
+    ```
+
+    ✅ **Adaptive Task Assignment**
+    ```swift
+    // Manager adapts based on agent performance
+    let adaptiveWorkflow = Orbit.create(
+        name: "Customer Support System",
+        agents: supportAgents,
+        tasks: supportTickets,
+        process: .hierarchical,
+        manager: supportManager  // Routes based on expertise
+    )
+    ```
+
+    ### When to Use
+
+    - **Many agents** with different specializations
+    - **Complex coordination** requirements
+    - **Quality validation** needed at each step
+    - **Dynamic task assignment** based on conditions
+    - **Load balancing** across multiple agents
+  </Tab>
+
+  <Tab title="Example">
+    ```swift
+    import OrbitAI
+
+    // Define manager agent
+    let projectManager = Agent(
+        role: "Senior Project Manager",
+        purpose: "Coordinate software development projects efficiently",
+        context: """
+        Experienced project manager with 10+ years in software delivery:
+        - Expert in agile methodologies
+        - Strong technical background
+        - Excellent at matching tasks to team members
+        - Focus on quality and timely delivery
+
+        Delegation approach:
+        1. Assess task complexity and requirements
+        2. Evaluate agent expertise and availability
+        3. Assign tasks to best-suited agents
+        4. Monitor progress and intervene if needed
+        5. Validate outputs against acceptance criteria
+        """,
+        allowDelegation: true,  // Enable delegation
+        tools: [
+            "task_analyzer",
+            "agent_evaluator",
+            "progress_monitor",
+            "quality_checker"
+        ],
+        temperature: 0.4  // Balanced decision-making
+    )
+
+    // Define worker agents
+    let backendDev = Agent(
+        role: "Backend Developer",
+        purpose: "Develop robust backend services and APIs",
+        context: "Expert in Swift, databases, and API design",
+        tools: ["code_generator", "api_designer", "database_tool"]
+    )
+
+    let frontendDev = Agent(
+        role: "Frontend Developer",
+        purpose: "Create intuitive user interfaces",
+        context: "Expert in SwiftUI and user experience",
+        tools: ["ui_designer", "component_library"]
+    )
+
+    let qaEngineer = Agent(
+        role: "QA Engineer",
+        purpose: "Ensure software quality through testing",
+        context: "Expert in testing strategies and automation",
+        tools: ["test_generator", "bug_tracker", "performance_analyzer"]
+    )
+
+    // Define tasks
+    let tasks = [
+        ORTask(
+            description: "Design and implement user authentication API",
+            expectedOutput: "Working authentication API with tests"
+        ),
+        ORTask(
+            description: "Create user profile management UI",
+            expectedOutput: "SwiftUI views for profile management"
+        ),
+        ORTask(
+            description: "Implement data persistence layer",
+            expectedOutput: "Core Data models and repositories"
+        ),
+        ORTask(
+            description: "Test complete user management flow",
+            expectedOutput: "Test suite with coverage report"
+        ),
+        ORTask(
+            description: "Performance optimization and profiling",
+            expectedOutput: "Performance report with optimizations"
+        )
+    ]
+
+    // Create hierarchical orbit
+    let orbit = try await Orbit.create(
+        name: "User Management Feature",
+        description: "Complete user management system",
+        agents: [backendDev, frontendDev, qaEngineer],
+        tasks: tasks,
+        process: .hierarchical,
+        manager: projectManager,
+        verbose: true
+    )
+
+    // Execute - manager will delegate tasks
+    let result = try await orbit.start()
+
+    // Manager's delegation decisions are logged
+    print("Task Assignments:")
+    for (task, output) in zip(tasks, result.taskOutputs) {
+        print("Task: \(task.description)")
+        print("Assigned to: \(output.agentId)")
+        print("Result: \(output.rawOutput)")
+        print("---")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Flow-Based Process
+
+Advanced dependency-driven execution with support for parallel task execution.
+
+<Tabs>
+  <Tab title="Overview">
+    **Flow-Based Process** uses a TaskFlow structure to define complex workflows with:
+    - Explicit task dependencies
+    - Parallel execution where possible
+    - Topological sorting for optimal ordering
+    - Conditional execution
+    - Failure handling strategies
+
+    ```swift
+    let taskFlow = TaskFlow(
+        name: "Data Processing Pipeline",
+        tasks: [
+            dataIngestion,    // No dependencies
+            validation1,      // Depends on ingestion
+            validation2,      // Depends on ingestion (parallel with validation1)
+            transform,        // Depends on both validations
+            analysis,         // Depends on transform
+            reporting         // Depends on analysis
+        ],
+        stopOnFailure: true
+    )
+
+    let result = try await taskEngine.executeTaskFlow(
+        taskFlow: taskFlow,
+        agents: agents,
+        context: context
+    )
+    ```
+
+    **Execution Flow:**
+    ```
+    Data Ingestion
+        ↓
+    ┌───┴───┐
+    │       │
+    Valid1  Valid2  (Parallel)
+    │       │
+    └───┬───┘
+        ↓
+    Transform
+        ↓
+    Analysis
+        ↓
+    Reporting
+    ```
+  </Tab>
+
+  <Tab title="Characteristics">
+    ### Key Features
+
+    <CardGroup cols={2}>
+      <Card title="Parallel Execution" icon="arrows-split-up-and-left">
+        Independent tasks run simultaneously
+      </Card>
+      <Card title="Dependency Resolution" icon="diagram-project">
+        Automatic topological sorting
+      </Card>
+      <Card title="Circular Detection" icon="circle-exclamation">
+        Prevents infinite dependency loops
+      </Card>
+      <Card title="Failure Strategies" icon="shield-halved">
+        Configure stop-on-failure behavior
+      </Card>
+    </CardGroup>
+
+    ### Dependency Definition
+
+    ```swift
+    // Define task dependencies explicitly
+    let taskA = ORTask(
+        description: "Task A - no dependencies",
+        expectedOutput: "Result A"
+    )
+
+    let taskB = ORTask(
+        description: "Task B - depends on A",
+        expectedOutput: "Result B",
+        dependencies: [taskA.id]  // Explicit dependency
+    )
+
+    let taskC = ORTask(
+        description: "Task C - depends on A",
+        expectedOutput: "Result C",
+        dependencies: [taskA.id]  // Parallel with B
+    )
+
+    let taskD = ORTask(
+        description: "Task D - depends on B and C",
+        expectedOutput: "Result D",
+        dependencies: [taskB.id, taskC.id]  // Waits for both
+    )
+    ```
+
+    ### Topological Sorting
+
+    The system automatically:
+    1. Builds dependency graph
+    2. Detects circular dependencies
+    3. Orders tasks for valid execution
+    4. Identifies parallelization opportunities
+
+    <Warning>
+      Circular dependencies will cause execution to fail with `OrbitAIError.taskExecutionFailed`.
+    </Warning>
+  </Tab>
+
+  <Tab title="Use Cases">
+    ### Best For
+
+    ✅ **Data Pipelines**
+    ```swift
+    // ETL with parallel validation
+    let pipeline = TaskFlow(
+        tasks: [
+            extractTask,
+            validateSchemaTask,    // Parallel
+            validateDataTask,      // Parallel
+            transformTask,         // After validations
+            loadTask              // After transform
+        ]
+    )
+    ```
+
+    ✅ **Build Systems**
+    ```swift
+    // Parallel compilation and testing
+    let buildFlow = TaskFlow(
+        tasks: [
+            compileModule1,    // Parallel
+            compileModule2,    // Parallel
+            compileModule3,    // Parallel
+            linkTask,          // After all compile
+            testTask          // After link
+        ]
+    )
+    ```
+
+    ✅ **Multi-Source Aggregation**
+    ```swift
+    // Fetch from multiple sources in parallel
+    let aggregation = TaskFlow(
+        tasks: [
+            fetchAPI1,         // Parallel
+            fetchAPI2,         // Parallel
+            fetchAPI3,         // Parallel
+            mergeTask,         // After all fetches
+            analyzeTask       // After merge
+        ]
+    )
+    ```
+
+    ✅ **Test Suites**
+    ```swift
+    // Run independent tests in parallel
+    let testSuite = TaskFlow(
+        tasks: [
+            unitTests,         // Parallel
+            integrationTests,  // Parallel
+            e2eTests,         // Parallel
+            reportTask        // After all tests
+        ],
+        stopOnFailure: false  // Run all tests even if some fail
+    )
+    ```
+  </Tab>
+
+  <Tab title="Example">
+    ```swift
+    import OrbitAI
+
+    // Define agents
+    let dataEngineer = Agent(
+        role: "Data Engineer",
+        purpose: "Handle data ingestion and transformation",
+        context: "Expert in ETL processes",
+        tools: ["data_loader", "data_transformer"]
+    )
+
+    let validator = Agent(
+        role: "Data Validator",
+        purpose: "Validate data quality and schema",
+        context: "Expert in data quality assurance",
+        tools: ["schema_validator", "quality_checker"]
+    )
+
+    let analyst = Agent(
+        role: "Data Analyst",
+        purpose: "Analyze processed data",
+        context: "Expert in data analysis",
+        tools: ["statistical_analyzer", "visualizer"]
+    )
+
+    // Task 1: Ingest data (no dependencies)
+    let ingestTask = ORTask(
+        description: "Ingest data from source systems",
+        expectedOutput: "Raw data loaded",
+        agent: dataEngineer.id
+    )
+
+    // Tasks 2-3: Validate in parallel (depend on ingestion)
+    let schemaValidation = ORTask(
+        description: "Validate data schema compliance",
+        expectedOutput: "Schema validation report",
+        agent: validator.id,
+        dependencies: [ingestTask.id]
+    )
+
+    let qualityValidation = ORTask(
+        description: "Validate data quality metrics",
+        expectedOutput: "Quality validation report",
+        agent: validator.id,
+        dependencies: [ingestTask.id]
+    )
+
+    // Task 4: Transform (depends on both validations)
+    let transformTask = ORTask(
+        description: """
+        Transform data for analysis.
+        Schema check: {task_1_output}
+        Quality check: {task_2_output}
+        """,
+        expectedOutput: "Transformed data",
+        agent: dataEngineer.id,
+        dependencies: [schemaValidation.id, qualityValidation.id],
+        context: [schemaValidation.id, qualityValidation.id]
+    )
+
+    // Task 5: Analyze (depends on transform)
+    let analyzeTask = ORTask(
+        description: """
+        Analyze transformed data.
+        Data: {task_3_output}
+        """,
+        expectedOutput: "Analysis report",
+        agent: analyst.id,
+        dependencies: [transformTask.id],
+        context: [transformTask.id]
+    )
+
+    // Task 6: Generate report (depends on analysis)
+    let reportTask = ORTask(
+        description: """
+        Generate final report.
+        Analysis: {task_4_output}
+        """,
+        expectedOutput: "Executive report",
+        agent: analyst.id,
+        dependencies: [analyzeTask.id],
+        context: [analyzeTask.id]
+    )
+
+    // Create task flow
+    let taskFlow = TaskFlow(
+        name: "Data Processing Pipeline",
+        tasks: [
+            ingestTask,
+            schemaValidation,
+            qualityValidation,
+            transformTask,
+            analyzeTask,
+            reportTask
+        ],
+        stopOnFailure: true  // Stop if any task fails
+    )
+
+    // Execute flow
+    let taskEngine = TaskExecutionEngine(
+        agentExecutor: agentExecutor,
+        maxConcurrentTasks: 3  // Allow parallel execution
+    )
+
+    let result = try await taskEngine.executeTaskFlow(
+        taskFlow: taskFlow,
+        agents: [dataEngineer, validator, analyst],
+        context: TaskExecutionContext()
+    )
+
+    print("Pipeline completed!")
+    print("Parallel tasks executed: schemaValidation + qualityValidation")
+    ```
+
+    <Info>
+      In this example, `schemaValidation` and `qualityValidation` execute in parallel since they both only depend on `ingestTask` and don't depend on each other.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Task Dependencies and Processes
+
+### How Processes Affect Task Execution
+
+<Tabs>
+  <Tab title="Sequential">
+    ### Sequential Process Behavior
+
+    **Task Dependencies:**
+    - Tasks execute in array order
+    - Each task waits for previous to complete
+    - Context automatically includes all previous outputs
+
+    **Agent Assignment:**
+    ```swift
+    // Task with explicit agent
+    let task1 = ORTask(
+        description: "Specialized task",
+        expectedOutput: "Result",
+        agent: specialistAgent.id  // Uses this agent
+    )
+
+    // Task without explicit agent
+    let task2 = ORTask(
+        description: "General task",
+        expectedOutput: "Result"
+        // Engine selects best available agent
+    )
+    ```
+
+    **Context Flow:**
+    ```swift
+    // Sequential process automatically provides:
+    // - task_0_output (first task's output)
+    // - task_1_output (second task's output)
+    // - task_N_output (Nth task's output)
+
+    let task3 = ORTask(
+        description: """
+        Combine previous results:
+        First: {task_0_output}
+        Second: {task_1_output}
+        """,
+        expectedOutput: "Combined result"
+    )
+    ```
+
+    **Failure Handling:**
+    - If any task fails, entire workflow stops
+    - No subsequent tasks execute
+    - Error propagates to orbit result
+  </Tab>
+
+  <Tab title="Hierarchical">
+    ### Hierarchical Process Behavior
+
+    **Task Dependencies:**
+    - Manager analyzes all tasks first
+    - Manager decides execution order
+    - May execute tasks in different order than defined
+    - Can execute independent tasks in parallel
+
+    **Agent Assignment:**
+    ```swift
+    // Manager decides agent assignment
+    // Even with explicit agent, manager may override
+    let task = ORTask(
+        description: "Complex task requiring expertise",
+        expectedOutput: "Result"
+        // Manager assigns to best agent
+    )
+    ```
+
+    **Manager Decision Process:**
+    1. **Analyze tasks**: Understand requirements
+    2. **Evaluate agents**: Check capabilities and load
+    3. **Create plan**: Optimize task assignment
+    4. **Delegate**: Assign tasks to workers
+    5. **Monitor**: Track progress
+    6. **Validate**: Check quality
+
+    **Context Flow:**
+    ```swift
+    // Manager coordinates context sharing
+    // Worker agents receive:
+    // - Relevant previous outputs
+    // - Manager's instructions
+    // - Additional context as needed
+
+    // Tasks can reference dependencies
+    let dependentTask = ORTask(
+        description: "Use results from previous tasks",
+        expectedOutput: "Processed result",
+        context: [previousTask1.id, previousTask2.id]
+    )
+    // Manager ensures dependencies execute first
+    ```
+
+    **Failure Handling:**
+    - Manager can retry with different agents
+    - Manager may adjust strategy on failures
+    - Can implement custom error recovery
+    - Manager validates outputs before proceeding
+  </Tab>
+
+  <Tab title="Flow-Based">
+    ### Flow-Based Process Behavior
+
+    **Task Dependencies:**
+    - Explicitly defined via `dependencies` array
+    - Topologically sorted before execution
+    - Independent tasks execute in parallel
+    - Dependent tasks wait for all dependencies
+
+    **Dependency Graph:**
+    ```swift
+    // Explicit dependencies
+    let taskA = ORTask(
+        description: "Task A",
+        expectedOutput: "A",
+        dependencies: []  // No dependencies
+    )
+
+    let taskB = ORTask(
+        description: "Task B",
+        expectedOutput: "B",
+        dependencies: [taskA.id]  // Depends on A
+    )
+
+    let taskC = ORTask(
+        description: "Task C",
+        expectedOutput: "C",
+        dependencies: [taskA.id]  // Also depends on A (parallel with B)
+    )
+
+    let taskD = ORTask(
+        description: "Task D",
+        expectedOutput: "D",
+        dependencies: [taskB.id, taskC.id]  // Depends on both B and C
+    )
+
+    // Execution order:
+    // 1. A executes
+    // 2. B and C execute in parallel
+    // 3. D executes after both B and C complete
+    ```
+
+    **Parallelization:**
+    ```swift
+    // Control max concurrent tasks
+    let taskEngine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 5  // Up to 5 tasks in parallel
+    )
+    ```
+
+    **Circular Dependency Detection:**
+    ```swift
+    // This will fail:
+    let taskX = ORTask(
+        description: "X",
+        dependencies: [taskY.id]
+    )
+    let taskY = ORTask(
+        description: "Y",
+        dependencies: [taskX.id]  // Circular!
+    )
+    // Error: "Circular dependency detected"
+    ```
+
+    **Failure Handling:**
+    ```swift
+    let taskFlow = TaskFlow(
+        tasks: tasks,
+        stopOnFailure: true  // Stop on first failure
+        // OR
+        stopOnFailure: false  // Continue other branches
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### Context Interpolation
+
+All process types support context variable interpolation:
+
+<AccordionGroup>
+  <Accordion title="Task Output References" icon="brackets-curly">
+    Reference previous task outputs in descriptions:
+
+    ```swift
+    let task1 = ORTask(
+        description: "Research AI trends",
+        expectedOutput: "Research report"
+    )
+
+    let task2 = ORTask(
+        description: """
+        Write article based on research.
+        Research data: {task_0_output}
+        """,
+        expectedOutput: "Article draft",
+        context: [task1.id]
+    )
+    ```
+
+    **Variable Format:**
+    - `{task_0_output}` - First task's output
+    - `{task_1_output}` - Second task's output
+    - `{task_N_output}` - Nth task's output
+
+    <Info>
+      Task indices are 0-based, matching array indexing in Swift.
+    </Info>
+  </Accordion>
+
+  <Accordion title="Orbit Inputs" icon="arrow-right-to-bracket">
+    Use orbit-level inputs in any task:
+
+    ```swift
+    let task = ORTask(
+        description: """
+        Analyze data for {industry} sector.
+        Focus on {metric} metrics.
+        Time period: {period}
+        """,
+        expectedOutput: "Analysis report"
+    )
+
+    // Provide inputs at execution time
+    let inputs = OrbitInput(Metadata([
+        "industry": .string("healthcare"),
+        "metric": .string("efficiency"),
+        "period": .string("Q4 2024")
+    ]))
+
+    let result = try await orbit.start(inputs: inputs)
+    ```
+  </Accordion>
+
+  <Accordion title="Agent Context" icon="user">
+    Tasks automatically receive agent context:
+
+    ```swift
+    // Agent context is available in system message
+    let agent = Agent(
+        role: "Financial Analyst",
+        purpose: "Analyze financial data",
+        context: """
+        Expert in:
+        - Financial modeling
+        - Risk assessment
+        - Market analysis
+        """
+    )
+
+    // Tasks executed by this agent have access to this context
+    // through the system message
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+### Process Selection
+
+<CardGroup cols={2}>
+  <Card title="Use Sequential For" icon="arrow-right">
+    **Simple Linear Workflows**
+    - Clear dependencies
+    - Each step builds on previous
+    - Easy to understand and debug
+
+    ```swift
+    process: .sequential
+    ```
+  </Card>
+
+  <Card title="Use Hierarchical For" icon="diagram-project">
+    **Complex Coordination**
+    - Many agents with different skills
+    - Dynamic task assignment needed
+    - Quality validation required
+    - Load balancing important
+
+    ```swift
+    process: .hierarchical
+    manager: coordinatorAgent
+    ```
+  </Card>
+
+  <Card title="Use Flow-Based For" icon="share-nodes">
+    **Parallel Opportunities**
+    - Independent tasks can run simultaneously
+    - Complex dependency graphs
+    - Performance critical workflows
+    - Build systems and pipelines
+
+    ```swift
+    TaskFlow(tasks: tasks)
+    ```
+  </Card>
+
+  <Card title="Consider Hybrid" icon="diagram-nested">
+    **Nested Workflows**
+    - Sequential top-level
+    - Hierarchical within phases
+    - Flow-based for parallelizable sections
+
+    <Tip>
+      Break complex workflows into smaller orbits and chain them.
+    </Tip>
+  </Card>
+</CardGroup>
+
+### Context Management
+
+<Steps>
+  <Step title="Explicit Context References">
+    Always declare context dependencies:
+
+    ```swift
+    let task = ORTask(
+        description: "Process data from: {task_0_output}",
+        expectedOutput: "Processed data",
+        context: [previousTask.id]  // Explicit declaration
+    )
+    ```
+
+    <Warning>
+      Without explicit context declaration, the task may not have access to previous outputs in hierarchical and flow-based processes.
+    </Warning>
+  </Step>
+
+  <Step title="Minimize Context Size">
+    Keep context concise for better performance:
+
+    ```swift
+    // Good: Specific reference
+    description: "Summarize key points from: {task_0_output}"
+
+    // Better: Extract only needed data
+    let extractTask = ORTask(
+        description: "Extract top 5 insights from research",
+        expectedOutput: "5 key insights"
+    )
+
+    let summaryTask = ORTask(
+        description: "Create summary from: {task_0_output}",
+        context: [extractTask.id]
+    )
+    ```
+  </Step>
+
+  <Step title="Structure Outputs">
+    Use structured outputs for easier downstream processing:
+
+    ```swift
+    struct ResearchFindings: Codable, Sendable {
+        let keyPoints: [String]
+        let sources: [String]
+        let confidence: Double
+    }
+
+    let researchTask = ORTask.withStructuredOutput(
+        description: "Research AI trends",
+        expectedType: ResearchFindings.self,
+        agent: researcher.id
+    )
+
+    // Downstream tasks can parse structured data easily
+    ```
+  </Step>
+</Steps>
+
+### Performance Optimization
+
+<AccordionGroup>
+  <Accordion title="Parallelization" icon="arrows-split-up-and-left">
+    Maximize parallel execution opportunities:
+
+    ```swift
+    // Bad: Sequential when tasks are independent
+    let sequential = [
+        fetchAPI1Task,      // Could run in parallel
+        fetchAPI2Task,      // Could run in parallel
+        fetchAPI3Task,      // Could run in parallel
+        mergeTask
+    ]
+
+    // Good: Use flow-based for parallelization
+    let flow = TaskFlow(tasks: [
+        fetchAPI1Task,      // Parallel
+        fetchAPI2Task,      // Parallel
+        fetchAPI3Task,      // Parallel
+        mergeTask          // Waits for all fetches
+    ])
+
+    // Configure concurrent execution
+    let engine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 3  // Run fetches in parallel
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Agent Reuse" icon="recycle">
+    Reuse agents efficiently:
+
+    ```swift
+    // Create agent pool for common tasks
+    let workerAgents = (1...5).map { i in
+        Agent(
+            role: "Data Processor \(i)",
+            purpose: "Process data efficiently",
+            context: "Generic data processing agent",
+            tools: ["data_processor"]
+        )
+    }
+
+    // Hierarchical process will distribute work
+    let orbit = Orbit.create(
+        agents: workerAgents,
+        tasks: manyTasks,
+        process: .hierarchical,
+        manager: coordinator
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Concurrency Limits" icon="gauge">
+    Set appropriate concurrency limits:
+
+    ```swift
+    // Balance parallelism with resource limits
+    let engine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 5,  // Don't overwhelm system
+        enableVerboseLogging: false  // Reduce overhead
+    )
+
+    // Consider:
+    // - API rate limits (50-100 requests/min)
+    // - Memory constraints
+    // - CPU availability
+    // - LLM provider limits
+    ```
+  </Accordion>
+
+  <Accordion title="Early Failure Detection" icon="triangle-exclamation">
+    Configure appropriate failure handling:
+
+    ```swift
+    // Critical path: stop on failure
+    let criticalFlow = TaskFlow(
+        tasks: criticalTasks,
+        stopOnFailure: true
+    )
+
+    // Best effort: continue on failure
+    let bestEffortFlow = TaskFlow(
+        tasks: optionalTasks,
+        stopOnFailure: false  // Collect all results
+    )
+
+    // Test suites: run all tests
+    let testFlow = TaskFlow(
+        tasks: testTasks,
+        stopOnFailure: false  // Run all tests
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Error Handling
+
+<Tabs>
+  <Tab title="Sequential">
+    ```swift
+    do {
+        let result = try await orbit.start()
+
+        // Process successful results
+        for (index, output) in result.taskOutputs.enumerated() {
+            print("Task \(index): \(output.rawOutput)")
+        }
+    } catch let error as OrbitAIError {
+        // Handle specific errors
+        switch error {
+        case .taskExecutionFailed(let message):
+            print("Task failed: \(message)")
+            // Check which task failed
+            let failedTasks = orbit.tasks.filter { $0.status == .failed }
+            for task in failedTasks {
+                print("Failed task: \(task.description)")
+            }
+
+        case .llmRateLimitExceeded:
+            print("Rate limit hit - implement backoff")
+
+        case .agentNotFound:
+            print("Agent assignment issue")
+
+        default:
+            print("Other error: \(error)")
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Hierarchical">
+    ```swift
+    do {
+        let result = try await orbit.start()
+
+        // Manager may have retried tasks
+        print("Manager's execution log:")
+        for output in result.taskOutputs {
+            print("Task: \(output.taskId)")
+            print("Agent: \(output.agentId)")
+            print("Attempts: \(output.usageMetrics.totalRequests)")
+        }
+    } catch {
+        // Manager failed to complete workflow
+        print("Manager could not complete workflow: \(error)")
+
+        // Check manager's reasoning
+        if let managerOutput = orbit.manager?.currentTask?.result?.output {
+            print("Manager's last decision: \(managerOutput.rawOutput)")
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Flow-Based">
+    ```swift
+    do {
+        let result = try await taskEngine.executeTaskFlow(
+            taskFlow: taskFlow,
+            agents: agents,
+            context: context
+        )
+
+        // Check which tasks succeeded
+        let successful = result.filter { $0.isSuccess }
+        let failed = result.filter { !$0.isSuccess }
+
+        print("Successful: \(successful.count)")
+        print("Failed: \(failed.count)")
+
+        // Process partial results if stopOnFailure: false
+        for taskResult in successful {
+            if let output = taskResult.output {
+                print("Completed: \(output.taskId)")
+            }
+        }
+
+    } catch let error as OrbitAIError {
+        if case .taskExecutionFailed(let message) = error {
+            if message.contains("Circular dependency") {
+                print("Fix task dependencies!")
+            }
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Tasks Executing in Wrong Order" icon="arrows-rotate">
+    **Symptoms**: Tasks run in unexpected sequence
+
+    **Causes:**
+    - Using hierarchical process (manager decides order)
+    - Missing dependency declarations in flow-based
+    - Context references without proper dependencies
+
+    **Solutions:**
+
+    ```swift
+    // For sequential: tasks run in array order
+    let tasks = [task1, task2, task3]  // Runs 1→2→3
+
+    // For hierarchical: manager decides order
+    // Solution: Use sequential if order matters
+
+    // For flow-based: declare dependencies
+    let task2 = ORTask(
+        description: "Task 2",
+        dependencies: [task1.id]  // Explicit dependency
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Context Variables Not Resolving" icon="brackets-curly">
+    **Symptoms**: `{task_N_output}` appears literally in output
+
+    **Causes:**
+    - Missing context declaration
+    - Wrong task index
+    - Task not executed yet (dependency issue)
+
+    **Solutions:**
+
+    ```swift
+    // Always declare context
+    let task = ORTask(
+        description: "Use data: {task_0_output}",
+        expectedOutput: "Result",
+        context: [previousTask.id]  // Required!
+    )
+
+    // Verify task index (0-based)
+    // task_0_output = first task (index 0)
+    // task_1_output = second task (index 1)
+
+    // Ensure dependency order
+    let dependent = ORTask(
+        description: "Use {task_1_output}",
+        context: [secondTask.id],
+        dependencies: [secondTask.id]  // Flow-based
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Hierarchical Manager Not Delegating" icon="diagram-project">
+    **Symptoms**: Manager doesn't assign tasks to workers
+
+    **Causes:**
+    - Manager missing `allowDelegation: true`
+    - Manager lacks delegation tools
+    - Poor manager context/prompting
+
+    **Solutions:**
+
+    ```swift
+    // Enable delegation
+    let manager = Agent(
+        role: "Project Manager",
+        purpose: "Delegate and coordinate tasks",
+        context: """
+        You are a project manager coordinating a team.
+
+        Your responsibilities:
+        1. Analyze each task's requirements
+        2. Select the best agent for each task
+        3. Assign tasks to appropriate team members
+        4. Monitor progress and quality
+
+        Available team members and their expertise:
+        [List agents and their capabilities]
+        """,
+        allowDelegation: true,  // Required!
+        tools: [
+            "task_analyzer",
+            "agent_evaluator",
+            "task_delegator"
+        ]
+    )
+
+    // Provide good worker context
+    let worker = Agent(
+        role: "Backend Developer",
+        purpose: "Develop backend services",
+        context: "Expert in Swift, APIs, databases",
+        tools: ["code_generator", "api_designer"]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Circular Dependency Errors" icon="circle-exclamation">
+    **Symptoms**: "Circular dependency detected" error
+
+    **Causes:**
+    - Task A depends on Task B depends on Task A
+    - Indirect circular dependencies through multiple tasks
+
+    **Solutions:**
+
+    ```swift
+    // Identify the cycle
+    // Bad:
+    taskA.dependencies = [taskB.id]
+    taskB.dependencies = [taskA.id]  // Circular!
+
+    // Fix: Remove circular dependency
+    taskA.dependencies = []  // A first
+    taskB.dependencies = [taskA.id]  // B depends on A
+
+    // For complex graphs, visualize dependencies:
+    func printDependencyGraph(tasks: [ORTask]) {
+        for task in tasks {
+            print("\(task.id): depends on \(task.dependencies ?? [])")
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Poor Parallelization Performance" icon="gauge-simple">
+    **Symptoms**: Flow-based not faster than sequential
+
+    **Causes:**
+    - Too many dependencies (tasks can't parallelize)
+    - Low `maxConcurrentTasks` setting
+    - API rate limits
+    - Tasks too small (overhead > benefit)
+
+    **Solutions:**
+
+    ```swift
+    // Increase concurrency
+    let engine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 10  // Higher limit
+    )
+
+    // Reduce dependencies
+    // Bad: Each task depends on previous
+    task2.dependencies = [task1.id]
+    task3.dependencies = [task2.id]
+    task4.dependencies = [task3.id]
+
+    // Good: Only necessary dependencies
+    task2.dependencies = [task1.id]
+    task3.dependencies = [task1.id]  // Parallel with task2
+    task4.dependencies = [task2.id, task3.id]  // After both
+
+    // Batch small tasks
+    // Instead of 100 tiny tasks, create 10 batches of 10
+    ```
+  </Accordion>
+
+  <Accordion title="Context Window Overflow" icon="window-maximize">
+    **Symptoms**: Token limit errors with many tasks
+
+    **Causes:**
+    - Accumulating context from all previous tasks
+    - Large task outputs
+    - Many tasks in workflow
+
+    **Solutions:**
+
+    ```swift
+    // Extract only needed information
+    let summaryTask = ORTask(
+        description: "Extract key points from research",
+        expectedOutput: "Bullet list of 5 key findings"
+    )
+
+    // Use structured outputs
+    struct Summary: Codable, Sendable {
+        let keyPoints: [String]  // Compact format
+    }
+
+    // Reference specific outputs, not all
+    let task = ORTask(
+        description: "Use summary: {task_2_output}",
+        context: [summaryTask.id]  // Only one task
+        // Not: context: [task0, task1, task2, task3, ...]
+    )
+
+    // Enable context window management
+    let agent = Agent(
+        role: "Agent",
+        purpose: "Process data",
+        context: "...",
+        respectContextWindow: true  // Auto-prune
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Process Comparison
+
+### Decision Matrix
+
+| Criteria | Sequential | Hierarchical | Flow-Based |
+|----------|-----------|--------------|------------|
+| **Complexity** | Simple | Complex | Medium-High |
+| **Setup Effort** | Low | High | Medium |
+| **Parallelization** | None | Manager-driven | Explicit |
+| **Agent Assignment** | Auto or explicit | Manager decides | Auto or explicit |
+| **Debugging** | Easy | Moderate | Moderate |
+| **Best For** | Linear workflows | Dynamic coordination | Pipelines |
+| **Performance** | Predictable | Variable | High potential |
+| **Learning Curve** | Low | High | Medium |
+
+### When to Use Each
+
+<CardGroup cols={3}>
+  <Card title="Sequential" icon="arrow-right">
+    **Choose when:**
+    - Tasks have clear linear flow
+    - Each step builds on previous
+    - Simplicity is important
+    - Debugging ease matters
+    - Team is learning OrbitAI
+
+    **Examples:**
+    - Content creation
+    - Report generation
+    - Data processing chains
+  </Card>
+
+  <Card title="Hierarchical" icon="diagram-project">
+    **Choose when:**
+    - Many specialized agents
+    - Dynamic task assignment needed
+    - Quality validation required
+    - Load balancing important
+    - Complex coordination
+    - Agent expertise varies greatly
+
+    **Examples:**
+    - Software development projects
+    - Customer support routing
+    - Research coordination
+  </Card>
+
+  <Card title="Flow-Based" icon="share-nodes">
+    **Choose when:**
+    - Independent tasks exist
+    - Performance is critical
+    - Complex dependencies
+    - Parallel execution possible
+    - Building pipelines
+    - Need fine control
+
+    **Examples:**
+    - ETL pipelines
+    - Build systems
+    - Test suites
+    - Data aggregation
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Tasks"
+    icon="list-check"
+    href="/tasks"
+  >
+    Learn about task configuration
+  </Card>
+
+  <Card
+    title="Agents"
+    icon="robot"
+    href="/agents"
+  >
+    Configure agents for processes
+  </Card>
+
+  <Card
+    title="Orbits"
+    icon="satellite"
+    href="/orbits"
+  >
+    Create complete workflows
+  </Card>
+
+  <Card
+    title="Examples"
+    icon="code"
+    href="/examples"
+  >
+    See process examples
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
