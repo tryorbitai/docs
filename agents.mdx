@@ -1,0 +1,1589 @@
+---
+title: "Agents"
+description: "Autonomous AI entities with specific roles, capabilities, and tools for executing complex tasks."
+---
+
+## Overview
+
+Agents are the core intelligent entities in OrbitAI that execute tasks autonomously. Each agent is designed with a specific role, purpose, and context, equipped with tools and capabilities to accomplish their assigned work.
+
+<CardGroup cols={3}>
+  <Card title="Autonomous" icon="brain">
+    Self-directed execution with intelligent decision-making
+  </Card>
+  <Card title="Specialized" icon="user-gear">
+    Configured with specific roles and domain expertise
+  </Card>
+  <Card title="Tool-Enabled" icon="wrench">
+    Access to tools for extended capabilities
+  </Card>
+  <Card title="Context-Aware" icon="book">
+    Maintains memory and understands task context
+  </Card>
+  <Card title="Collaborative" icon="users">
+    Works with other agents in orchestrated workflows
+  </Card>
+  <Card title="Monitored" icon="chart-line">
+    Comprehensive metrics and performance tracking
+  </Card>
+</CardGroup>
+
+### Key Characteristics
+
+<AccordionGroup>
+  <Accordion title="Role-Based Design" icon="id-badge">
+    Each agent has a defined role that shapes its behavior and decision-making process. Roles provide context for how the agent should approach tasks and interact with other agents.
+  </Accordion>
+
+  <Accordion title="Purpose-Driven" icon="bullseye">
+    Agents are created with specific purposes that guide their actions and define their primary objectives within the system.
+  </Accordion>
+
+  <Accordion title="Contextual Understanding" icon="brain">
+    Agents maintain context through detailed background information, memory systems, and knowledge bases, enabling sophisticated reasoning.
+  </Accordion>
+
+  <Accordion title="LLM Integration" icon="microchip">
+    Agents leverage Large Language Models for natural language understanding, reasoning, and content generation.
+  </Accordion>
+</AccordionGroup>
+
+## Agent Architecture
+
+```
+Agent (Core Entity)
+    ├── Identity
+    │   ├── ID (OrbitAIID)
+    │   ├── Role (String)
+    │   └── Purpose (String)
+    │
+    ├── Intelligence
+    │   ├── LLM Provider
+    │   ├── Context/Background
+    │   └── Temperature
+    │
+    ├── Capabilities
+    │   ├── Tools (Array)
+    │   ├── Memory System
+    │   └── Knowledge Base
+    │
+    ├── Execution
+    │   ├── OrbitAgentExecutor
+    │   ├── Task Queue
+    │   └── Output Generation
+    │
+    └── Monitoring
+        ├── Usage Metrics
+        ├── Performance Data
+        └── Execution History
+```
+
+### Core Components
+
+<Tabs>
+  <Tab title="Agent Structure">
+    The `Agent` actor is the fundamental unit that encapsulates:
+    - Identity and configuration
+    - LLM integration
+    - Tool access
+    - Memory management
+    - Execution state
+
+    ```swift
+    public actor Agent: Identifiable, Codable, Sendable {
+        public let id: OrbitAIID
+        public let role: String
+        public let purpose: String
+        public let context: String
+        // ... additional properties
+    }
+    ```
+  </Tab>
+
+  <Tab title="Agent Executor">
+    The `OrbitAgentExecutor` handles:
+    - Task execution logic
+    - Tool orchestration
+    - Memory integration
+    - Output formatting
+    - Error handling
+
+    ```swift
+    public actor OrbitAgentExecutor {
+        func executeTask(
+            agent: Agent,
+            task: ORTask,
+            context: TaskExecutionContext
+        ) async throws -> TaskOutput
+    }
+    ```
+  </Tab>
+
+  <Tab title="Agent Factory">
+    Provides pre-configured agent templates:
+    - Research agents
+    - Writing agents
+    - Analysis agents
+    - Custom specialized agents
+
+    ```swift
+    let researcher = AgentFactory.createResearchAgent(
+        goal: "Conduct market research",
+        llmID: .openAI,
+        tools: ["web_search", "data_analysis"]
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Agent Parameters
+
+### Core Properties
+
+<Tabs>
+  <Tab title="Required">
+    | Property | Type | Description |
+    |----------|------|-------------|
+    | `id` | `OrbitAIID` | Unique identifier (UUID) for the agent |
+    | `role` | `String` | The agent's role or title (e.g., "Senior Data Analyst") |
+    | `purpose` | `String` | Primary objective and responsibility |
+    | `context` | `String` | Background information and expertise details |
+
+    ```swift
+    let agent = Agent(
+        role: "Financial Analyst",
+        purpose: "Analyze financial data and provide investment insights",
+        context: """
+        Expert financial analyst with 15 years of experience in:
+        - Financial statement analysis
+        - Market trend identification
+        - Risk assessment and portfolio management
+        - Investment recommendations
+        """
+    )
+    ```
+
+    <Info>
+      The role, purpose, and context form the agent's "system message" that shapes all LLM interactions.
+    </Info>
+  </Tab>
+
+  <Tab title="LLM Configuration">
+    | Property | Type | Default | Description |
+    |----------|------|---------|-------------|
+    | `llmID` | `LLMProviderID?` | `nil` | LLM provider to use |
+    | `llm` | `String?` | `nil` | Legacy string-based provider (deprecated) |
+    | `temperature` | `Double?` | `0.7` | LLM temperature (0.0-1.0) |
+    | `maxTokens` | `Int?` | `nil` | Maximum tokens per response |
+
+    ```swift
+    let agent = Agent(
+        role: "Creative Writer",
+        purpose: "Generate engaging marketing content",
+        context: "Expert copywriter with SEO knowledge",
+        llmID: .anthropic,        // Use Anthropic Claude
+        temperature: 0.9,          // High creativity
+        maxTokens: 2000           // Longer responses
+    )
+    ```
+
+    <Tip>
+      Use lower temperatures (0.1-0.3) for analytical tasks and higher (0.7-0.9) for creative work.
+    </Tip>
+  </Tab>
+
+  <Tab title="Capabilities">
+    | Property | Type | Default | Description |
+    |----------|------|---------|-------------|
+    | `tools` | `[String]?` | `nil` | Available tool names |
+    | `allowDelegation` | `Bool` | `false` | Can delegate to other agents |
+    | `maxIter` | `Int?` | `15` | Maximum reasoning iterations |
+    | `maxRPM` | `Int?` | `nil` | Rate limit (requests per minute) |
+    | `maxExecutionTime` | `TimeInterval?` | `nil` | Maximum execution time |
+
+    ```swift
+    let agent = Agent(
+        role: "Research Specialist",
+        purpose: "Conduct comprehensive research",
+        context: "Expert researcher with analytical skills",
+        tools: [
+            "web_search",
+            "data_analyzer",
+            "chart_generator",
+            "report_writer"
+        ],
+        allowDelegation: true,
+        maxIter: 20,              // More iterations for complex research
+        maxRPM: 60                // 60 requests per minute
+    )
+    ```
+  </Tab>
+
+  <Tab title="Memory & Knowledge">
+    | Property | Type | Default | Description |
+    |----------|------|---------|-------------|
+    | `memory` | `Bool` | `false` | Enable short-term memory |
+    | `longTermMemory` | `Bool` | `false` | Enable long-term memory storage |
+    | `entityMemory` | `Bool` | `false` | Track named entities |
+    | `memoryConfig` | `MemoryConfiguration?` | `nil` | Memory system configuration |
+    | `knowledgeSources` | `[String]?` | `nil` | Knowledge base file paths |
+
+    ```swift
+    let agent = Agent(
+        role: "Personal Assistant",
+        purpose: "Provide personalized assistance",
+        context: "Helpful assistant with memory of user preferences",
+        memory: true,              // Short-term memory
+        longTermMemory: true,      // Persistent storage
+        entityMemory: true,        // Track people, places, things
+        knowledgeSources: [
+            "./company-policies.pdf",
+            "./product-catalog.json",
+            "./faq-database.txt"
+        ]
+    )
+    ```
+
+    <Warning>
+      Memory systems consume additional resources. Enable only when needed for context retention.
+    </Warning>
+  </Tab>
+
+  <Tab title="Execution & Output">
+    | Property | Type | Default | Description |
+    |----------|------|---------|-------------|
+    | `verbose` | `Bool` | `false` | Enable detailed logging |
+    | `stepCallback` | `String?` | `nil` | Callback for step events |
+    | `respectContextWindow` | `Bool` | `true` | Enforce context limits |
+    | `cacheHandler` | `CacheHandler?` | `nil` | Custom cache implementation |
+    | `systemTemplate` | `String?` | `nil` | Custom system message template |
+    | `promptTemplate` | `String?` | `nil` | Custom prompt template |
+    | `responseTemplate` | `String?` | `nil` | Custom response template |
+
+    ```swift
+    let agent = Agent(
+        role: "Debug Assistant",
+        purpose: "Help debug code issues",
+        context: "Experienced debugger with knowledge of Swift",
+        verbose: true,             // Detailed logging
+        respectContextWindow: true, // Prevent token overflow
+        systemTemplate: """
+        You are {role}.
+        Your purpose: {purpose}
+        Background: {context}
+
+        Always provide clear explanations with code examples.
+        """
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### State Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `currentTask` | `ORTask?` | Currently executing task |
+| `taskHistory` | `[ORTask]` | Completed task history |
+| `totalUsageMetrics` | `UsageMetrics` | Cumulative usage statistics |
+| `executionCount` | `Int` | Number of tasks executed |
+| `averageExecutionTime` | `TimeInterval` | Average task completion time |
+
+<Info>
+  State properties are automatically managed during agent execution and provide insights into agent performance.
+</Info>
+
+## Critical Parameters
+
+### Role, Purpose, and Context
+
+The most critical parameters that define agent behavior:
+
+<Steps>
+  <Step title="Role: Define the Agent's Identity">
+    The role establishes who the agent is. Be specific and professional:
+
+    ```swift
+    // Good roles
+    role: "Senior Financial Analyst"
+    role: "Technical Writer specializing in API documentation"
+    role: "Customer Support Specialist"
+
+    // Poor roles
+    role: "Helper"
+    role: "AI"
+    role: "Agent"
+    ```
+
+    <Tip>
+      Use professional titles that reflect real-world expertise levels and specializations.
+    </Tip>
+  </Step>
+
+  <Step title="Purpose: State the Primary Objective">
+    The purpose clarifies what the agent should accomplish:
+
+    ```swift
+    // Good purposes
+    purpose: "Analyze financial statements and provide investment recommendations"
+    purpose: "Create comprehensive API documentation from code specifications"
+    purpose: "Resolve customer inquiries and escalate complex issues"
+
+    // Poor purposes
+    purpose: "Help with stuff"
+    purpose: "Do tasks"
+    purpose: "Be useful"
+    ```
+  </Step>
+
+  <Step title="Context: Provide Background and Expertise">
+    The context gives the agent detailed background knowledge:
+
+    ```swift
+    context: """
+    You are a senior financial analyst with 15+ years of experience in:
+    - Equity research and valuation modeling
+    - Financial statement analysis (10-K, 10-Q reports)
+    - Market trend analysis and forecasting
+    - Risk assessment and portfolio management
+    - Regulatory compliance (SEC, FINRA)
+
+    Your analysis is data-driven and considers:
+    - Industry benchmarks and peer comparisons
+    - Macroeconomic factors and market conditions
+    - Technical and fundamental indicators
+    - Risk-adjusted returns
+
+    Always provide specific, actionable recommendations backed by data.
+    Use appropriate financial terminology and explain complex concepts clearly.
+    """
+    ```
+
+    <Warning>
+      Avoid generic context. Provide specific expertise, methodologies, and guidelines that shape agent behavior.
+    </Warning>
+  </Step>
+</Steps>
+
+### Temperature Configuration
+
+Temperature controls randomness and creativity:
+
+<Tabs>
+  <Tab title="Low (0.0-0.3)">
+    **Use for:**
+    - Data analysis
+    - Code generation
+    - Factual reporting
+    - Structured outputs
+    - Mathematical tasks
+
+    ```swift
+    let analyst = Agent(
+        role: "Data Analyst",
+        purpose: "Analyze datasets and generate reports",
+        context: "Expert in statistical analysis",
+        temperature: 0.2  // Deterministic, focused
+    )
+    ```
+  </Tab>
+
+  <Tab title="Medium (0.4-0.7)">
+    **Use for:**
+    - General assistance
+    - Balanced tasks
+    - Problem-solving
+    - Question answering
+    - Standard workflows
+
+    ```swift
+    let assistant = Agent(
+        role: "General Assistant",
+        purpose: "Help with various tasks",
+        context: "Versatile assistant with broad knowledge",
+        temperature: 0.5  // Balanced approach
+    )
+    ```
+  </Tab>
+
+  <Tab title="High (0.8-1.0)">
+    **Use for:**
+    - Creative writing
+    - Brainstorming
+    - Marketing content
+    - Story generation
+    - Artistic tasks
+
+    ```swift
+    let writer = Agent(
+        role: "Creative Writer",
+        purpose: "Generate engaging marketing copy",
+        context: "Award-winning copywriter",
+        temperature: 0.9  // Highly creative
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Memory and Context
+
+### Memory Systems
+
+OrbitAI provides multiple memory systems for context retention:
+
+<CardGroup cols={2}>
+  <Card title="Short-Term Memory" icon="clock">
+    **Enabled with:** `memory: true`
+
+    Retains information within a single conversation or task sequence.
+
+    ```swift
+    memory: true
+    ```
+
+    **Use cases:**
+    - Multi-turn conversations
+    - Sequential task workflows
+    - Context building within sessions
+  </Card>
+
+  <Card title="Long-Term Memory" icon="database">
+    **Enabled with:** `longTermMemory: true`
+
+    Persists information across sessions and executions.
+
+    ```swift
+    longTermMemory: true
+    ```
+
+    **Use cases:**
+    - User preference tracking
+    - Historical data retention
+    - Cross-session learning
+  </Card>
+
+  <Card title="Entity Memory" icon="tags">
+    **Enabled with:** `entityMemory: true`
+
+    Tracks and remembers named entities (people, places, organizations).
+
+    ```swift
+    entityMemory: true
+    ```
+
+    **Use cases:**
+    - Customer relationship management
+    - Knowledge graph building
+    - Entity relationship tracking
+  </Card>
+
+  <Card title="Knowledge Sources" icon="book-open">
+    **Configured with:** `knowledgeSources: [paths]`
+
+    Load external knowledge from files.
+
+    ```swift
+    knowledgeSources: [
+        "./docs/api-reference.md",
+        "./data/product-catalog.json"
+    ]
+    ```
+
+    **Supported formats:**
+    - PDF documents
+    - Markdown files
+    - JSON data
+    - Plain text
+  </Card>
+</CardGroup>
+
+### Memory Configuration
+
+Fine-tune memory behavior with `MemoryConfiguration`:
+
+```swift
+let memoryConfig = MemoryConfiguration(
+    maxMemoryItems: 100,          // Maximum stored items
+    persistencePath: "./memory",   // Storage location
+    embeddingModel: "text-embedding-ada-002",
+    similarityThreshold: 0.75,    // Relevance threshold
+    compressionEnabled: true       // Automatic summarization
+)
+
+let agent = Agent(
+    role: "Knowledge Assistant",
+    purpose: "Provide informed responses using memory",
+    context: "Assistant with excellent recall",
+    memory: true,
+    longTermMemory: true,
+    memoryConfig: memoryConfig
+)
+```
+
+### Context Window Management
+
+Manage token limits and context overflow:
+
+```swift
+let agent = Agent(
+    role: "Long-Context Analyst",
+    purpose: "Analyze large documents",
+    context: "Expert in processing extensive content",
+    respectContextWindow: true,    // Enforce limits
+    maxTokens: 4000               // Per-response limit
+)
+```
+
+<AccordionGroup>
+  <Accordion title="Context Pruning" icon="scissors">
+    When `respectContextWindow: true`, the system automatically:
+    1. Monitors token usage
+    2. Prunes old messages when approaching limits
+    3. Retains system messages and recent context
+    4. Maintains conversation coherence
+
+    ```swift
+    // Automatic pruning when context exceeds limits
+    if tokenCount > maxContextTokens * 0.8 {
+        messages = pruneContext(messages, keepRecent: 10)
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Memory vs Context Window" icon="scale-balanced">
+    **Memory Systems:**
+    - Store information externally
+    - Retrieve relevant data as needed
+    - Not limited by context window
+    - Slower access (retrieval step)
+
+    **Context Window:**
+    - All data in active conversation
+    - Immediate access
+    - Limited by token count
+    - Faster processing
+
+    <Tip>
+      Use memory for large knowledge bases and long-term retention. Keep recent, relevant information in the context window.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## Execution Control
+
+### Iteration and Reasoning
+
+Control how agents reason through complex problems:
+
+```swift
+let agent = Agent(
+    role: "Problem Solver",
+    purpose: "Solve complex analytical problems",
+    context: "Expert in systematic problem-solving",
+    maxIter: 20,                  // Allow up to 20 reasoning steps
+    allowDelegation: true          // Can delegate subtasks
+)
+```
+
+<Info>
+  The `maxIter` parameter limits the number of reasoning cycles, preventing infinite loops while allowing thorough analysis.
+</Info>
+
+### Rate Limiting
+
+Prevent API throttling and control costs:
+
+```swift
+let agent = Agent(
+    role: "High-Volume Assistant",
+    purpose: "Handle multiple concurrent requests",
+    context: "Efficient assistant for batch processing",
+    maxRPM: 60,                   // 60 requests per minute
+    maxExecutionTime: 300         // 5 minute timeout
+)
+```
+
+### Delegation
+
+Enable agents to delegate to other agents:
+
+```swift
+// Manager agent that can delegate
+let manager = Agent(
+    role: "Project Manager",
+    purpose: "Coordinate complex projects across teams",
+    context: "Experienced PM with delegation skills",
+    allowDelegation: true,
+    tools: ["task_delegator", "progress_tracker"]
+)
+
+// Worker agents for specialized tasks
+let dataAgent = Agent(
+    role: "Data Processor",
+    purpose: "Process and transform data",
+    context: "Data engineering expert"
+)
+
+let reportAgent = Agent(
+    role: "Report Generator",
+    purpose: "Create formatted reports",
+    context: "Technical writing specialist"
+)
+```
+
+### Callbacks and Monitoring
+
+Track agent execution with callbacks:
+
+```swift
+let agent = Agent(
+    role: "Monitored Agent",
+    purpose: "Execute tasks with detailed tracking",
+    context: "Agent with comprehensive monitoring",
+    verbose: true,                // Log all steps
+    stepCallback: "onAgentStep"   // Custom callback function
+)
+
+// Callback implementation
+func onAgentStep(step: AgentStep) {
+    print("Agent: \(step.agentId)")
+    print("Action: \(step.action)")
+    print("Thought: \(step.thought)")
+    print("Observation: \(step.observation)")
+}
+```
+
+## Agent Tools
+
+### Tool Integration
+
+Agents gain capabilities through tools:
+
+```swift
+let agent = Agent(
+    role: "Research Analyst",
+    purpose: "Conduct comprehensive market research",
+    context: "Expert researcher with analytical capabilities",
+    tools: [
+        "web_search",          // Search the internet
+        "data_analyzer",       // Analyze datasets
+        "chart_generator",     // Create visualizations
+        "pdf_reader",          // Read PDF documents
+        "calculator",          // Perform calculations
+        "report_writer"        // Generate reports
+    ]
+)
+```
+
+### Built-in Tools
+
+<CardGroup cols={2}>
+  <Card title="Web Search" icon="magnifying-glass">
+    Search the internet for current information
+
+    ```swift
+    tools: ["web_search"]
+    ```
+  </Card>
+
+  <Card title="Calculator" icon="calculator">
+    Perform mathematical calculations
+
+    ```swift
+    tools: ["calculator"]
+    ```
+  </Card>
+
+  <Card title="File Operations" icon="file">
+    Read, write, and manipulate files
+
+    ```swift
+    tools: ["file_reader", "file_writer"]
+    ```
+  </Card>
+
+  <Card title="Data Analysis" icon="chart-bar">
+    Analyze and process datasets
+
+    ```swift
+    tools: ["data_analyzer", "csv_processor"]
+    ```
+  </Card>
+
+  <Card title="Code Execution" icon="code">
+    Execute code safely
+
+    ```swift
+    tools: ["code_executor", "python_repl"]
+    ```
+  </Card>
+
+  <Card title="API Integration" icon="plug">
+    Call external APIs
+
+    ```swift
+    tools: ["api_caller", "rest_client"]
+    ```
+  </Card>
+</CardGroup>
+
+### Custom Tools
+
+Create domain-specific tools:
+
+<Tabs>
+  <Tab title="Define Tool">
+    ```swift
+    import OrbitAI
+
+    final class DatabaseQueryTool: BaseTool {
+        override var name: String { "database_query" }
+        override var description: String {
+            "Query the company database for information"
+        }
+
+        override var parametersSchema: JSONSchema {
+            JSONSchema(
+                type: .object,
+                properties: [
+                    "query": JSONSchema(
+                        type: .string,
+                        description: "SQL query to execute"
+                    ),
+                    "limit": JSONSchema(
+                        type: .integer,
+                        description: "Maximum rows to return"
+                    )
+                ],
+                required: ["query"]
+            )
+        }
+
+        override func execute(
+            with parameters: Metadata
+        ) async throws -> ToolResult {
+            guard let query = parameters["query"]?.stringValue else {
+                throw OrbitAIError.invalidToolParameters("Missing query")
+            }
+
+            let limit = parameters["limit"]?.intValue ?? 100
+
+            // Execute database query
+            let results = try await database.execute(query, limit: limit)
+
+            var resultData = Metadata()
+            resultData["rows"] = .array(results.map { .dictionary($0) })
+            resultData["count"] = .int(results.count)
+
+            return ToolResult(success: true, data: resultData)
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Register Tool">
+    ```swift
+    // Register tool globally
+    let toolsHandler = ToolsHandler.shared
+    await toolsHandler.registerTool(DatabaseQueryTool())
+
+    // Use in agent
+    let agent = Agent(
+        role: "Data Analyst",
+        purpose: "Query and analyze company data",
+        context: "Expert in SQL and data analysis",
+        tools: ["database_query", "data_analyzer"]
+    )
+    ```
+  </Tab>
+
+  <Tab title="Tool Best Practices">
+    <Steps>
+      <Step title="Clear Naming">
+        Use descriptive, action-oriented names:
+        - ✅ `web_search`, `send_email`, `analyze_sentiment`
+        - ❌ `tool1`, `helper`, `process`
+      </Step>
+
+      <Step title="Detailed Descriptions">
+        Explain what the tool does and when to use it:
+
+        ```swift
+        description: """
+        Search the web for current information.
+        Use this when you need real-time data, news,
+        or information not in your training data.
+        """
+        ```
+      </Step>
+
+      <Step title="Schema Validation">
+        Define clear parameter schemas with descriptions:
+
+        ```swift
+        parametersSchema: JSONSchema(
+            type: .object,
+            properties: [
+                "query": JSONSchema(
+                    type: .string,
+                    description: "Search query (2-200 characters)"
+                )
+            ],
+            required: ["query"]
+        )
+        ```
+      </Step>
+
+      <Step title="Error Handling">
+        Provide meaningful error messages:
+
+        ```swift
+        if query.isEmpty {
+            throw OrbitAIError.invalidToolParameters(
+                "Query cannot be empty"
+            )
+        }
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+### Tool Selection
+
+Agents automatically select appropriate tools based on:
+1. **Task requirements**: Tools mentioned in task description
+2. **Agent configuration**: Available tools in agent's tool list
+3. **LLM reasoning**: Model determines when tools are needed
+4. **Context**: Previous tool usage and results
+
+```swift
+// Agent selects tools based on task
+let task = ORTask(
+    description: """
+    Research current AI trends, analyze the data,
+    and create a visualization chart.
+    """,
+    expectedOutput: "Research report with charts"
+)
+
+// Agent with multiple tools
+let agent = Agent(
+    role: "Research Analyst",
+    purpose: "Conduct and visualize research",
+    context: "Expert researcher with data viz skills",
+    tools: [
+        "web_search",      // Used for research
+        "data_analyzer",   // Used for analysis
+        "chart_generator"  // Used for visualization
+    ]
+)
+
+// Agent automatically selects tools in order:
+// 1. web_search for research
+// 2. data_analyzer for analysis
+// 3. chart_generator for visualization
+```
+
+## Structured Outputs
+
+### Type-Safe Output Generation
+
+Use Swift's Codable for structured responses:
+
+```swift
+struct AnalysisReport: Codable, Sendable {
+    let title: String
+    let executiveSummary: String
+    let findings: [Finding]
+    let recommendations: [Recommendation]
+    let confidence: Double
+    let generatedAt: Date
+
+    struct Finding: Codable, Sendable {
+        let category: String
+        let description: String
+        let impact: Impact
+        let evidence: [String]
+    }
+
+    struct Recommendation: Codable, Sendable {
+        let title: String
+        let description: String
+        let priority: Priority
+        let estimatedCost: Double?
+    }
+
+    enum Impact: String, Codable {
+        case high, medium, low
+    }
+
+    enum Priority: String, Codable {
+        case critical, high, medium, low
+    }
+}
+
+// Agent configured for structured output
+let agent = Agent(
+    role: "Business Analyst",
+    purpose: "Generate structured analysis reports",
+    context: "Expert analyst with strong reporting skills",
+    temperature: 0.3  // Lower for consistent structure
+)
+
+// Task with structured output
+let task = ORTask.withStructuredOutput(
+    description: "Analyze Q4 2024 business performance",
+    expectedType: AnalysisReport.self,
+    agent: agent.id
+)
+```
+
+### JSON Schema Validation
+
+Define schemas for output validation:
+
+```swift
+let reportSchema = JSONSchema(
+    type: .object,
+    properties: [
+        "title": JSONSchema(type: .string),
+        "summary": JSONSchema(type: .string),
+        "metrics": JSONSchema(
+            type: .object,
+            properties: [
+                "revenue": JSONSchema(type: .number),
+                "growth": JSONSchema(type: .number),
+                "customers": JSONSchema(type: .integer)
+            ]
+        ),
+        "recommendations": JSONSchema(
+            type: .array,
+            items: .init(value: JSONSchema(type: .string))
+        )
+    ],
+    required: ["title", "summary", "metrics"]
+)
+
+let task = ORTask(
+    description: "Generate quarterly business report",
+    expectedOutput: "Structured report with metrics and recommendations",
+    outputFormat: .structured(reportSchema)
+)
+```
+
+<Tip>
+  Use structured outputs for:
+  - API integrations
+  - Database storage
+  - UI rendering
+  - Data pipelines
+  - System integrations
+</Tip>
+
+## Best Practices
+
+### Agent Design
+
+<CardGroup cols={2}>
+  <Card title="Single Responsibility" icon="bullseye">
+    Design agents with one clear purpose
+
+    ✅ **Good:**
+    ```swift
+    role: "Email Response Specialist"
+    purpose: "Draft professional email responses"
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    role: "Everything Agent"
+    purpose: "Do all tasks"
+    ```
+  </Card>
+
+  <Card title="Domain Expertise" icon="graduation-cap">
+    Provide specific, relevant expertise
+
+    ✅ **Good:**
+    ```swift
+    context: """
+    Expert in GDPR compliance with knowledge of:
+    - Data protection principles
+    - Legal requirements
+    - Implementation best practices
+    """
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    context: "Knows about privacy"
+    ```
+  </Card>
+
+  <Card title="Appropriate Tools" icon="toolbox">
+    Only include necessary tools
+
+    ✅ **Good:**
+    ```swift
+    tools: ["web_search", "data_analyzer"]
+    // Relevant for research tasks
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    tools: ["web_search", "image_editor",
+            "video_processor", "code_executor"]
+    // Too many unrelated tools
+    ```
+  </Card>
+
+  <Card title="Temperature Tuning" icon="temperature-half">
+    Match temperature to task type
+
+    ✅ **Good:**
+    ```swift
+    // Data analysis
+    temperature: 0.2
+
+    // Creative writing
+    temperature: 0.9
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    // Always using default
+    temperature: 0.7
+    ```
+  </Card>
+</CardGroup>
+
+### Performance Optimization
+
+<AccordionGroup>
+  <Accordion title="Memory Management" icon="memory">
+    **Enable memory only when needed:**
+
+    ```swift
+    // Short tasks - no memory needed
+    let quickAgent = Agent(
+        role: "Quick Responder",
+        purpose: "Answer simple questions",
+        context: "General knowledge assistant",
+        memory: false  // No memory overhead
+    )
+
+    // Multi-turn conversations - enable memory
+    let conversationalAgent = Agent(
+        role: "Conversational Assistant",
+        purpose: "Engage in ongoing conversations",
+        context: "Friendly assistant with good memory",
+        memory: true,
+        longTermMemory: true
+    )
+    ```
+
+    **Benefits:**
+    - Reduced resource usage
+    - Faster execution
+    - Lower storage costs
+  </Accordion>
+
+  <Accordion title="Tool Selection" icon="wrench">
+    **Optimize tool assignment:**
+
+    ```swift
+    // Specific tools for specific tasks
+    let codeAgent = Agent(
+        role: "Code Reviewer",
+        purpose: "Review code for issues",
+        context: "Expert code reviewer",
+        tools: [
+            "code_analyzer",
+            "security_scanner"
+        ]  // Only relevant tools
+    )
+    ```
+
+    **Avoid:**
+    - Giving every agent all available tools
+    - Including tools the agent won't use
+    - Complex tools for simple tasks
+  </Accordion>
+
+  <Accordion title="Context Window" icon="window-maximize">
+    **Manage context efficiently:**
+
+    ```swift
+    let agent = Agent(
+        role: "Document Processor",
+        purpose: "Process long documents",
+        context: "Expert in document analysis",
+        respectContextWindow: true,  // Auto-manage
+        maxTokens: 2000             // Per-response limit
+    )
+    ```
+
+    **Strategies:**
+    - Enable `respectContextWindow` for auto-pruning
+    - Set appropriate `maxTokens` limits
+    - Use knowledge sources for large documents
+    - Implement chunking for very long content
+  </Accordion>
+
+  <Accordion title="Rate Limiting" icon="gauge">
+    **Prevent throttling:**
+
+    ```swift
+    let agent = Agent(
+        role: "Batch Processor",
+        purpose: "Process items in batches",
+        context: "Efficient batch processing agent",
+        maxRPM: 50,              // Stay under API limits
+        maxExecutionTime: 600    // 10 minute timeout
+    )
+    ```
+
+    **Benefits:**
+    - Avoid API rate limit errors
+    - Control costs
+    - Predictable performance
+  </Accordion>
+</AccordionGroup>
+
+### Security and Safety
+
+<Steps>
+  <Step title="Input Validation">
+    Validate all inputs and parameters:
+
+    ```swift
+    // Sanitize user input
+    let sanitizedInput = userInput
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .replacingOccurrences(of: #"<script.*?</script>"#,
+                              with: "",
+                              options: .regularExpression)
+    ```
+  </Step>
+
+  <Step title="Access Control">
+    Limit agent access to sensitive operations:
+
+    ```swift
+    let publicAgent = Agent(
+        role: "Public Assistant",
+        purpose: "Help public users",
+        context: "Public-facing assistant",
+        tools: [
+            "web_search",      // Safe
+            "calculator"       // Safe
+        ]
+        // No file system access
+        // No database access
+        // No email sending
+    )
+    ```
+  </Step>
+
+  <Step title="Output Filtering">
+    Filter potentially harmful outputs:
+
+    ```swift
+    let agent = Agent(
+        role: "Content Generator",
+        purpose: "Generate user-facing content",
+        context: "Professional content creator",
+        guardrails: [
+            .noHarmfulContent,
+            .noPII,  // No personal information
+            .contentFilter
+        ]
+    )
+    ```
+  </Step>
+
+  <Step title="Audit Logging">
+    Track agent actions for security:
+
+    ```swift
+    let agent = Agent(
+        role: "Privileged Agent",
+        purpose: "Perform sensitive operations",
+        context: "Authorized for sensitive tasks",
+        verbose: true,  // Detailed logging
+        tools: ["database_access", "file_writer"]
+    )
+
+    // Monitor logs for suspicious activity
+    ```
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Agent Not Producing Expected Results" icon="circle-exclamation">
+    **Symptoms**: Agent outputs are off-target or low quality
+
+    **Common Causes:**
+    1. Vague or unclear role/purpose/context
+    2. Inappropriate temperature setting
+    3. Missing necessary tools
+    4. Insufficient context information
+
+    **Solutions:**
+
+    ```swift
+    // Before: Vague configuration
+    let vague = Agent(
+        role: "Helper",
+        purpose: "Help users",
+        context: "Helpful assistant"
+    )
+
+    // After: Clear, specific configuration
+    let specific = Agent(
+        role: "Technical Support Specialist",
+        purpose: "Diagnose and resolve technical issues for software users",
+        context: """
+        Expert technical support specialist with:
+        - 5+ years experience in software troubleshooting
+        - Deep knowledge of common technical issues
+        - Excellent problem-solving and communication skills
+        - Systematic approach to diagnostics
+
+        Always:
+        1. Ask clarifying questions
+        2. Provide step-by-step solutions
+        3. Explain technical concepts clearly
+        4. Verify issue resolution
+        """,
+        temperature: 0.4,  // Balanced for support tasks
+        tools: ["knowledge_base", "diagnostic_tool"]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Agent Timeouts" icon="clock">
+    **Symptoms**: Tasks fail with timeout errors
+
+    **Common Causes:**
+    1. Insufficient `maxExecutionTime`
+    2. Complex reasoning requiring many iterations
+    3. Slow tool execution
+    4. LLM provider latency
+
+    **Solutions:**
+
+    ```swift
+    // Increase execution time and iterations
+    let agent = Agent(
+        role: "Complex Problem Solver",
+        purpose: "Solve intricate problems",
+        context: "Expert problem solver",
+        maxExecutionTime: 1800,  // 30 minutes
+        maxIter: 25,             // More reasoning steps
+        tools: ["complex_analyzer"]
+    )
+
+    // Or use async execution
+    let task = ORTask(
+        description: "Long-running analysis",
+        expectedOutput: "Comprehensive analysis",
+        agent: agent.id,
+        async: true  // Don't block
+    )
+    ```
+
+    <Tip>
+      Monitor `averageExecutionTime` to set appropriate timeouts.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Tool Execution Failures" icon="wrench">
+    **Symptoms**: Agent reports tool execution errors
+
+    **Common Causes:**
+    1. Tool not registered with ToolsHandler
+    2. Invalid tool parameters
+    3. Tool permissions issues
+    4. Tool dependencies missing
+
+    **Solutions:**
+
+    ```swift
+    // Verify tool registration
+    let toolsHandler = ToolsHandler.shared
+    let isRegistered = await toolsHandler.isToolAvailable(
+        named: "my_custom_tool"
+    )
+
+    if !isRegistered {
+        await toolsHandler.registerTool(MyCustomTool())
+    }
+
+    // Add better error handling in tools
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        do {
+            // Tool logic
+            return ToolResult(success: true, data: result)
+        } catch {
+            return ToolResult(
+                success: false,
+                error: "Tool failed: \(error.localizedDescription)"
+            )
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Memory Issues" icon="database">
+    **Symptoms**: High memory usage or memory-related errors
+
+    **Common Causes:**
+    1. Memory enabled but not needed
+    2. Too many memory items stored
+    3. Large knowledge sources
+    4. Memory not being pruned
+
+    **Solutions:**
+
+    ```swift
+    // Configure memory limits
+    let memoryConfig = MemoryConfiguration(
+        maxMemoryItems: 50,        // Limit storage
+        compressionEnabled: true,   // Auto-summarize
+        pruneOldItems: true        // Remove old entries
+    )
+
+    let agent = Agent(
+        role: "Memory-Efficient Agent",
+        purpose: "Work efficiently with memory",
+        context: "Efficient agent design",
+        memory: true,
+        memoryConfig: memoryConfig
+    )
+
+    // Or disable memory if not needed
+    let simpleAgent = Agent(
+        role: "Simple Task Agent",
+        purpose: "Handle simple one-off tasks",
+        context: "Quick task handler",
+        memory: false  // No memory overhead
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Inconsistent Outputs" icon="shuffle">
+    **Symptoms**: Agent produces different outputs for same inputs
+
+    **Common Causes:**
+    1. High temperature setting
+    2. Non-deterministic tool behavior
+    3. Memory state differences
+    4. Random sampling in LLM
+
+    **Solutions:**
+
+    ```swift
+    // Lower temperature for consistency
+    let consistentAgent = Agent(
+        role: "Data Processor",
+        purpose: "Process data consistently",
+        context: "Reliable data processing agent",
+        temperature: 0.0,  // Deterministic
+        tools: ["data_processor"]
+    )
+
+    // Use structured outputs
+    struct ProcessingResult: Codable, Sendable {
+        let status: String
+        let processedItems: Int
+        let errors: [String]
+    }
+
+    let task = ORTask.withStructuredOutput(
+        description: "Process data batch",
+        expectedType: ProcessingResult.self,
+        agent: consistentAgent.id
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Rate Limit Errors" icon="ban">
+    **Symptoms**: API rate limit exceeded errors
+
+    **Common Causes:**
+    1. No `maxRPM` configured
+    2. Too many concurrent agents
+    3. Rapid successive requests
+    4. Insufficient retry backoff
+
+    **Solutions:**
+
+    ```swift
+    // Configure rate limiting
+    let rateLimitedAgent = Agent(
+        role: "Controlled Agent",
+        purpose: "Respect API rate limits",
+        context: "Rate-aware agent",
+        maxRPM: 50,  // Limit requests per minute
+        tools: ["api_caller"]
+    )
+
+    // Implement exponential backoff
+    func executeWithBackoff(
+        agent: Agent,
+        task: ORTask,
+        maxRetries: Int = 3
+    ) async throws -> TaskOutput {
+        var lastError: Error?
+
+        for attempt in 1...maxRetries {
+            do {
+                return try await executor.executeTask(
+                    agent: agent,
+                    task: task
+                )
+            } catch let error as OrbitAIError {
+                if case .llmRateLimitExceeded = error {
+                    let delay = pow(2.0, Double(attempt))
+                    try await Task.sleep(for: .seconds(delay))
+                    lastError = error
+                } else {
+                    throw error
+                }
+            }
+        }
+
+        throw lastError ?? OrbitAIError.taskExecutionFailed("Max retries exceeded")
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Debugging Strategies
+
+<Steps>
+  <Step title="Enable Verbose Logging">
+    ```swift
+    let debugAgent = Agent(
+        role: "Debug Subject",
+        purpose: "Agent being debugged",
+        context: "Test agent for debugging",
+        verbose: true,  // Detailed logs
+        stepCallback: "onAgentStep"
+    )
+
+    func onAgentStep(step: AgentStep) {
+        print("=== Agent Step ===")
+        print("Thought: \(step.thought)")
+        print("Action: \(step.action)")
+        print("Observation: \(step.observation)")
+        print("================")
+    }
+    ```
+  </Step>
+
+  <Step title="Monitor Metrics">
+    ```swift
+    // Check agent performance
+    print("Execution count: \(await agent.executionCount)")
+    print("Avg time: \(await agent.averageExecutionTime)s")
+    print("Total tokens: \(await agent.totalUsageMetrics.totalTokens)")
+
+    // Analyze tool usage
+    if let taskOutput = result.output {
+        for toolUsage in taskOutput.toolsUsed {
+            print("Tool: \(toolUsage.toolName)")
+            print("Time: \(toolUsage.executionTime)s")
+            print("Success: \(toolUsage.success)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Test with Simple Tasks">
+    ```swift
+    // Start simple
+    let simpleTask = ORTask(
+        description: "What is 2 + 2?",
+        expectedOutput: "The number 4"
+    )
+
+    let result = try await executor.executeTask(
+        agent: agent,
+        task: simpleTask
+    )
+
+    // Verify basic functionality before complex tasks
+    assert(result.rawOutput.contains("4"))
+    ```
+  </Step>
+
+  <Step title="Isolate Components">
+    ```swift
+    // Test without tools
+    let noToolsAgent = Agent(
+        role: agent.role,
+        purpose: agent.purpose,
+        context: agent.context,
+        tools: nil  // Remove tools to isolate issue
+    )
+
+    // Test without memory
+    let noMemoryAgent = Agent(
+        role: agent.role,
+        purpose: agent.purpose,
+        context: agent.context,
+        memory: false,
+        longTermMemory: false
+    )
+
+    // Identify which component causes issues
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Tasks"
+    icon="list-check"
+    href="/tasks"
+  >
+    Learn how agents execute tasks
+  </Card>
+
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/tools"
+  >
+    Extend agent capabilities with tools
+  </Card>
+
+  <Card
+    title="Orbits"
+    icon="satellite"
+    href="/orbits"
+  >
+    Orchestrate agents in workflows
+  </Card>
+
+  <Card
+    title="Memory"
+    icon="brain"
+    href="/memory"
+  >
+    Implement memory systems
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
