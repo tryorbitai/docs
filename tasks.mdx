@@ -1,0 +1,997 @@
+---
+title: "Tasks"
+description: "Fundamental execution units in OrbitAI with defined requirements, constraints, and expected outputs"
+---
+
+## Overview
+
+OrbitAI Tasks are the fundamental execution units in the OrbitAI framework. A task represents a specific piece of work that needs to be completed by an AI agent, with defined requirements, constraints, and expected outputs.
+
+<CardGroup cols={3}>
+  <Card title="Type Safety" icon="shield-check">
+    Built with Swift's strong typing for compile-time safety
+  </Card>
+  <Card title="Async/Await" icon="bolt">
+    Native Swift concurrency for efficient execution
+  </Card>
+  <Card title="Structured Outputs" icon="brackets-curly">
+    Support for text and structured data outputs
+  </Card>
+  <Card title="Validation" icon="check-double">
+    Built-in guardrails and validation mechanisms
+  </Card>
+  <Card title="Monitoring" icon="chart-line">
+    Comprehensive telemetry and performance tracking
+  </Card>
+  <Card title="Flexibility" icon="wand-magic-sparkles">
+    Various output formats and execution patterns
+  </Card>
+</CardGroup>
+
+## Architecture
+
+OrbitAI's task system consists of several key components working together to orchestrate task execution:
+
+```
+ORTask (Task Definition)
+    ↓
+TaskExecutionEngine (Orchestrator)
+    ├── Agent Selection
+    ├── ToolsHandler Integration
+    ├── MemoryStorage Access
+    ├── KnowledgeBase Queries
+    └── TelemetryManager Tracking
+    ↓
+TaskResult → TaskOutput
+```
+
+### Key Components
+
+<AccordionGroup>
+  <Accordion title="ORTask" icon="file-code">
+    The main task definition structure containing all task specifications, requirements, and configuration.
+  </Accordion>
+
+  <Accordion title="TaskExecutionEngine" icon="gears">
+    Central orchestrator that manages task execution across agents, handles concurrency, and enforces constraints.
+  </Accordion>
+
+  <Accordion title="TaskResult" icon="circle-check">
+    Success/failure result wrapper that encapsulates execution outcomes and errors.
+  </Accordion>
+
+  <Accordion title="TaskOutput" icon="file-export">
+    Contains execution results, metadata, usage metrics, and tool execution information.
+  </Accordion>
+
+  <Accordion title="TaskExecutionContext" icon="layer-group">
+    Provides execution context including metadata and outputs from dependent tasks.
+  </Accordion>
+</AccordionGroup>
+
+## Task Parameters
+
+### Core Properties
+
+<Tabs>
+  <Tab title="Required">
+    | Property | Type | Description |
+    |----------|------|-------------|
+    | `id` | `OrbitAIID` | Unique identifier (UUID) for the task |
+    | `description` | `String` | Detailed description of what to accomplish |
+    | `expectedOutput` | `String` | Specification of output format and content |
+
+    ```swift
+    let task = ORTask(
+        description: "Analyze Q4 2024 sales data and identify top products",
+        expectedOutput: "JSON report with top 10 products by revenue"
+    )
+    ```
+  </Tab>
+
+  <Tab title="Optional">
+    | Property | Type | Description |
+    |----------|------|-------------|
+    | `agent` | `OrbitAIID?` | Optional agent ID assignment |
+    | `tools` | `[String]?` | List of tool names available |
+    | `async` | `Bool` | Asynchronous execution support |
+    | `context` | `[OrbitAIID]?` | IDs of tasks providing context |
+    | `outputFormat` | `OutputFormat` | Format specification (default: .text) |
+    | `outputFile` | `String?` | File path for saving output |
+    | `humanInput` | `Bool` | Requires human input |
+
+    ```swift
+    let task = ORTask(
+        description: "Generate market analysis report",
+        expectedOutput: "Comprehensive analysis in markdown",
+        agent: analystAgent.id,
+        tools: ["web_search", "data_analyzer"],
+        outputFormat: .markdown,
+        context: [researchTask.id]
+    )
+    ```
+  </Tab>
+
+  <Tab title="Execution Control">
+    | Property | Type | Description |
+    |----------|------|-------------|
+    | `maxExecutionTime` | `TimeInterval?` | Maximum execution time (seconds) |
+    | `guardrails` | `[TypeSafeGuardrail]?` | Safety and validation constraints |
+    | `retryLimit` | `Int?` | Maximum retry attempts |
+    | `validationStrictness` | `ValidationStrictness?` | Validation strictness level |
+
+    ```swift
+    let task = ORTask(
+        description: "Complex data processing task",
+        expectedOutput: "Processed data report",
+        maxExecutionTime: 600, // 10 minutes
+        guardrails: [.noHarmfulContent, .tokenLimit],
+        retryLimit: 3,
+        validationStrictness: .standard
+    )
+    ```
+  </Tab>
+
+  <Tab title="Execution State">
+    | Property | Type | Description |
+    |----------|------|-------------|
+    | `status` | `TaskStatus` | Current execution status |
+    | `result` | `TaskResult?` | Execution result (after completion) |
+    | `startTime` | `Date?` | When execution began |
+    | `endTime` | `Date?` | When execution completed |
+    | `executionTime` | `TimeInterval?` | Total execution duration |
+    | `usageMetrics` | `UsageMetrics?` | Token and usage metrics |
+
+    <Info>
+      Execution state properties are automatically managed by the TaskExecutionEngine during task execution.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Output Formats
+
+OrbitAI supports multiple output formats to meet different use cases:
+
+<CardGroup cols={2}>
+  <Card title="Text" icon="file-lines">
+    Plain text output for human-readable results
+    ```swift
+    outputFormat: .text
+    ```
+  </Card>
+
+  <Card title="JSON" icon="brackets-curly">
+    Generic JSON output for flexible data structures
+    ```swift
+    outputFormat: .json
+    ```
+  </Card>
+
+  <Card title="Markdown" icon="markdown">
+    Markdown formatted text for documentation
+    ```swift
+    outputFormat: .markdown
+    ```
+  </Card>
+
+  <Card title="CSV" icon="table">
+    Comma-separated values for tabular data
+    ```swift
+    outputFormat: .csv
+    ```
+  </Card>
+
+  <Card title="XML" icon="code">
+    XML structured output for legacy systems
+    ```swift
+    outputFormat: .xml
+    ```
+  </Card>
+
+  <Card title="Structured" icon="diagram-project">
+    Schema-validated structured output
+    ```swift
+    outputFormat: .structured(schema)
+    ```
+  </Card>
+</CardGroup>
+
+### Structured Output Example
+
+```swift
+struct ReportData: Codable, Sendable {
+    let title: String
+    let summary: String
+    let findings: [String]
+    let recommendations: [String]
+    let confidence: Double
+}
+
+let task = ORTask.withStructuredOutput(
+    description: "Generate quarterly business report",
+    expectedType: ReportData.self,
+    agent: analystAgent.id
+)
+```
+
+<Tip>
+  Use structured outputs with Swift's `Codable` types for type-safe data handling and compile-time validation.
+</Tip>
+
+## Task Execution
+
+### Execution Patterns
+
+<Tabs>
+  <Tab title="Sequential">
+    Tasks execute one after another, with context updated between tasks:
+
+    ```swift
+    let results = try await taskEngine.executeTasks(
+        tasks: [researchTask, analysisTask, reportTask],
+        agents: availableAgents,
+        process: .sequential,
+        context: executionContext
+    )
+    ```
+
+    **Use when:**
+    - Tasks depend on previous results
+    - Order of execution matters
+    - Context needs to build progressively
+
+    <Info>
+      Sequential execution is the default and most common pattern for task workflows.
+    </Info>
+  </Tab>
+
+  <Tab title="Hierarchical">
+    A manager agent coordinates and delegates task assignment:
+
+    ```swift
+    let results = try await taskEngine.executeTasks(
+        tasks: complexTasks,
+        agents: workerAgents,
+        process: .hierarchical,
+        context: executionContext,
+        manager: managerAgent
+    )
+    ```
+
+    **Use when:**
+    - Complex coordination is needed
+    - Dynamic task distribution is required
+    - Manager oversight is beneficial
+
+    <Tip>
+      Hierarchical execution is ideal for complex projects requiring intelligent task delegation.
+    </Tip>
+  </Tab>
+
+  <Tab title="Flow-Based">
+    Complex dependency-based execution with topological sorting:
+
+    ```swift
+    let taskFlow = TaskFlow(
+        name: "Data Processing Pipeline",
+        tasks: [dataIngestionTask, transformTask, analysisTask],
+        stopOnFailure: true
+    )
+
+    let result = try await taskEngine.executeTaskFlow(
+        taskFlow: taskFlow,
+        agents: agents,
+        context: context
+    )
+    ```
+
+    **Use when:**
+    - Tasks have complex dependencies
+    - Parallel execution is possible
+    - DAG-based workflows are needed
+
+    <Warning>
+      Flow-based execution automatically detects and prevents circular dependencies.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Agent Selection
+
+The TaskExecutionEngine uses a multi-step approach for optimal agent selection:
+
+<Steps>
+  <Step title="Explicit Assignment">
+    Respects task-agent assignments when specified:
+
+    ```swift
+    let task = ORTask(
+        description: "Security vulnerability assessment",
+        expectedOutput: "Security report",
+        agent: securityExpertAgent.id // Explicit assignment
+    )
+    ```
+  </Step>
+
+  <Step title="Compatibility Scoring">
+    Evaluates tool compatibility and role relevance:
+
+    ```swift
+    // Engine calculates scores based on:
+    // - Tool availability (5 points per matching tool)
+    // - Domain expertise matching
+    // - Task complexity alignment
+    // - Previous success rates
+    ```
+  </Step>
+
+  <Step title="LLM-Based Selection">
+    Uses LLM reasoning for close decisions when scores are similar.
+  </Step>
+
+  <Step title="Caching">
+    Caches selections for similar tasks to improve performance.
+  </Step>
+</Steps>
+
+## Task Dependencies
+
+### Context Dependencies
+
+Tasks can depend on outputs from previous tasks:
+
+```swift
+let researchTask = ORTask(
+    description: "Research AI trends in healthcare",
+    expectedOutput: "Research findings with key trends"
+)
+
+let analysisTask = ORTask(
+    description: """
+    Analyze research findings for business impact.
+    Use the previous research: {task_0_output}
+    """,
+    expectedOutput: "Business analysis report",
+    context: [researchTask.id] // Depends on research output
+)
+```
+
+<Info>
+  Reference previous task outputs using `{task_N_output}` syntax in task descriptions, where N is the task index.
+</Info>
+
+### Conditional Tasks
+
+Execute tasks based on previous results:
+
+```swift
+let conditionalTask = ConditionalTask(
+    task: followUpTask,
+    condition: TaskCondition(
+        type: .outputContains,
+        taskId: previousTask.id,
+        expectedValue: "requires follow-up"
+    )
+)
+```
+
+### Dependency Resolution
+
+The system automatically handles dependency resolution:
+
+<AccordionGroup>
+  <Accordion title="Topological Sorting" icon="diagram-project">
+    Tasks are automatically sorted to ensure dependencies execute in the correct order:
+
+    ```swift
+    // Automatic topological sort ensures proper execution order
+    private func topologicalSort(tasks: [ORTask]) throws -> [ORTask] {
+        var sorted: [ORTask] = []
+        var visited: Set<OrbitAIID> = []
+        var visiting: Set<OrbitAIID> = []
+
+        func visit(_ task: ORTask) throws {
+            if visiting.contains(task.id) {
+                throw OrbitAIError.taskExecutionFailed("Circular dependency detected")
+            }
+
+            if visited.contains(task.id) { return }
+
+            visiting.insert(task.id)
+
+            // Visit dependencies first
+            if let dependencies = task.dependencies {
+                for depId in dependencies {
+                    if let depTask = tasks.first(where: { $0.id == depId }) {
+                        try visit(depTask)
+                    }
+                }
+            }
+
+            visiting.remove(task.id)
+            visited.insert(task.id)
+            sorted.append(task)
+        }
+
+        for task in tasks {
+            try visit(task)
+        }
+
+        return sorted
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Circular Dependency Detection" icon="circle-exclamation">
+    The system automatically detects and prevents circular dependencies, throwing an error when detected.
+
+    <Warning>
+      Circular dependencies will cause task execution to fail with `OrbitAIError.taskExecutionFailed`.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Task Results
+
+### Result Structure
+
+```swift
+public enum TaskResult: Codable, Sendable {
+    case success(TaskOutput)
+    case failure(OrbitAIError)
+
+    public var output: TaskOutput? { /* ... */ }
+    public var error: OrbitAIError? { /* ... */ }
+    public var isSuccess: Bool { /* ... */ }
+}
+```
+
+### Task Output Components
+
+```swift
+public struct TaskOutput: Codable, Sendable {
+    public let rawOutput: String           // Raw output text
+    public let structuredOutput: StructuredOutput? // Parsed structured data
+    public let usageMetrics: UsageMetrics  // Token/resource usage
+    public let toolsUsed: [ToolUsage]     // Tools that were executed
+    public let agentId: OrbitAIID         // Executing agent
+    public let taskId: OrbitAIID          // Source task
+    public let timestamp: Date            // Generation timestamp
+}
+```
+
+### Type-Safe Decoding
+
+<Tabs>
+  <Tab title="Direct Decoding">
+    ```swift
+    // Decode output to specific type
+    let reportData: ReportData = try taskOutput.decode(as: ReportData.self)
+    ```
+  </Tab>
+
+  <Tab title="Safe Decoding">
+    ```swift
+    // Check if output can be decoded
+    if taskOutput.canDecode(as: ReportData.self) {
+        let data = try taskOutput.decode(as: ReportData.self)
+        // Process structured data
+    } else {
+        // Fallback to raw text
+        print(taskOutput.rawOutput)
+    }
+    ```
+  </Tab>
+
+  <Tab title="Fallback Decoding">
+    ```swift
+    // Decode with automatic fallback strategies
+    let data = try taskOutput.decodeWithFallback(as: ReportData.self)
+    ```
+
+    Fallback strategies include:
+    1. Direct decoding
+    2. Wrapper unwrapping (`data`, `result`, `response`, `content` keys)
+    3. Field normalization (alternative field names)
+    4. Partial extraction with defaults
+    5. Markdown cleaning
+  </Tab>
+</Tabs>
+
+## Validation & Guardrails
+
+OrbitAI includes a comprehensive type-safe guardrail system for validation and safety:
+
+<CardGroup cols={2}>
+  <Card title="Content Safety" icon="shield-check">
+    **NoHarmfulContentGuardrail**
+
+    Checks for harmful keywords and patterns in content.
+
+    ```swift
+    guardrails: [.noHarmfulContent]
+    ```
+  </Card>
+
+  <Card title="Token Limits" icon="hashtag">
+    **TokenLimitGuardrail**
+
+    Enforces maximum token limits for content.
+
+    ```swift
+    TokenLimitGuardrail(
+        maxTokens: 8000,
+        model: "gpt-4o"
+    )
+    ```
+  </Card>
+
+  <Card title="Rate Limiting" icon="gauge">
+    **RateLimitGuardrail**
+
+    Prevents excessive requests from agents.
+
+    ```swift
+    RateLimitGuardrail(
+        maxRequestsPerMinute: 60
+    )
+    ```
+  </Card>
+
+  <Card title="Custom Guardrails" icon="code">
+    **OrbitGuardrail Protocol**
+
+    Implement custom validation logic.
+
+    ```swift
+    protocol OrbitGuardrail {
+        func check(context: Context) async throws -> GuardrailResult
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Validation Strictness
+
+Control how strictly task outputs are validated:
+
+```swift
+public enum ValidationStrictness: String, Codable {
+    case lenient   // Partial approvals accepted
+    case standard  // Balanced validation
+    case strict    // Even partial approvals require revision
+}
+```
+
+### Manager Validation
+
+Tasks can be validated by manager agents with feedback:
+
+```swift
+public enum TaskValidationResult {
+    case approved
+    case partiallyApproved(feedback: String)
+    case needsRevision(feedback: String)
+    case validationFailed
+}
+```
+
+## Metrics & Monitoring
+
+### Usage Metrics
+
+Comprehensive metrics are collected for each task execution:
+
+```swift
+public struct UsageMetrics: Codable, Sendable {
+    public let promptTokens: Int      // Tokens in prompts
+    public let completionTokens: Int  // Tokens in responses
+    public let totalTokens: Int       // Total token usage
+    public let successfulRequests: Int // Successful API calls
+    public let totalRequests: Int     // Total API calls made
+}
+```
+
+### Tool Usage Tracking
+
+```swift
+public struct ToolUsage: Codable, Sendable {
+    public let toolName: String       // Name of the tool used
+    public let executionTime: TimeInterval // Tool execution duration
+    public let success: Bool         // Execution success status
+    public let inputSize: Int        // Size of tool input
+    public let outputSize: Int       // Size of tool output
+}
+```
+
+### Performance Monitoring
+
+<AccordionGroup>
+  <Accordion title="Execution Metrics" icon="clock">
+    Key metrics tracked include:
+    - Task completion duration
+    - LLM token consumption
+    - Tool execution statistics
+    - Success/failure ratios
+  </Accordion>
+
+  <Accordion title="Agent Performance" icon="robot">
+    Per-agent execution metrics:
+    - Average task completion time
+    - Success rate
+    - Token efficiency
+    - Tool utilization
+  </Accordion>
+
+  <Accordion title="Resource Usage" icon="server">
+    Resource consumption tracking:
+    - Memory usage
+    - API call counts
+    - Cache hit rates
+    - Concurrent task counts
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+### Task Design
+
+<CardGroup cols={2}>
+  <Card title="Clear Descriptions" icon="file-lines">
+    Write specific, actionable task descriptions
+
+    ✅ **Good:**
+    ```swift
+    description: """
+    Analyze Q4 2024 sales data and provide:
+    1. Top 10 products by revenue
+    2. Regional performance trends
+    3. Customer segment analysis
+    """
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    description: "Look at sales stuff"
+    ```
+  </Card>
+
+  <Card title="Defined Outputs" icon="file-export">
+    Specify expected output format clearly
+
+    ✅ **Good:**
+    ```swift
+    expectedOutput: """
+    JSON report with:
+    - products: Array of {name, revenue}
+    - trends: Object with regional data
+    - analysis: String summary
+    """
+    ```
+
+    ❌ **Bad:**
+    ```swift
+    expectedOutput: "Some insights"
+    ```
+  </Card>
+
+  <Card title="Appropriate Scope" icon="sitemap">
+    Keep tasks focused and reasonably sized
+
+    <Tip>
+      Break large tasks into smaller, manageable subtasks for better control and debugging.
+    </Tip>
+  </Card>
+
+  <Card title="Tool Selection" icon="wrench">
+    Choose relevant tools for requirements
+
+    ```swift
+    tools: [
+        "csv_analyzer",
+        "chart_generator",
+        "statistical_analyzer"
+    ]
+    ```
+  </Card>
+</CardGroup>
+
+### Error Handling
+
+Configure appropriate error handling and retry mechanisms:
+
+```swift
+let task = ORTask(
+    description: "Generate comprehensive market analysis",
+    expectedOutput: "Market analysis report with trends",
+    maxExecutionTime: 600, // 10 minutes
+    retryLimit: 3,
+    guardrails: [.noHarmfulContent, .tokenLimit],
+    validationStrictness: .standard
+)
+```
+
+<Warning>
+  Always set reasonable execution timeouts to prevent tasks from running indefinitely.
+</Warning>
+
+### Structured Outputs
+
+Use strongly-typed output structures when possible:
+
+```swift
+struct MarketAnalysis: Codable, Sendable {
+    let executiveSummary: String
+    let marketTrends: [TrendData]
+    let competitorAnalysis: [CompetitorInfo]
+    let recommendations: [Recommendation]
+    let confidence: Double
+}
+
+let task = ORTask.withStructuredOutput(
+    description: "Generate Q4 2024 market analysis for tech sector",
+    expectedType: MarketAnalysis.self,
+    agent: analystAgent.id
+)
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Task Execution Timeouts" icon="clock">
+    **Symptoms**: Tasks fail with timeout errors
+
+    **Causes**:
+    - Insufficient execution time limits
+    - Complex tasks requiring more processing
+    - Agent inefficiency or loops
+
+    **Solutions**:
+    ```swift
+    // Increase timeout for complex tasks
+    let task = ORTask(
+        description: "Complex data analysis task",
+        expectedOutput: "Detailed analysis report",
+        maxExecutionTime: 1800 // 30 minutes
+    )
+
+    // Use async execution for long-running tasks
+    let asyncTask = ORTask(
+        description: "Long-running background analysis",
+        expectedOutput: "Analysis results",
+        async: true
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Structured Output Parsing Failures" icon="code">
+    **Symptoms**: JSON parsing errors, type mismatches
+
+    **Causes**:
+    - LLM returning malformed JSON
+    - Unexpected output format
+    - Missing required fields
+
+    **Solutions**:
+    ```swift
+    // Use fallback decoding with error recovery
+    do {
+        let data = try taskOutput.decodeWithFallback(as: ExpectedType.self)
+    } catch {
+        // Handle parsing failure gracefully
+        print("Failed to parse: \(error)")
+        let rawText = taskOutput.rawOutput
+        // Implement custom parsing
+    }
+
+    // Allow retries for malformed output
+    let task = ORTask.withStructuredOutput(
+        description: "Generate structured report",
+        expectedType: ReportData.self,
+        retryLimit: 2
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Agent Selection Issues" icon="user-gear">
+    **Symptoms**: Tasks assigned to inappropriate agents
+
+    **Causes**:
+    - Insufficient capability matching
+    - Missing tool assignments
+    - Poor role alignment
+
+    **Solutions**:
+    ```swift
+    // Explicit agent assignment for critical tasks
+    let criticalTask = ORTask(
+        description: "High-priority security analysis",
+        expectedOutput: "Security assessment report",
+        agent: securityExpertAgent.id // Explicit
+    )
+
+    // Better agent configuration
+    let specializedAgent = Agent(
+        role: "Security Analyst",
+        purpose: "Perform security assessments",
+        context: "Expert in cybersecurity with 10+ years experience",
+        tools: [
+            "vulnerability_scanner",
+            "threat_analyzer",
+            "compliance_checker"
+        ]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Memory & Performance Issues" icon="server">
+    **Symptoms**: High memory usage, slow execution
+
+    **Causes**:
+    - Too many concurrent tasks
+    - Insufficient resource limits
+    - Memory leaks
+
+    **Solutions**:
+    ```swift
+    // Configure resource limits
+    let taskEngine = TaskExecutionEngine(
+        agentExecutor: executor,
+        maxConcurrentTasks: 3, // Limit concurrency
+        enableVerboseLogging: false
+    )
+
+    // Use resource guardrails
+    let task = ORTask(
+        description: "Memory-intensive analysis",
+        expectedOutput: "Analysis results",
+        guardrails: [.resourceLimit]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Guardrail Violations" icon="shield-exclamation">
+    **Symptoms**: Tasks fail due to guardrail violations
+
+    **Causes**:
+    - Content safety issues
+    - Token limits exceeded
+    - Rate limits hit
+
+    **Solutions**:
+    ```swift
+    // Adjust guardrail thresholds
+    let tokenGuardrail = TokenLimitGuardrail(
+        maxTokens: 8000, // Increase limit
+        model: "gpt-4o"
+    )
+
+    // Use lenient validation for development
+    let task = ORTask(
+        description: "Development task",
+        expectedOutput: "Development output",
+        validationStrictness: .lenient
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Debugging Tips
+
+<Steps>
+  <Step title="Enable Verbose Logging">
+    ```swift
+    let taskEngine = TaskExecutionEngine(
+        agentExecutor: executor,
+        enableVerboseLogging: true
+    )
+
+    let verboseAgent = Agent(
+        role: "Debug Agent",
+        purpose: "Debugging task execution",
+        context: "Debug context",
+        verbose: true
+    )
+    ```
+  </Step>
+
+  <Step title="Monitor Execution Status">
+    ```swift
+    // Check execution status periodically
+    let status = await taskEngine.getExecutionStatus()
+    print("Queued: \(status.queuedTasks)")
+    print("Active: \(status.activeTasks)")
+    print("Completed: \(status.completedTasks)")
+
+    // Monitor task progress
+    if let result = task.result {
+        switch result {
+        case .success(let output):
+            print("Execution time: \(task.executionTime ?? 0)s")
+            print("Tokens used: \(output.usageMetrics.totalTokens)")
+        case .failure(let error):
+            print("Task failed: \(error.localizedDescription)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Analyze Task Metrics">
+    ```swift
+    // Review detailed metrics
+    if let metrics = task.usageMetrics {
+        print("Prompt tokens: \(metrics.promptTokens)")
+        print("Completion tokens: \(metrics.completionTokens)")
+        print("Success rate: \(metrics.successfulRequests)/\(metrics.totalRequests)")
+    }
+
+    // Analyze tool usage
+    if let output = task.result?.output {
+        for toolUsage in output.toolsUsed {
+            print("Tool: \(toolUsage.toolName)")
+            print("Time: \(toolUsage.executionTime)s")
+            print("Success: \(toolUsage.success)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Test with Simple Tasks">
+    ```swift
+    // Start with simple test tasks
+    let testTask = ORTask(
+        description: "Simple test: add 2 + 2",
+        expectedOutput: "The number 4",
+        maxExecutionTime: 30
+    )
+
+    // Gradually increase complexity
+    let complexTask = ORTask(
+        description: "Complex analysis task...",
+        expectedOutput: "Detailed analysis...",
+        tools: ["analyzer_tool"],
+        maxExecutionTime: 300
+    )
+    ```
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Agents"
+    icon="robot"
+    href="/agents"
+  >
+    Learn how agents execute tasks
+  </Card>
+
+  <Card
+    title="Orbits"
+    icon="satellite"
+    href="/orbits"
+  >
+    Orchestrate tasks in workflows
+  </Card>
+
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/tools"
+  >
+    Extend task capabilities with tools
+  </Card>
+
+  <Card
+    title="Guardrails"
+    icon="shield-check"
+    href="/guardrails"
+  >
+    Implement validation and safety
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
