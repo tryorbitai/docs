@@ -12,7 +12,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "OrbitAI",
         "groups": [
           {
             "group": "Getting started",
@@ -23,33 +23,47 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "LLMs",
+              "agents",
+              "tasks",
+              "processes",
+              "orbits",
+              "Inputs",
+              "Outputs",
+              "tools",
+              "memory",
+              "knowledge-base",
+              "guardrails",
+              "telemetry"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Tools",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "apple-calendar",
+              "apple-reminders",
+              "core-location",
+              "directory-list",
+              "file-read",
+              "file-write",
+              "geocoding",
+              "local-notifications",
+              "weather-kit",
+              "web-scraping"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Learn",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "custom-LLM-implementation"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Orbit App",
         "groups": [
           {
             "group": "API documentation",
@@ -73,12 +87,12 @@
       "anchors": [
         {
           "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "href": "https://docs.tryorbiai.com",
           "icon": "book-open-cover"
         },
         {
           "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
+          "href": "https://blog.tryorbiai.com",
           "icon": "newspaper"
         }
       ]
@@ -91,14 +105,14 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "GitHub",
+        "href": "https://github.com/tryorbitai"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Contact Us",
+      "href": "mailto:hello@tryorbitai.com"
     }
   },
   "contextual": {
@@ -115,9 +129,9 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/tryorbitai",
+      "github": "https://github.com/tryorbitai",
+      "linkedin": "https://linkedin.com/company/tryorbitai"
     }
   }
 }
