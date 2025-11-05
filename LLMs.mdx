@@ -1,0 +1,869 @@
+---
+title: "LLMs"
+description: "Comprehensive guide to integrating and managing Large Language Models in OrbitAI applications"
+---
+
+## Overview
+
+OrbitAI provides a sophisticated Large Language Model integration layer that enables seamless interaction with multiple AI providers through a unified interface.
+
+<CardGroup cols={2}>
+  <Card title="Multi-Provider Support" icon="layer-group">
+    OpenAI, Anthropic, and extensible architecture for custom providers
+  </Card>
+  <Card title="Intelligent Routing" icon="route">
+    Automatic provider selection based on latency and success rate
+  </Card>
+  <Card title="Unified Interface" icon="cube">
+    Single API for all LLM operations regardless of provider
+  </Card>
+  <Card title="Advanced Features" icon="rocket">
+    Streaming, tool calling, structured output, and caching
+  </Card>
+  <Card title="Performance Monitoring" icon="chart-line">
+    Built-in metrics tracking and health monitoring
+  </Card>
+  <Card title="Type Safety" icon="shield-check">
+    Full Swift type safety with compile-time guarantees
+  </Card>
+</CardGroup>
+
+### Key Benefits
+
+<AccordionGroup>
+  <Accordion title="Vendor Independence" icon="arrows-rotate">
+    Switch between providers without code changes. Use the same API regardless of whether you're calling OpenAI, Anthropic, or a custom provider.
+  </Accordion>
+
+  <Accordion title="Automatic Failover" icon="life-ring">
+    Built-in redundancy and error recovery. If a provider fails or is rate-limited, requests automatically route to backup providers.
+  </Accordion>
+
+  <Accordion title="Cost Optimization" icon="dollar-sign">
+    Route to optimal providers based on cost and performance criteria. Balance quality with budget constraints automatically.
+  </Accordion>
+
+  <Accordion title="Developer Experience" icon="code">
+    Simple, consistent API across all providers with full Swift type safety and comprehensive error handling.
+  </Accordion>
+</AccordionGroup>
+
+## Architecture
+
+OrbitAI's LLM system consists of several key components working together:
+
+```
+LLMManager (Central Coordinator)
+    ├── Provider Registry
+    ├── Request Routing
+    ├── Response Caching
+    ├── Metrics Collection
+    └── Health Monitoring
+
+LLMProviders (Implementation Layer)
+    ├── OpenAIProvider
+    ├── AnthropicProvider
+    └── Custom Providers
+
+Models & Schemas (Type Safety)
+    ├── OpenAIModel enum
+    ├── AnthropicModel enum
+    ├── ChatMessage
+    ├── LLMRequest/Response
+    └── ToolSchema
+```
+
+### LLMManager: The Central Hub
+
+The `LLMManager` actor serves as the central coordination point for all LLM operations:
+
+- **Provider Management**: Register, configure, and manage multiple LLM providers
+- **Request Routing**: Intelligently route requests to optimal providers
+- **Response Caching**: Optional in-memory caching for improved performance
+- **Metrics & Health**: Track performance and monitor provider health
+- **Thread Safety**: Actor-based design ensures safe concurrent access
+
+## Setting Up LLM Providers
+
+<Steps>
+  <Step title="Configure Environment Variables">
+    Set up your API keys as environment variables:
+
+    ```bash .env
+    OPENAI_API_KEY=your-openai-api-key-here
+    ANTHROPIC_API_KEY=your-anthropic-api-key-here
+    OPENAI_ORG=your-organization-id  # Optional
+    ```
+
+    <Warning>
+      Never commit your API keys to version control. Always use environment variables or secure key storage.
+    </Warning>
+  </Step>
+
+  <Step title="Initialize LLM Manager">
+    Use factory methods for quick setup:
+
+    ```swift
+    import OrbitAI
+
+    // OpenAI with default configuration
+    let manager = try await LLMManager.createWithOpenAI(
+        apiKey: "your-openai-key",
+        model: .gpt4o
+    )
+
+    // OpenAI with advanced configuration
+    let advancedManager = try await LLMManager.createWithOpenAI(
+        apiKey: "your-openai-key",
+        model: .gpt4o,
+        cacheTTL: 300,           // 5 minutes
+        cacheCapacity: 256,      // Max cached responses
+        enableCaching: true,
+        defaultTimeout: 30,      // 30 seconds
+        enableMetrics: true,
+        organization: "org_123",
+        maxAttempts: 3,          // Retry attempts
+        logRetries: true
+    )
+    ```
+  </Step>
+
+  <Step title="Register Providers">
+    For more control, manually register providers:
+
+    ```swift
+    let manager = LLMManager(
+        enableMetrics: true,
+        enableCaching: true,
+        defaultTimeout: 30
+    )
+
+    // Register OpenAI provider
+    let openAIProvider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: "your-openai-key"
+    )
+    await manager.registerProvider(openAIProvider, asDefault: true)
+
+    // Register Anthropic provider as fallback
+    let anthropicProvider = AnthropicProvider(
+        model: .claude35Sonnet,
+        apiKey: "your-anthropic-key"
+    )
+    await manager.registerProvider(anthropicProvider)
+    ```
+  </Step>
+
+  <Step title="Environment-Based Setup">
+    Use automatic environment configuration:
+
+    ```swift
+    // Automatically uses OPENAI_API_KEY, OPENAI_ORG, etc.
+    let provider = try OpenAIProvider.fromEnvironment(
+        model: .gpt4o
+    )
+    let manager = LLMManager()
+    await manager.registerProvider(provider, asDefault: true)
+    ```
+  </Step>
+</Steps>
+
+## Provider Configuration
+
+<Tabs>
+  <Tab title="OpenAI">
+    ### Standard Configuration
+
+    ```swift
+    let openAIProvider = try OpenAIProvider(
+        model: .gpt4o,                    // Model selection
+        apiKey: "your-api-key",
+        apiBase: "https://api.openai.com/v1",
+        organization: "org_123",           // Optional
+        maxAttempts: 3,                   // Retry attempts
+        logRetries: false,                // Log retry attempts
+        allowInsecureAPIBase: false       // Allow HTTP endpoints
+    )
+    ```
+
+    ### Available Models
+
+    ```swift
+    // Latest and most capable models
+    .gpt5          // GPT-5 (when available)
+    .gpt41         // GPT-4.1
+    .gpt4o         // GPT-4o (recommended)
+    .gpt4oMini     // Cost-effective variant
+
+    // Reasoning models
+    .gptO3         // GPT-o3
+    .gptO3Mini     // GPT-o3 Mini
+    .gptO3Pro      // GPT-o3 Pro
+    .gptO4Mini     // GPT-o4 Mini
+
+    // Shortcuts
+    .default       // Currently gpt4oMini
+    .highQuality   // Currently gpt5
+    .economic      // Currently gptO3Mini
+    ```
+
+    ### AI Proxy Configuration
+
+    For using AI proxy services:
+
+    ```swift
+    let proxyProvider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: "",  // Empty if using proxy auth
+        aiProxyPartialKey: "your-partial-key",
+        clientID: "your-client-id"
+    )
+    ```
+  </Tab>
+
+  <Tab title="Anthropic">
+    ### Configuration
+
+    ```swift
+    let anthropicProvider = AnthropicProvider(
+        model: .claude35Sonnet,
+        apiKey: "your-anthropic-key",
+        apiBase: "https://api.anthropic.com/v1"
+    )
+    ```
+
+    ### Available Models
+
+    ```swift
+    .claude35Sonnet    // Claude 3.5 Sonnet (recommended)
+    .claude35Haiku     // Claude 3.5 Haiku (fast, cost-effective)
+    .claude3Opus       // Claude 3 Opus (highest capability)
+    .default           // Currently claude35Sonnet
+    ```
+  </Tab>
+
+  <Tab title="Multi-Provider">
+    ### Setup Multiple Providers
+
+    Configure multiple providers for redundancy:
+
+    ```swift
+    let manager = LLMManager()
+
+    // Primary: OpenAI GPT-4o for high-quality tasks
+    let primaryProvider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: openAIKey
+    )
+    await manager.registerProvider(primaryProvider, asDefault: true)
+
+    // Secondary: GPT-4o Mini for cost-sensitive tasks
+    let economicProvider = try OpenAIProvider(
+        model: .gpt4oMini,
+        apiKey: openAIKey
+    )
+    await manager.registerProvider(economicProvider)
+
+    // Fallback: Anthropic Claude for diversity
+    let fallbackProvider = AnthropicProvider(
+        model: .claude35Sonnet,
+        apiKey: anthropicKey
+    )
+    await manager.registerProvider(fallbackProvider)
+    ```
+  </Tab>
+</Tabs>
+
+## Integration with Agents
+
+### Agent-Level Configuration
+
+Agents can be configured to use specific LLM providers:
+
+```swift
+// Using typed provider ID (recommended)
+let researchAgent = Agent(
+    role: "Senior Research Analyst",
+    purpose: "Conduct comprehensive market research",
+    context: "Expert in data analysis with 10 years experience",
+    llmID: .openAI,  // Type-safe provider selection
+    tools: ["web_search", "data_analysis"],
+    verbose: true
+)
+```
+
+<Info>
+  The `llmID` parameter uses type-safe enums to ensure you're referencing valid providers configured in your system.
+</Info>
+
+### Agent Factory
+
+Use AgentFactory for pre-configured agents:
+
+```swift
+// Research agent with specific LLM
+let researcher = AgentFactory.createResearchAgent(
+    goal: "Analyze AI market trends for Q4 2024",
+    llmID: .openAI,
+    tools: ["web_search", "data_analysis", "report_generator"]
+)
+
+// Writing agent with different LLM for creative tasks
+let writer = AgentFactory.createWritingAgent(
+    goal: "Write compelling product descriptions",
+    llmID: .anthropic,  // Anthropic for creative writing
+    tools: ["content_optimization"]
+)
+```
+
+### Orbit-Level Integration
+
+Orbits automatically handle LLM provider setup:
+
+```swift
+let orbit = try await Orbit.create(
+    name: "Content Creation Pipeline",
+    agents: [researcher, writer, editor],
+    tasks: [researchTask, writingTask, editingTask],
+    process: .sequential,
+    verbose: true
+)
+
+// Orbit automatically creates and configures LLMManager
+// Uses environment variables: OPENAI_API_KEY, ANTHROPIC_API_KEY
+```
+
+For manual configuration:
+
+```swift
+let orbit = try await Orbit.create(
+    agents: [agents],
+    tasks: [tasks]
+)
+
+// Configure custom LLM provider
+let customProvider = try OpenAIProvider(
+    model: .gpt4o,
+    apiKey: customKey,
+    apiBase: "https://custom-endpoint.com/v1"
+)
+await orbit.configureLLMProvider(customProvider, asDefault: true)
+```
+
+## Custom Endpoints & Local Models
+
+<AccordionGroup>
+  <Accordion title="Ollama Integration" icon="server">
+    Configure OrbitAI to use Ollama for local models:
+
+    ```swift
+    let ollamaProvider = try OpenAIProvider(
+        model: .gpt4o,  // Use any model enum
+        apiKey: "ollama", // Ollama doesn't require real API key
+        apiBase: "http://localhost:11434/v1",
+        allowInsecureAPIBase: true  // Allow HTTP for local development
+    )
+
+    await manager.registerProvider(ollamaProvider)
+    ```
+
+    <Tip>
+      Ollama provides a local, OpenAI-compatible API endpoint, making integration seamless.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="LM Studio Setup" icon="desktop">
+    ```swift
+    let lmStudioProvider = try OpenAIProvider(
+        model: .gpt4oMini,
+        apiKey: "lm-studio",
+        apiBase: "http://localhost:1234/v1",
+        allowInsecureAPIBase: true
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Custom Providers" icon="code">
+    Implement the `LLMProvider` protocol for custom APIs:
+
+    ```swift
+    public actor CustomModelProvider: LLMProvider, LLMProviderIdentifiable {
+        public let providerName: String = "CustomModel"
+        public let providerID: LLMProviderID = .custom
+        public let modelName: String
+        public let maxTokens: Int = 4096
+        public let supportsStreaming: Bool = true
+        public let supportsToolCalling: Bool = false
+
+        private let endpoint: String
+        private let apiKey: String
+
+        public init(modelName: String, endpoint: String, apiKey: String) {
+            self.modelName = modelName
+            self.endpoint = endpoint
+            self.apiKey = apiKey
+        }
+
+        public func generateCompletion(
+            messages: [ChatMessage],
+            temperature: Double?,
+            maxTokens: Int?,
+            tools: [ToolSchema]?
+        ) async throws -> LLMResponse {
+            // Implement your custom API integration
+            // Convert ChatMessages to your API format
+            // Make HTTP request to your endpoint
+            // Parse response and return LLMResponse
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+### Provider Selection
+
+<CardGroup cols={2}>
+  <Card title="GPT-4o" icon="brain">
+    **Best for:** Complex reasoning, analysis, high-quality output
+
+    Use when accuracy and capability are paramount
+  </Card>
+
+  <Card title="GPT-4o Mini" icon="gauge-high">
+    **Best for:** Simple tasks, summaries, classification
+
+    Cost-effective for high-volume operations
+  </Card>
+
+  <Card title="Claude 3.5 Sonnet" icon="pen-fancy">
+    **Best for:** Creative writing, long-form content
+
+    Excellent for content generation
+  </Card>
+
+  <Card title="Claude 3.5 Haiku" icon="bolt">
+    **Best for:** Fast responses, simple queries
+
+    Optimized for speed and efficiency
+  </Card>
+</CardGroup>
+
+### Intelligent Routing
+
+Use `ProviderSelectionCriteria` for automatic provider selection:
+
+```swift
+let highQualityCriteria = ProviderSelectionCriteria(
+    preferredModel: OpenAIModel.gpt4o,
+    maxLatency: 2.0,
+    minSuccessRate: 0.95,
+    requiresStreaming: false,
+    requiresTools: true
+)
+
+let economicCriteria = ProviderSelectionCriteria(
+    preferredModel: OpenAIModel.gpt4oMini,
+    maxCostPerToken: 0.001,
+    requiresStreaming: true
+)
+
+// Route based on task requirements
+let response = try await manager.routeRequest(
+    request: request,
+    criteria: highQualityCriteria
+)
+```
+
+### Context Management
+
+#### Effective System Messages
+
+```swift
+let agent = Agent(
+    role: "Financial Analyst",
+    purpose: "Analyze financial data and provide investment insights",
+    context: """
+    You are a senior financial analyst with 15 years of experience in equity research.
+    Your expertise includes:
+    - Financial statement analysis
+    - Market trend identification
+    - Risk assessment
+    - Investment recommendations
+
+    Always provide specific, actionable insights backed by data.
+    Use appropriate financial terminology and explain complex concepts clearly.
+    """,
+    temperature: 0.3  // Lower temperature for analytical tasks
+)
+```
+
+<Tip>
+  Use lower temperatures (0.1-0.3) for analytical tasks and higher temperatures (0.7-0.9) for creative tasks.
+</Tip>
+
+### Performance Optimization
+
+#### Caching Strategy
+
+```swift
+let manager = LLMManager(
+    enableCaching: true,
+    cacheTTL: 300,      // 5 minutes for stable responses
+    cacheCapacity: 512  // Balance memory usage
+)
+
+// Cache-friendly requests
+let request = LLMRequest(
+    messages: normalizedMessages,  // Consistent formatting
+    temperature: 0.0,  // Deterministic for better cache hits
+    bypassCache: false
+)
+```
+
+#### Streaming for Real-Time
+
+```swift
+let stream = try await manager.generateStreamingCompletion(request: request)
+
+for try await chunk in stream {
+    if let content = chunk.content {
+        // Update UI incrementally
+        await MainActor.run {
+            textView.text += content
+        }
+    }
+
+    if let usage = chunk.usageMetrics {
+        // Track token usage
+        updateMetrics(usage)
+    }
+}
+```
+
+## Advanced Features
+
+<AccordionGroup>
+  <Accordion title="Structured Output" icon="brackets-curly">
+    Force LLMs to return structured JSON responses:
+
+    ```swift
+    let productSchema = JSONSchema(
+        type: .object,
+        properties: [
+            "name": JSONSchema(type: .string, description: "Product name"),
+            "price": JSONSchema(type: .number, description: "Price in USD"),
+            "category": JSONSchema(type: .string, description: "Product category"),
+            "features": JSONSchema(
+                type: .array,
+                items: .init(value: JSONSchema(type: .string)),
+                description: "List of key features"
+            )
+        ],
+        required: ["name", "price", "category"]
+    )
+
+    let response = try await manager.generateStructuredCompletion(
+        request: LLMRequest(messages: [.user("Create a product for wireless headphones")]),
+        schema: productSchema,
+        preferNative: true
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Tool Calling" icon="wrench">
+    Define tools for LLM use:
+
+    ```swift
+    let webSearchTool = ToolSchema(
+        function: FunctionSchema(
+            name: "web_search",
+            description: "Search the web for current information",
+            parameters: JSONSchema(
+                type: .object,
+                properties: [
+                    "query": JSONSchema(
+                        type: .string,
+                        description: "Search query"
+                    ),
+                    "num_results": JSONSchema(
+                        type: .integer,
+                        description: "Number of results (1-10)"
+                    )
+                ],
+                required: ["query"]
+            )
+        )
+    )
+
+    let requestWithTools = LLMRequest(
+        messages: [
+            .system("You can search the web for current information."),
+            .user("What are the latest developments in AI this week?")
+        ],
+        tools: [webSearchTool]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Batch Processing" icon="layer-group">
+    Process multiple requests concurrently:
+
+    ```swift
+    func processBatch(_ inputs: [String]) async throws -> [String] {
+        return try await withThrowingTaskGroup(of: (Int, String).self) { group in
+            for (index, input) in inputs.enumerated() {
+                group.addTask {
+                    let request = LLMRequest(messages: [.user(input)])
+                    let response = try await manager.generateCompletion(request: request)
+                    return (index, response.content)
+                }
+            }
+
+            var results = Array(repeating: "", count: inputs.count)
+            for try await (index, result) in group {
+                results[index] = result
+            }
+            return results
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Conversation Management" icon="comments">
+    Multi-turn conversations with context:
+
+    ```swift
+    actor ConversationManager {
+        private var messages: [ChatMessage] = []
+        private let manager: LLMManager
+        private let maxContextTokens: Int
+
+        init(manager: LLMManager, maxContextTokens: Int = 8000) {
+            self.manager = manager
+            self.maxContextTokens = maxContextTokens
+        }
+
+        func addUserMessage(_ content: String) async throws -> String {
+            messages.append(.user(content))
+
+            // Prune context if needed
+            await pruneContextIfNeeded()
+
+            let response = try await manager.generateCompletion(
+                request: LLMRequest(messages: messages)
+            )
+
+            messages.append(.assistant(response.content))
+            return response.content
+        }
+
+        private func pruneContextIfNeeded() async {
+            let tokenCount = try? await manager.countTokens(
+                request: LLMRequest(messages: messages)
+            )
+
+            if let count = tokenCount, count > maxContextTokens {
+                // Keep system message and recent messages
+                let systemMessages = messages.filter { $0.role == .system }
+                let recentMessages = Array(messages.suffix(10))
+                messages = systemMessages + recentMessages
+            }
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication Errors" icon="key">
+    **Problem**: `OrbitAIError.configuration("OPENAI_API_KEY missing")`
+
+    **Solutions**:
+    ```swift
+    // Verify environment variable
+    print(ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? "Not set")
+
+    // Pass API key explicitly
+    let provider = try OpenAIProvider(
+        model: .gpt4o,
+        apiKey: "your-actual-api-key-here"
+    )
+    ```
+
+    <Warning>
+      Verify your API key format. OpenAI keys start with `sk-`, Anthropic keys start with `sk-ant-`.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Rate Limiting" icon="gauge">
+    **Problem**: `OrbitAIError.llmRateLimitExceeded`
+
+    **Solutions**:
+    ```swift
+    // Implement backoff strategy
+    do {
+        let response = try await manager.generateCompletion(request: request)
+    } catch let error as OrbitAIError {
+        if case .llmRateLimitExceeded(let message) = error {
+            // Parse Retry-After header
+            if let retryAfter = parseRetryAfter(message) {
+                try await Task.sleep(for: .seconds(retryAfter))
+            }
+        }
+    }
+    ```
+
+    Monitor rate limits:
+    ```swift
+    let metrics = manager.getProviderMetrics()
+    for (provider, metric) in metrics {
+        print("\(provider): \(metric.successRate)% success rate")
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Timeout Issues" icon="clock">
+    **Problem**: Requests timing out
+
+    **Solutions**:
+    ```swift
+    // Increase timeout for complex requests
+    let response = try await manager.generateCompletion(
+        request: request,
+        timeout: 60  // Increase from default 30s
+    )
+
+    // Use streaming for long responses
+    let stream = try await manager.generateStreamingCompletion(request: request)
+    ```
+  </Accordion>
+
+  <Accordion title="Performance Issues" icon="chart-line">
+    **Diagnostics**:
+    ```swift
+    // Check provider metrics
+    let metrics = await manager.getProviderMetrics(id: .openAI)
+    print("Average latency: \(metrics?.averageLatency ?? 0)s")
+    print("P95 latency: \(metrics?.p95Latency ?? 0)s")
+    print("Success rate: \((metrics?.successRate ?? 0) * 100)%")
+
+    // Check cache performance
+    print("Cache size: \(manager.cacheSize())")
+    ```
+
+    **Solutions**:
+    - Clear stale cache entries
+    - Use consistent message formatting
+    - Consider provider switching for better performance
+  </Accordion>
+</AccordionGroup>
+
+## Security Considerations
+
+### API Key Management
+
+<Warning>
+  Never hardcode API keys in your source code. Use environment variables or secure key storage solutions.
+</Warning>
+
+```swift
+import Security
+
+class SecureAPIKeyManager {
+    private let service = "com.yourapp.orbitai"
+
+    func storeAPIKey(_ key: String, for provider: String) -> Bool {
+        let data = key.data(using: .utf8)!
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: provider,
+            kSecValueData as String: data
+        ]
+
+        SecItemDelete(query as CFDictionary)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        return status == errSecSuccess
+    }
+
+    func retrieveAPIKey(for provider: String) -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: provider,
+            kSecReturnData as String: true
+        ]
+
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        guard status == errSecSuccess,
+              let data = result as? Data,
+              let key = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return key
+    }
+}
+```
+
+### Request Sanitization
+
+```swift
+extension ChatMessage {
+    func sanitized() -> ChatMessage {
+        let sanitizedContent = content
+            .replacingOccurrences(of: #"<script.*?</script>"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"<.*?>"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return ChatMessage(role: role, content: sanitizedContent)
+    }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Agents"
+    icon="robot"
+    href="/agents"
+  >
+    Learn about agent-specific LLM configuration
+  </Card>
+
+  <Card
+    title="Tasks"
+    icon="list-check"
+    href="/tasks"
+  >
+    Explore task-level LLM integration
+  </Card>
+
+  <Card
+    title="Tools"
+    icon="wrench"
+    href="/tools"
+  >
+    Extend LLM capabilities with tools
+  </Card>
+
+  <Card
+    title="Orbits"
+    icon="satellite"
+    href="/orbits"
+  >
+    Understand Orbit-level orchestration
+  </Card>
+</CardGroup>
+
+<Note>
+  For additional support and advanced use cases, consult the [GitHub Discussions](https://github.com/tryorbitai/orbit-ai-swift/discussions) or check out the [Issue Tracker](https://github.com/tryorbitai/orbit-ai-swift/issues).
+</Note>
