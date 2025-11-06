@@ -1,0 +1,1732 @@
+---
+title: "Telemetry"
+description: "Monitor, measure, and optimize agent performance with comprehensive metrics and analytics."
+---
+
+## Overview
+
+Telemetry in OrbitAI provides real-time monitoring, performance metrics, and usage analytics across agents, tasks, and orbits. Track token consumption, execution times, API calls, tool usage, and costs to optimize performance, manage budgets, and debug issues effectively.
+
+<CardGroup cols={3}>
+  <Card title="Usage Metrics" icon="chart-line">
+    Track token usage, API calls, and request success rates
+  </Card>
+  <Card title="Performance Monitoring" icon="gauge-high">
+    Monitor execution times and identify bottlenecks
+  </Card>
+  <Card title="Cost Tracking" icon="dollar-sign">
+    Calculate and monitor LLM and API costs
+  </Card>
+  <Card title="Tool Analytics" icon="wrench">
+    Measure tool usage, execution time, and success rates
+  </Card>
+  <Card title="Real-Time Updates" icon="signal-stream">
+    Monitor live execution status and progress
+  </Card>
+  <Card title="Custom Integration" icon="plug">
+    Integrate with external analytics and monitoring systems
+  </Card>
+</CardGroup>
+
+### Key Capabilities
+
+<AccordionGroup>
+  <Accordion title="Hierarchical Metrics" icon="sitemap">
+    Telemetry data is collected at multiple levels—orbit, task, agent, and tool—providing both aggregated overview metrics and granular detail for deep analysis.
+  </Accordion>
+
+  <Accordion title="Automatic Collection" icon="wand-magic-sparkles">
+    Metrics are collected automatically during execution without any manual instrumentation. All usage data, timing information, and performance metrics are captured seamlessly.
+  </Accordion>
+
+  <Accordion title="Zero Configuration" icon="toggle-on">
+    Telemetry is enabled by default and requires no setup. Access comprehensive metrics immediately after execution through simple API calls.
+  </Accordion>
+
+  <Accordion title="Extensible Framework" icon="puzzle-piece">
+    Integrate custom telemetry managers to export data to your preferred analytics platform, logging service, or monitoring dashboard.
+  </Accordion>
+</AccordionGroup>
+
+## Telemetry Architecture
+
+```
+Telemetry Data Flow
+    ├── Orbit Level
+    │   ├── Total execution time
+    │   ├── Aggregated token usage
+    │   ├── Total API calls
+    │   └── All tasks metrics
+    │       │
+    │       ├── Task Level
+    │       │   ├── Task execution time
+    │       │   ├── Task token usage
+    │       │   ├── Task API calls
+    │       │   ├── Validation results
+    │       │   └── Tools used
+    │       │       │
+    │       │       └── Tool Level
+    │       │           ├── Tool name
+    │       │           ├── Execution time
+    │       │           ├── Success status
+    │       │           ├── Input size
+    │       │           └── Output size
+    │       │
+    │       └── Agent Level
+    │           ├── Execution count
+    │           ├── Average execution time
+    │           └── Cumulative metrics
+    │
+    └── External Integration
+        ├── TelemetryManager
+        ├── Custom Analytics
+        ├── Monitoring Dashboards
+        └── Alerting Systems
+```
+
+## Usage Metrics
+
+OrbitAI tracks comprehensive usage metrics to help you understand resource consumption and API usage patterns.
+
+### UsageMetrics Structure
+
+```swift
+public struct UsageMetrics: Codable, Sendable {
+    public let promptTokens: Int          // Tokens in prompts
+    public let completionTokens: Int      // Tokens in responses
+    public let totalTokens: Int           // Total token usage
+    public let successfulRequests: Int    // Successful API calls
+    public let totalRequests: Int         // Total API calls made
+}
+```
+
+<Tabs>
+  <Tab title="Token Metrics">
+    **Token Usage Tracking**
+
+    ```swift
+    let result = try await orbit.run()
+    let metrics = result.usageMetrics
+
+    print("Token Usage:")
+    print("  Prompt tokens: \(metrics.promptTokens)")
+    print("  Completion tokens: \(metrics.completionTokens)")
+    print("  Total tokens: \(metrics.totalTokens)")
+    ```
+
+    **Understanding Token Counts**:
+    - **Prompt tokens**: Input sent to LLM (system messages, user input, context, tools)
+    - **Completion tokens**: LLM-generated output (responses, tool calls, reasoning)
+    - **Total tokens**: Sum of prompt and completion tokens
+
+    **Why it matters**:
+    - Track API costs (billed per token)
+    - Optimize prompt efficiency
+    - Monitor context window usage
+    - Identify verbose agents
+  </Tab>
+
+  <Tab title="API Call Metrics">
+    **Request Tracking**
+
+    ```swift
+    let metrics = result.usageMetrics
+
+    print("API Calls:")
+    print("  Successful: \(metrics.successfulRequests)")
+    print("  Total: \(metrics.totalRequests)")
+    print("  Failed: \(metrics.totalRequests - metrics.successfulRequests)")
+
+    // Calculate success rate
+    let successRate = Double(metrics.successfulRequests) /
+                     Double(metrics.totalRequests) * 100
+    print("  Success rate: \(String(format: "%.1f", successRate))%")
+    ```
+
+    **API Call Categories**:
+    - **Successful**: Completed without errors
+    - **Failed**: Network errors, rate limits, timeouts, or API errors
+
+    **Why it matters**:
+    - Monitor reliability
+    - Detect rate limiting issues
+    - Identify problematic integrations
+    - Track retry overhead
+  </Tab>
+
+  <Tab title="Access Patterns">
+    **Orbit-Level Metrics**:
+    ```swift
+    let orbitOutput = try await orbit.run()
+    let metrics = orbitOutput.usageMetrics
+    // Aggregated across all tasks
+    ```
+
+    **Task-Level Metrics**:
+    ```swift
+    for taskOutput in orbitOutput.taskOutputs {
+        let taskMetrics = taskOutput.usageMetrics
+        print("Task: \(taskOutput.description)")
+        print("  Tokens: \(taskMetrics.totalTokens)")
+    }
+    ```
+
+    **Agent-Level Metrics**:
+    ```swift
+    let agent = await orbit.getAgents().first!
+    let agentMetrics = await agent.totalUsageMetrics
+    print("Agent cumulative tokens: \(agentMetrics.totalTokens)")
+    ```
+  </Tab>
+</Tabs>
+
+### Accessing Usage Metrics
+
+<Steps>
+  <Step title="Execute Orbit">
+    Run your orbit to generate telemetry data:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Analytics Workflow",
+        agents: agents,
+        tasks: tasks
+    )
+
+    let result = try await orbit.run()
+    ```
+  </Step>
+
+  <Step title="Access Aggregated Metrics">
+    Get orbit-wide metrics from the output:
+
+    ```swift
+    let metrics = result.usageMetrics
+
+    print("=== Orbit Metrics ===")
+    print("Total tokens: \(metrics.totalTokens)")
+    print("Prompt tokens: \(metrics.promptTokens)")
+    print("Completion tokens: \(metrics.completionTokens)")
+    print("API calls: \(metrics.totalRequests)")
+    print("Successful: \(metrics.successfulRequests)")
+    ```
+  </Step>
+
+  <Step title="Analyze Per-Task Metrics">
+    Drill down into individual task performance:
+
+    ```swift
+    for (index, taskOutput) in result.taskOutputs.enumerated() {
+        print("\n=== Task \(index + 1) ===")
+        print("Description: \(taskOutput.description)")
+
+        if let taskMetrics = taskOutput.usageMetrics {
+            print("Tokens: \(taskMetrics.totalTokens)")
+            print("Requests: \(taskMetrics.totalRequests)")
+            print("Success rate: \(taskMetrics.successfulRequests)/\(taskMetrics.totalRequests)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Review Agent Statistics">
+    Check agent-level cumulative metrics:
+
+    ```swift
+    let agents = await orbit.getAgents()
+
+    for agent in agents {
+        let agentMetrics = await agent.totalUsageMetrics
+        let execCount = await agent.executionCount
+        let avgTime = await agent.averageExecutionTime
+
+        print("\n=== \(agent.role) ===")
+        print("Executions: \(execCount)")
+        print("Avg time: \(String(format: "%.2f", avgTime))s")
+        print("Total tokens: \(agentMetrics.totalTokens)")
+        print("Avg tokens/exec: \(agentMetrics.totalTokens / max(1, execCount))")
+    }
+    ```
+  </Step>
+</Steps>
+
+## Performance Monitoring
+
+Track execution times and identify performance bottlenecks across your agent workflows.
+
+### Execution Time Metrics
+
+<Tabs>
+  <Tab title="Orbit Execution Time">
+    **Total Workflow Duration**
+
+    ```swift
+    let result = try await orbit.run()
+
+    print("Workflow Performance:")
+    print("  Total execution: \(result.executionTime)s")
+
+    // Break down by tasks
+    var totalTaskTime: TimeInterval = 0
+    for (index, taskOutput) in result.taskOutputs.enumerated() {
+        if let task = orbit.tasks[safe: index],
+           let execTime = task.executionTime {
+            totalTaskTime += execTime
+            print("  Task \(index + 1): \(String(format: "%.2f", execTime))s")
+        }
+    }
+
+    // Calculate overhead (orchestration, validation, etc.)
+    let overhead = result.executionTime - totalTaskTime
+    print("  Orchestration overhead: \(String(format: "%.2f", overhead))s")
+    ```
+
+    **Components**:
+    - Task execution time (agent processing)
+    - Tool execution time
+    - Orchestration overhead (task coordination, validation)
+    - Sequential vs parallel timing
+  </Tab>
+
+  <Tab title="Task Execution Time">
+    **Per-Task Performance**
+
+    ```swift
+    let tasks = await orbit.getTasks()
+
+    for task in tasks {
+        print("\nTask: \(task.description)")
+        print("  Status: \(task.status)")
+
+        if let startTime = task.startTime,
+           let endTime = task.endTime {
+            let duration = endTime.timeIntervalSince(startTime)
+            print("  Started: \(startTime.formatted())")
+            print("  Ended: \(endTime.formatted())")
+            print("  Duration: \(String(format: "%.2f", duration))s")
+        }
+
+        if let execTime = task.executionTime {
+            print("  Execution time: \(String(format: "%.2f", execTime))s")
+        }
+    }
+    ```
+
+    **Task Timing Breakdown**:
+    - Agent thinking/reasoning time
+    - LLM API call latency
+    - Tool execution duration
+    - Validation and guardrail checks
+  </Tab>
+
+  <Tab title="Agent Performance">
+    **Agent Efficiency Metrics**
+
+    ```swift
+    let agents = await orbit.getAgents()
+
+    for agent in agents {
+        let execCount = await agent.executionCount
+        let avgTime = await agent.averageExecutionTime
+        let totalMetrics = await agent.totalUsageMetrics
+
+        print("\n=== \(agent.role) ===")
+        print("Efficiency Metrics:")
+        print("  Executions: \(execCount)")
+        print("  Average time: \(String(format: "%.2f", avgTime))s")
+        print("  Tokens/execution: \(totalMetrics.totalTokens / max(1, execCount))")
+        print("  Requests/execution: \(totalMetrics.totalRequests / max(1, execCount))")
+
+        // Performance rating
+        let efficiency = avgTime < 10 &&
+                        totalMetrics.totalTokens / max(1, execCount) < 5000
+        print("  Rating: \(efficiency ? "⚡ Efficient" : "⚠️ Needs optimization")")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Identifying Bottlenecks
+
+<Steps>
+  <Step title="Sort Tasks by Execution Time">
+    Find the slowest tasks:
+
+    ```swift
+    let result = try await orbit.run()
+
+    // Create task timing array
+    let taskTimings = result.taskOutputs.enumerated().compactMap { (index, output) -> (Int, TimeInterval)? in
+        guard let task = orbit.tasks[safe: index],
+              let execTime = task.executionTime else {
+            return nil
+        }
+        return (index, execTime)
+    }
+
+    // Sort by execution time (descending)
+    let sortedByTime = taskTimings.sorted { $0.1 > $1.1 }
+
+    print("⚠️ Slowest Tasks:")
+    for (index, time) in sortedByTime.prefix(5) {
+        if let task = orbit.tasks[safe: index] {
+            let percentage = (time / result.executionTime) * 100
+            print("  \(index + 1). \(task.description)")
+            print("     Time: \(String(format: "%.2f", time))s (\(String(format: "%.1f", percentage))% of total)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Analyze Tool Performance">
+    Identify slow or failing tools:
+
+    ```swift
+    var toolStats: [String: (count: Int, totalTime: TimeInterval, failures: Int)] = [:]
+
+    for taskOutput in result.taskOutputs {
+        for toolUsage in taskOutput.toolsUsed {
+            if var stats = toolStats[toolUsage.toolName] {
+                stats.count += 1
+                stats.totalTime += toolUsage.executionTime
+                if !toolUsage.success {
+                    stats.failures += 1
+                }
+                toolStats[toolUsage.toolName] = stats
+            } else {
+                toolStats[toolUsage.toolName] = (
+                    1,
+                    toolUsage.executionTime,
+                    toolUsage.success ? 0 : 1
+                )
+            }
+        }
+    }
+
+    print("\n⚠️ Tool Performance Issues:")
+    for (tool, stats) in toolStats.sorted(by: { $0.value.totalTime > $1.value.totalTime }) {
+        let avgTime = stats.totalTime / Double(stats.count)
+        let failureRate = Double(stats.failures) / Double(stats.count) * 100
+
+        if avgTime > 5.0 || failureRate > 10 {
+            print("  \(tool):")
+            print("    Avg time: \(String(format: "%.2f", avgTime))s")
+            print("    Failure rate: \(String(format: "%.1f", failureRate))%")
+            print("    Calls: \(stats.count)")
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Calculate Task Efficiency">
+    Compare actual vs expected performance:
+
+    ```swift
+    for (index, taskOutput) in result.taskOutputs.enumerated() {
+        guard let task = orbit.tasks[safe: index],
+              let execTime = task.executionTime else {
+            continue
+        }
+
+        let expectedTime = task.maxExecutionTime ?? 60.0
+        let efficiency = (expectedTime / execTime) * 100
+
+        if efficiency < 50 {
+            print("⚠️ Task \(index + 1) inefficient:")
+            print("   Expected: <\(expectedTime)s")
+            print("   Actual: \(String(format: "%.2f", execTime))s")
+            print("   Efficiency: \(String(format: "%.0f", efficiency))%")
+
+            // Analyze why
+            if let metrics = taskOutput.usageMetrics {
+                print("   Tokens: \(metrics.totalTokens)")
+                print("   API calls: \(metrics.totalRequests)")
+            }
+            print("   Tools used: \(taskOutput.toolsUsed.count)")
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Real-Time Monitoring
+
+Monitor orbit execution in real-time:
+
+```swift
+import Foundation
+
+// Start orbit asynchronously
+Task {
+    try await orbit.run()
+}
+
+// Monitor while running
+while await orbit.isRunning() {
+    let status = await orbit.getExecutionStatus()
+
+    print("\r⏳ Progress: \(status.completionPercentage)% ", terminator: "")
+    print("| Active: \(status.activeTasks) ", terminator: "")
+    print("| Completed: \(status.completedTasks)/\(status.totalTasks) ", terminator: "")
+    print("| Failed: \(status.failedTasks)", terminator: "")
+
+    try await Task.sleep(for: .seconds(1))
+}
+
+print("\n✅ Complete!")
+```
+
+**Execution Status Fields**:
+- `queuedTasks`: Tasks waiting to execute
+- `activeTasks`: Currently executing tasks
+- `completedTasks`: Successfully completed tasks
+- `failedTasks`: Failed tasks
+- `totalTasks`: Total number of tasks
+- `completionPercentage`: Progress (0-100)
+
+## Tool Analytics
+
+Track tool usage, performance, and success rates across your workflow.
+
+### ToolUsage Structure
+
+```swift
+public struct ToolUsage: Codable, Sendable {
+    public let toolName: String           // Name of the tool used
+    public let executionTime: TimeInterval // Tool execution duration
+    public let success: Bool              // Execution success status
+    public let inputSize: Int             // Size of tool input
+    public let outputSize: Int            // Size of tool output
+}
+```
+
+### Tool Performance Analysis
+
+<Tabs>
+  <Tab title="Basic Tool Stats">
+    ```swift
+    let result = try await orbit.run()
+
+    // Collect all tool usages
+    var allTools: [ToolUsage] = []
+    for taskOutput in result.taskOutputs {
+        allTools.append(contentsOf: taskOutput.toolsUsed)
+    }
+
+    print("Tool Usage Summary:")
+    print("  Total tool calls: \(allTools.count)")
+    print("  Unique tools: \(Set(allTools.map { $0.toolName }).count)")
+    print("  Successful: \(allTools.filter { $0.success }.count)")
+    print("  Failed: \(allTools.filter { !$0.success }.count)")
+
+    // Total time spent in tools
+    let totalToolTime = allTools.reduce(0) { $0 + $1.executionTime }
+    print("  Total tool execution time: \(String(format: "%.2f", totalToolTime))s")
+    ```
+  </Tab>
+
+  <Tab title="Per-Tool Analysis">
+    ```swift
+    var toolStats: [String: ToolStats] = [:]
+
+    struct ToolStats {
+        var count: Int = 0
+        var totalTime: TimeInterval = 0
+        var successes: Int = 0
+        var failures: Int = 0
+        var totalInputSize: Int = 0
+        var totalOutputSize: Int = 0
+    }
+
+    // Aggregate tool data
+    for taskOutput in result.taskOutputs {
+        for toolUsage in taskOutput.toolsUsed {
+            if var stats = toolStats[toolUsage.toolName] {
+                stats.count += 1
+                stats.totalTime += toolUsage.executionTime
+                stats.successes += toolUsage.success ? 1 : 0
+                stats.failures += toolUsage.success ? 0 : 1
+                stats.totalInputSize += toolUsage.inputSize
+                stats.totalOutputSize += toolUsage.outputSize
+                toolStats[toolUsage.toolName] = stats
+            } else {
+                toolStats[toolUsage.toolName] = ToolStats(
+                    count: 1,
+                    totalTime: toolUsage.executionTime,
+                    successes: toolUsage.success ? 1 : 0,
+                    failures: toolUsage.success ? 0 : 1,
+                    totalInputSize: toolUsage.inputSize,
+                    totalOutputSize: toolUsage.outputSize
+                )
+            }
+        }
+    }
+
+    // Print detailed stats
+    print("\n📊 Tool Performance Report:")
+    for (tool, stats) in toolStats.sorted(by: { $0.value.count > $1.value.count }) {
+        let avgTime = stats.totalTime / Double(stats.count)
+        let successRate = Double(stats.successes) / Double(stats.count) * 100
+        let avgInput = stats.totalInputSize / stats.count
+        let avgOutput = stats.totalOutputSize / stats.count
+
+        print("\n  \(tool):")
+        print("    Calls: \(stats.count)")
+        print("    Avg time: \(String(format: "%.3f", avgTime))s")
+        print("    Success rate: \(String(format: "%.1f", successRate))%")
+        print("    Avg input: \(avgInput) bytes")
+        print("    Avg output: \(avgOutput) bytes")
+    }
+    ```
+  </Tab>
+
+  <Tab title="Tool Efficiency">
+    ```swift
+    // Find most/least efficient tools
+    let toolEfficiency = toolStats.map { (tool, stats) -> (String, Double) in
+        let avgTime = stats.totalTime / Double(stats.count)
+        let successRate = Double(stats.successes) / Double(stats.count)
+
+        // Efficiency score (lower time + higher success = better)
+        let score = successRate / (avgTime + 0.1)  // Avoid division by zero
+        return (tool, score)
+    }
+
+    let sortedByEfficiency = toolEfficiency.sorted { $0.1 > $1.1 }
+
+    print("\n⚡ Most Efficient Tools:")
+    for (tool, score) in sortedByEfficiency.prefix(3) {
+        print("  \(tool): \(String(format: "%.2f", score)) efficiency score")
+    }
+
+    print("\n⚠️ Least Efficient Tools:")
+    for (tool, score) in sortedByEfficiency.suffix(3).reversed() {
+        print("  \(tool): \(String(format: "%.2f", score)) efficiency score")
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Tool Usage Patterns
+
+Identify how tools are being used:
+
+```swift
+// Which tasks use which tools?
+for (index, taskOutput) in result.taskOutputs.enumerated() {
+    guard let task = orbit.tasks[safe: index] else { continue }
+
+    if !taskOutput.toolsUsed.isEmpty {
+        print("\nTask \(index + 1): \(task.description)")
+        print("  Tools: \(taskOutput.toolsUsed.map { $0.toolName }.joined(separator: ", "))")
+
+        // Tool execution sequence
+        print("  Execution order:")
+        for (i, toolUsage) in taskOutput.toolsUsed.enumerated() {
+            let status = toolUsage.success ? "✓" : "✗"
+            print("    \(i + 1). \(toolUsage.toolName) (\(String(format: "%.2f", toolUsage.executionTime))s) \(status)")
+        }
+    }
+}
+
+// Tool correlation analysis
+print("\n🔗 Tool Correlation:")
+print("  (Which tools are often used together?)")
+
+var toolPairs: [String: Int] = [:]
+for taskOutput in result.taskOutputs {
+    let tools = taskOutput.toolsUsed.map { $0.toolName }
+    for i in 0..<tools.count {
+        for j in (i+1)..<tools.count {
+            let pair = "\(tools[i]) + \(tools[j])"
+            toolPairs[pair, default: 0] += 1
+        }
+    }
+}
+
+for (pair, count) in toolPairs.sorted(by: { $0.value > $1.value }).prefix(5) {
+    print("  \(pair): \(count) times")
+}
+```
+
+## Cost Tracking
+
+Calculate and monitor costs associated with LLM usage and external API calls.
+
+### LLM Cost Calculation
+
+<Tabs>
+  <Tab title="OpenAI Pricing">
+    Calculate costs for OpenAI models:
+
+    ```swift
+    func calculateOpenAICost(
+        metrics: UsageMetrics,
+        model: String
+    ) -> Double {
+        // Pricing per 1M tokens (as of 2024)
+        let pricing: [String: (input: Double, output: Double)] = [
+            "gpt-4o": (2.50, 10.00),
+            "gpt-4o-mini": (0.15, 0.60),
+            "gpt-4-turbo": (10.00, 30.00),
+            "gpt-3.5-turbo": (0.50, 1.50)
+        ]
+
+        guard let price = pricing[model] else {
+            return 0.0
+        }
+
+        let inputCost = Double(metrics.promptTokens) / 1_000_000 * price.input
+        let outputCost = Double(metrics.completionTokens) / 1_000_000 * price.output
+
+        return inputCost + outputCost
+    }
+
+    // Usage
+    let result = try await orbit.run()
+    let cost = calculateOpenAICost(
+        metrics: result.usageMetrics,
+        model: "gpt-4o"
+    )
+
+    print("💰 Estimated Cost: $\(String(format: "%.4f", cost))")
+    ```
+  </Tab>
+
+  <Tab title="Claude Pricing">
+    Calculate costs for Anthropic Claude models:
+
+    ```swift
+    func calculateClaudeCost(
+        metrics: UsageMetrics,
+        model: String
+    ) -> Double {
+        // Pricing per 1M tokens (as of 2024)
+        let pricing: [String: (input: Double, output: Double)] = [
+            "claude-3-opus": (15.00, 75.00),
+            "claude-3-sonnet": (3.00, 15.00),
+            "claude-3-haiku": (0.25, 1.25),
+            "claude-3.5-sonnet": (3.00, 15.00)
+        ]
+
+        guard let price = pricing[model] else {
+            return 0.0
+        }
+
+        let inputCost = Double(metrics.promptTokens) / 1_000_000 * price.input
+        let outputCost = Double(metrics.completionTokens) / 1_000_000 * price.output
+
+        return inputCost + outputCost
+    }
+    ```
+  </Tab>
+
+  <Tab title="Multi-Model Costs">
+    Track costs across different models:
+
+    ```swift
+    struct ModelUsage {
+        let model: String
+        let metrics: UsageMetrics
+    }
+
+    var modelUsages: [ModelUsage] = []
+
+    // Track per-task model usage
+    for taskOutput in result.taskOutputs {
+        if let metrics = taskOutput.usageMetrics {
+            // Assuming model info in metadata
+            let model = taskOutput.metadata["model"] ?? "gpt-4o"
+            modelUsages.append(ModelUsage(model: model, metrics: metrics))
+        }
+    }
+
+    // Calculate total cost
+    var totalCost: Double = 0
+    var costBreakdown: [String: Double] = [:]
+
+    for usage in modelUsages {
+        let cost = calculateOpenAICost(
+            metrics: usage.metrics,
+            model: usage.model
+        )
+
+        totalCost += cost
+        costBreakdown[usage.model, default: 0] += cost
+    }
+
+    print("💰 Cost Breakdown:")
+    for (model, cost) in costBreakdown.sorted(by: { $0.value > $1.value }) {
+        let percentage = (cost / totalCost) * 100
+        print("  \(model): $\(String(format: "%.4f", cost)) (\(String(format: "%.1f", percentage))%)")
+    }
+    print("  Total: $\(String(format: "%.4f", totalCost))")
+    ```
+  </Tab>
+</Tabs>
+
+### Budget Management
+
+Implement cost controls and budget tracking:
+
+```swift
+final class BudgetTracker {
+    let dailyLimit: Double
+    let monthlyLimit: Double
+
+    private var dailyCost: Double = 0
+    private var monthlyCost: Double = 0
+    private var lastResetDate: Date = Date()
+
+    init(dailyLimit: Double, monthlyLimit: Double) {
+        self.dailyLimit = dailyLimit
+        self.monthlyLimit = monthlyLimit
+    }
+
+    func trackExecution(metrics: UsageMetrics, model: String) throws {
+        resetIfNeeded()
+
+        let cost = calculateOpenAICost(metrics: metrics, model: model)
+
+        // Check limits
+        if dailyCost + cost > dailyLimit {
+            throw BudgetError.dailyLimitExceeded(
+                current: dailyCost,
+                limit: dailyLimit,
+                attempted: cost
+            )
+        }
+
+        if monthlyCost + cost > monthlyLimit {
+            throw BudgetError.monthlyLimitExceeded(
+                current: monthlyCost,
+                limit: monthlyLimit,
+                attempted: cost
+            )
+        }
+
+        // Update tracking
+        dailyCost += cost
+        monthlyCost += cost
+
+        print("💰 Budget Status:")
+        print("  Daily: $\(String(format: "%.2f", dailyCost))/$\(String(format: "%.2f", dailyLimit))")
+        print("  Monthly: $\(String(format: "%.2f", monthlyCost))/$\(String(format: "%.2f", monthlyLimit))")
+    }
+
+    private func resetIfNeeded() {
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Reset daily if new day
+        if !calendar.isDate(lastResetDate, inSameDayAs: now) {
+            dailyCost = 0
+        }
+
+        // Reset monthly if new month
+        if !calendar.isDate(lastResetDate, equalTo: now, toGranularity: .month) {
+            monthlyCost = 0
+        }
+
+        lastResetDate = now
+    }
+
+    enum BudgetError: Error {
+        case dailyLimitExceeded(current: Double, limit: Double, attempted: Double)
+        case monthlyLimitExceeded(current: Double, limit: Double, attempted: Double)
+    }
+}
+
+// Usage
+let budgetTracker = BudgetTracker(
+    dailyLimit: 10.00,    // $10/day
+    monthlyLimit: 200.00  // $200/month
+)
+
+do {
+    let result = try await orbit.run()
+    try budgetTracker.trackExecution(
+        metrics: result.usageMetrics,
+        model: "gpt-4o"
+    )
+} catch BudgetTracker.BudgetError.dailyLimitExceeded(let current, let limit, let attempted) {
+    print("⚠️ Daily budget exceeded!")
+    print("  Current: $\(current)")
+    print("  Limit: $\(limit)")
+    print("  Attempted: $\(attempted)")
+}
+```
+
+### Cost Optimization
+
+Strategies to reduce costs:
+
+<CardGroup cols={2}>
+  <Card title="Optimize Prompts" icon="compress">
+    Reduce token usage with concise prompts:
+
+    ```swift
+    // Before: Verbose (150 tokens)
+    context: """
+    You are a highly skilled and experienced
+    professional content writer with many years
+    of expertise in creating engaging content...
+    """
+
+    // After: Concise (30 tokens)
+    context: "Expert content writer"
+
+    // Savings: 80% fewer tokens
+    ```
+  </Card>
+
+  <Card title="Use Cheaper Models" icon="piggy-bank">
+    Choose appropriate model for task complexity:
+
+    ```swift
+    // Simple tasks: use cheaper model
+    let simpleAgent = Agent(
+        role: "Data Formatter",
+        llm: .gpt4oMini  // 94% cheaper
+    )
+
+    // Complex tasks: use premium model
+    let complexAgent = Agent(
+        role: "Strategic Analyst",
+        llm: .gpt4o  // Better reasoning
+    )
+    ```
+  </Card>
+
+  <Card title="Cache Responses" icon="database">
+    Enable LLM caching for repeated queries:
+
+    ```swift
+    let llmManager = LLMManager(
+        enableCaching: true,
+        cacheTTL: 3600  // 1 hour
+    )
+
+    // Repeated queries use cache
+    // Saves API calls and costs
+    ```
+  </Card>
+
+  <Card title="Batch Processing" icon="layer-group">
+    Process multiple items in one request:
+
+    ```swift
+    // Instead of 10 separate calls
+    for item in items {
+        await agent.process(item)  // 10 API calls
+    }
+
+    // Batch process
+    await agent.processBatch(items)  // 1 API call
+    ```
+  </Card>
+</CardGroup>
+
+## Custom Telemetry Integration
+
+Integrate OrbitAI with your existing analytics and monitoring infrastructure.
+
+### TelemetryManager Protocol
+
+```swift
+public protocol TelemetryManager {
+    // Lifecycle events
+    func orbitStarted(orbitId: String, name: String)
+    func orbitCompleted(orbitId: String, output: OrbitOutput)
+    func orbitFailed(orbitId: String, error: Error)
+
+    // Task events
+    func taskStarted(taskId: String, description: String)
+    func taskCompleted(taskId: String, output: TaskOutput)
+    func taskFailed(taskId: String, error: Error)
+
+    // Agent events
+    func agentExecuted(agentId: String, role: String, metrics: UsageMetrics)
+
+    // Tool events
+    func toolInvoked(toolName: String, parameters: [String: Any])
+    func toolCompleted(toolName: String, usage: ToolUsage)
+
+    // Custom events
+    func logEvent(name: String, properties: [String: Any])
+    func logMetric(name: String, value: Double, tags: [String: String])
+}
+```
+
+### Custom Implementation Example
+
+<Tabs>
+  <Tab title="Analytics Integration">
+    ```swift
+    import OrbitAI
+
+    final class AnalyticsTelemetryManager: TelemetryManager {
+        private let analyticsService: AnalyticsService
+
+        init(analyticsService: AnalyticsService) {
+            self.analyticsService = analyticsService
+        }
+
+        func orbitStarted(orbitId: String, name: String) {
+            analyticsService.track(
+                event: "orbit_started",
+                properties: [
+                    "orbit_id": orbitId,
+                    "orbit_name": name,
+                    "timestamp": Date().timeIntervalSince1970
+                ]
+            )
+        }
+
+        func orbitCompleted(orbitId: String, output: OrbitOutput) {
+            analyticsService.track(
+                event: "orbit_completed",
+                properties: [
+                    "orbit_id": orbitId,
+                    "orbit_name": output.orbitName,
+                    "execution_time": output.executionTime,
+                    "total_tokens": output.usageMetrics.totalTokens,
+                    "total_tasks": output.taskOutputs.count,
+                    "timestamp": Date().timeIntervalSince1970
+                ]
+            )
+
+            // Track as metric
+            analyticsService.recordMetric(
+                name: "orbit_execution_time",
+                value: output.executionTime,
+                tags: ["orbit_name": output.orbitName]
+            )
+
+            analyticsService.recordMetric(
+                name: "orbit_token_usage",
+                value: Double(output.usageMetrics.totalTokens),
+                tags: ["orbit_name": output.orbitName]
+            )
+        }
+
+        func orbitFailed(orbitId: String, error: Error) {
+            analyticsService.track(
+                event: "orbit_failed",
+                properties: [
+                    "orbit_id": orbitId,
+                    "error": error.localizedDescription,
+                    "timestamp": Date().timeIntervalSince1970
+                ]
+            )
+
+            // Alert on failures
+            analyticsService.incrementCounter(
+                "orbit_failures",
+                tags: ["error_type": String(describing: type(of: error))]
+            )
+        }
+
+        func taskCompleted(taskId: String, output: TaskOutput) {
+            analyticsService.track(
+                event: "task_completed",
+                properties: [
+                    "task_id": taskId,
+                    "description": output.description,
+                    "tokens": output.usageMetrics.totalTokens,
+                    "tools_used": output.toolsUsed.count
+                ]
+            )
+        }
+
+        func toolCompleted(toolName: String, usage: ToolUsage) {
+            analyticsService.recordMetric(
+                name: "tool_execution_time",
+                value: usage.executionTime,
+                tags: [
+                    "tool": toolName,
+                    "success": String(usage.success)
+                ]
+            )
+        }
+
+        // Implement other protocol methods...
+    }
+
+    // Usage
+    let analytics = AnalyticsTelemetryManager(
+        analyticsService: myAnalyticsService
+    )
+
+    let orbit = try await Orbit.create(
+        name: "Monitored Workflow",
+        agents: agents,
+        tasks: tasks,
+        telemetryManager: analytics
+    )
+    ```
+  </Tab>
+
+  <Tab title="Logging Integration">
+    ```swift
+    import OSLog
+
+    final class LoggingTelemetryManager: TelemetryManager {
+        private let logger = Logger(
+            subsystem: "com.myapp.orbit",
+            category: "telemetry"
+        )
+
+        func orbitStarted(orbitId: String, name: String) {
+            logger.info("🚀 Orbit started: \(name, privacy: .public) [\(orbitId, privacy: .private)]")
+        }
+
+        func orbitCompleted(orbitId: String, output: OrbitOutput) {
+            logger.info("""
+            ✅ Orbit completed: \(output.orbitName, privacy: .public)
+               Duration: \(output.executionTime, format: .fixed(precision: 2))s
+               Tokens: \(output.usageMetrics.totalTokens)
+               Tasks: \(output.taskOutputs.count)
+            """)
+        }
+
+        func orbitFailed(orbitId: String, error: Error) {
+            logger.error("❌ Orbit failed: \(error.localizedDescription, privacy: .public)")
+        }
+
+        func taskStarted(taskId: String, description: String) {
+            logger.debug("▶️ Task started: \(description, privacy: .public)")
+        }
+
+        func taskCompleted(taskId: String, output: TaskOutput) {
+            logger.debug("""
+            ✓ Task completed: \(output.description, privacy: .public)
+              Tokens: \(output.usageMetrics.totalTokens)
+              Tools: \(output.toolsUsed.map { $0.toolName }.joined(separator: ", "), privacy: .public)
+            """)
+        }
+
+        func agentExecuted(agentId: String, role: String, metrics: UsageMetrics) {
+            logger.debug("""
+            🤖 Agent executed: \(role, privacy: .public)
+               Tokens: \(metrics.totalTokens)
+               Requests: \(metrics.totalRequests)
+            """)
+        }
+
+        func toolCompleted(toolName: String, usage: ToolUsage) {
+            let status = usage.success ? "✓" : "✗"
+            logger.debug("""
+            🔧 \(status) Tool: \(toolName, privacy: .public)
+               Time: \(usage.executionTime, format: .fixed(precision: 3))s
+            """)
+        }
+
+        func logEvent(name: String, properties: [String: Any]) {
+            logger.info("📊 Event: \(name, privacy: .public) - \(String(describing: properties), privacy: .private)")
+        }
+
+        func logMetric(name: String, value: Double, tags: [String: String]) {
+            logger.debug("📈 Metric: \(name, privacy: .public) = \(value, format: .fixed(precision: 2)) \(String(describing: tags), privacy: .private)")
+        }
+
+        // Implement remaining methods...
+    }
+    ```
+  </Tab>
+
+  <Tab title="Metrics Platform">
+    ```swift
+    final class DatadogTelemetryManager: TelemetryManager {
+        private let ddClient: DDClient
+
+        init(apiKey: String) {
+            self.ddClient = DDClient(apiKey: apiKey)
+        }
+
+        func orbitCompleted(orbitId: String, output: OrbitOutput) {
+            // Send metrics to Datadog
+            ddClient.gauge(
+                "orbit.execution_time",
+                value: output.executionTime,
+                tags: [
+                    "orbit_name:\(output.orbitName)",
+                    "process_type:\(output.processType?.rawValue ?? "unknown")"
+                ]
+            )
+
+            ddClient.count(
+                "orbit.token_usage",
+                value: output.usageMetrics.totalTokens,
+                tags: ["orbit_name:\(output.orbitName)"]
+            )
+
+            ddClient.count(
+                "orbit.api_calls",
+                value: output.usageMetrics.totalRequests,
+                tags: ["orbit_name:\(output.orbitName)"]
+            )
+
+            // Success rate
+            let successRate = Double(output.usageMetrics.successfulRequests) /
+                             Double(output.usageMetrics.totalRequests)
+            ddClient.gauge(
+                "orbit.success_rate",
+                value: successRate,
+                tags: ["orbit_name:\(output.orbitName)"]
+            )
+        }
+
+        func toolCompleted(toolName: String, usage: ToolUsage) {
+            ddClient.histogram(
+                "tool.execution_time",
+                value: usage.executionTime,
+                tags: [
+                    "tool:\(toolName)",
+                    "success:\(usage.success)"
+                ]
+            )
+
+            if !usage.success {
+                ddClient.increment(
+                    "tool.failures",
+                    tags: ["tool:\(toolName)"]
+                )
+            }
+        }
+
+        func logMetric(name: String, value: Double, tags: [String: String]) {
+            let ddTags = tags.map { "\($0.key):\($0.value)" }
+            ddClient.gauge(name, value: value, tags: ddTags)
+        }
+
+        // Implement remaining methods...
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Step Callbacks
+
+Track execution progress with step callbacks:
+
+```swift
+let orbit = try await Orbit.create(
+    name: "Monitored Workflow",
+    agents: agents,
+    tasks: tasks,
+    stepCallback: "onStepComplete"
+)
+
+// Define callback
+func onStepComplete(step: ExecutionStep) {
+    print("📍 Step completed:")
+    print("  Orbit: \(step.orbitId)")
+    print("  Task: \(step.taskDescription)")
+    print("  Agent: \(step.agentRole)")
+    print("  Duration: \(String(format: "%.2f", step.duration))s")
+    print("  Progress: \(step.progressPercentage)%")
+
+    // Custom telemetry
+    telemetryManager.logEvent(
+        name: "step_completed",
+        properties: [
+            "orbit_id": step.orbitId,
+            "task_id": step.taskId,
+            "agent_id": step.agentId,
+            "duration": step.duration,
+            "progress": step.progressPercentage
+        ]
+    )
+
+    // Update UI/dashboard
+    updateDashboard(step: step)
+}
+```
+
+## Best Practices
+
+### Telemetry Configuration
+
+<CardGroup cols={2}>
+  <Card title="Enable by Default" icon="toggle-on">
+    Always collect telemetry in production:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Production Workflow",
+        agents: agents,
+        tasks: tasks,
+        usageMetrics: true  // Default: true
+    )
+    ```
+
+    **Why**:
+    - Debug production issues
+    - Track costs
+    - Monitor performance
+    - Analyze usage patterns
+  </Card>
+
+  <Card title="Aggregate Metrics" icon="chart-simple">
+    Use orbit-level metrics for overview:
+
+    ```swift
+    // Don't iterate tasks for totals
+    let total = result.usageMetrics.totalTokens
+
+    // Instead of
+    var total = 0
+    for task in result.taskOutputs {
+        total += task.usageMetrics.totalTokens
+    }
+    ```
+
+    **Benefits**:
+    - Cleaner code
+    - Already aggregated
+    - No calculation overhead
+  </Card>
+
+  <Card title="Archive Metrics" icon="box-archive">
+    Store telemetry data for historical analysis:
+
+    ```swift
+    struct ExecutionRecord: Codable {
+        let date: Date
+        let orbitName: String
+        let executionTime: TimeInterval
+        let tokens: Int
+        let cost: Double
+        let tasks: Int
+    }
+
+    func archiveMetrics(_ output: OrbitOutput) {
+        let record = ExecutionRecord(
+            date: output.completedAt,
+            orbitName: output.orbitName,
+            executionTime: output.executionTime,
+            tokens: output.usageMetrics.totalTokens,
+            cost: calculateCost(output.usageMetrics),
+            tasks: output.taskOutputs.count
+        )
+
+        database.save(record)
+    }
+    ```
+  </Card>
+
+  <Card title="Set Alerts" icon="bell">
+    Alert on anomalies:
+
+    ```swift
+    func checkMetrics(_ metrics: UsageMetrics) {
+        // Alert on high token usage
+        if metrics.totalTokens > 50000 {
+            alerting.send(
+                "High token usage: \(metrics.totalTokens)"
+            )
+        }
+
+        // Alert on high failure rate
+        let failureRate = 1.0 - (
+            Double(metrics.successfulRequests) /
+            Double(metrics.totalRequests)
+        )
+
+        if failureRate > 0.1 {  // >10% failures
+            alerting.send(
+                "High failure rate: \(failureRate * 100)%"
+            )
+        }
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Performance Monitoring
+
+<AccordionGroup>
+  <Accordion title="Establish Baselines" icon="ruler">
+    Measure baseline performance for comparison:
+
+    ```swift
+    struct PerformanceBaseline {
+        let orbitName: String
+        let avgExecutionTime: TimeInterval
+        let avgTokens: Int
+        let avgTasks: Int
+
+        func compare(to output: OrbitOutput) -> PerformanceComparison {
+            let timeDelta = output.executionTime - avgExecutionTime
+            let tokenDelta = output.usageMetrics.totalTokens - avgTokens
+
+            return PerformanceComparison(
+                timeChange: timeDelta,
+                timeChangePercent: (timeDelta / avgExecutionTime) * 100,
+                tokenChange: tokenDelta,
+                tokenChangePercent: Double(tokenDelta) / Double(avgTokens) * 100
+            )
+        }
+    }
+
+    // Establish baseline
+    var executions: [OrbitOutput] = []
+    for _ in 0..<10 {
+        let output = try await orbit.run()
+        executions.append(output)
+    }
+
+    let baseline = PerformanceBaseline(
+        orbitName: orbit.name,
+        avgExecutionTime: executions.map { $0.executionTime }.reduce(0, +) / Double(executions.count),
+        avgTokens: executions.map { $0.usageMetrics.totalTokens }.reduce(0, +) / executions.count,
+        avgTasks: executions[0].taskOutputs.count
+    )
+
+    // Compare new executions
+    let newOutput = try await orbit.run()
+    let comparison = baseline.compare(to: newOutput)
+
+    if comparison.timeChangePercent > 50 {
+        print("⚠️ Execution time increased by \(comparison.timeChangePercent)%")
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Track Trends" icon="chart-line-up">
+    Monitor performance trends over time:
+
+    ```swift
+    final class TrendTracker {
+        private var history: [Date: UsageMetrics] = [:]
+
+        func record(_ metrics: UsageMetrics) {
+            history[Date()] = metrics
+        }
+
+        func analyzeTokenTrend(days: Int = 7) -> TrendAnalysis {
+            let cutoff = Calendar.current.date(
+                byAdding: .day,
+                value: -days,
+                to: Date()
+            )!
+
+            let recent = history.filter { $0.key >= cutoff }
+            let sorted = recent.sorted { $0.key < $1.key }
+
+            let tokens = sorted.map { Double($0.value.totalTokens) }
+
+            // Simple linear regression
+            let trend = calculateTrend(tokens)
+
+            return TrendAnalysis(
+                direction: trend > 0 ? .increasing : .decreasing,
+                rate: abs(trend),
+                dataPoints: tokens.count
+            )
+        }
+
+        private func calculateTrend(_ values: [Double]) -> Double {
+            // Simplified trend calculation
+            guard values.count > 1 else { return 0 }
+
+            let first = values.prefix(values.count / 2).reduce(0, +) / Double(values.count / 2)
+            let second = values.suffix(values.count / 2).reduce(0, +) / Double(values.count / 2)
+
+            return second - first
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Profile Tasks" icon="stopwatch">
+    Identify which tasks need optimization:
+
+    ```swift
+    struct TaskProfile {
+        let description: String
+        var executions: Int = 0
+        var totalTime: TimeInterval = 0
+        var totalTokens: Int = 0
+
+        var avgTime: TimeInterval {
+            totalTime / Double(max(1, executions))
+        }
+
+        var avgTokens: Double {
+            Double(totalTokens) / Double(max(1, executions))
+        }
+    }
+
+    var taskProfiles: [String: TaskProfile] = [:]
+
+    // Track over multiple runs
+    for _ in 0..<10 {
+        let result = try await orbit.run()
+
+        for (index, taskOutput) in result.taskOutputs.enumerated() {
+            guard let task = orbit.tasks[safe: index],
+                  let execTime = task.executionTime else {
+                continue
+            }
+
+            let key = task.description
+            if var profile = taskProfiles[key] {
+                profile.executions += 1
+                profile.totalTime += execTime
+                profile.totalTokens += taskOutput.usageMetrics.totalTokens
+                taskProfiles[key] = profile
+            } else {
+                taskProfiles[key] = TaskProfile(
+                    description: task.description,
+                    executions: 1,
+                    totalTime: execTime,
+                    totalTokens: taskOutput.usageMetrics.totalTokens
+                )
+            }
+        }
+    }
+
+    // Analyze profiles
+    print("\n📊 Task Performance Profiles:")
+    for (_, profile) in taskProfiles.sorted(by: { $0.value.avgTime > $1.value.avgTime }) {
+        print("\nTask: \(profile.description)")
+        print("  Executions: \(profile.executions)")
+        print("  Avg time: \(String(format: "%.2f", profile.avgTime))s")
+        print("  Avg tokens: \(Int(profile.avgTokens))")
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Missing Metrics" icon="question">
+    **Symptom**: `usageMetrics` is nil or has zero values.
+
+    **Causes**:
+    - Metrics collection disabled
+    - Task didn't execute
+    - LLM provider doesn't return usage data
+
+    **Diagnosis**:
+    ```swift
+    let result = try await orbit.run()
+
+    // Check if metrics exist
+    if result.usageMetrics.totalTokens == 0 {
+        print("⚠️ No metrics collected")
+
+        // Check task outputs
+        for (index, taskOutput) in result.taskOutputs.enumerated() {
+            print("Task \(index): \(taskOutput.usageMetrics.totalTokens) tokens")
+        }
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Ensure metrics enabled
+    let orbit = try await Orbit.create(
+        name: "Workflow",
+        agents: agents,
+        tasks: tasks,
+        usageMetrics: true  // Explicitly enable
+    )
+
+    // 2. Check task execution
+    for task in orbit.tasks {
+        print("Task status: \(task.status)")
+        if task.status == .failed {
+            print("  Error: \(task.result?.error ?? "Unknown")")
+        }
+    }
+
+    // 3. Verify LLM configuration
+    let llmManager = LLMManager(
+        enableMetrics: true  // Enable LLM metrics
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Inaccurate Token Counts" icon="hashtag">
+    **Symptom**: Token counts don't match expectations or LLM provider reports.
+
+    **Causes**:
+    - Different tokenization methods
+    - System messages not counted
+    - Tool descriptions included/excluded
+
+    **Diagnosis**:
+    ```swift
+    // Compare with manual calculation
+    let estimatedTokens = estimateTokens(text)
+    let reportedTokens = metrics.promptTokens
+
+    let difference = abs(estimatedTokens - reportedTokens)
+    let percentDiff = Double(difference) / Double(reportedTokens) * 100
+
+    if percentDiff > 10 {
+        print("⚠️ Token count mismatch: \(percentDiff)%")
+        print("  Estimated: \(estimatedTokens)")
+        print("  Reported: \(reportedTokens)")
+    }
+
+    func estimateTokens(_ text: String) -> Int {
+        // Rough estimate: ~4 characters per token
+        return text.count / 4
+    }
+    ```
+
+    **Solutions**:
+    - Use LLM provider's token count (most accurate)
+    - Include tool definitions in estimates
+    - Account for system messages
+    - Use provider's tokenizer for accuracy
+  </Accordion>
+
+  <Accordion title="High Resource Usage" icon="memory">
+    **Symptom**: Telemetry collection uses excessive memory or CPU.
+
+    **Causes**:
+    - Storing too much telemetry data in memory
+    - Complex analytics calculations
+    - Not archiving historical data
+
+    **Solutions**:
+    ```swift
+    // 1. Archive and clear regularly
+    func archiveAndClear() {
+        // Archive to disk/database
+        database.archive(telemetryData)
+
+        // Clear in-memory data
+        telemetryData.removeAll()
+    }
+
+    // Run periodically
+    Timer.scheduledTimer(
+        withTimeInterval: 3600,  // Every hour
+        repeats: true
+    ) { _ in
+        archiveAndClear()
+    }
+
+    // 2. Use sampling for high-frequency events
+    var eventCount = 0
+
+    func logEvent(_ event: TelemetryEvent) {
+        eventCount += 1
+
+        // Only log every 100th event
+        if eventCount % 100 == 0 {
+            telemetryManager.logEvent(event)
+        }
+    }
+
+    // 3. Disable detailed tracking for production
+    #if DEBUG
+    let detailedTracking = true
+    #else
+    let detailedTracking = false
+    #endif
+    ```
+  </Accordion>
+
+  <Accordion title="Slow Performance" icon="hourglass">
+    **Symptom**: Adding telemetry slows down execution.
+
+    **Causes**:
+    - Synchronous telemetry calls
+    - Network I/O to analytics service
+    - Complex calculations in callback
+
+    **Solutions**:
+    ```swift
+    // 1. Make telemetry async
+    final class AsyncTelemetryManager: TelemetryManager {
+        private let queue = DispatchQueue(
+            label: "com.app.telemetry",
+            qos: .utility
+        )
+
+        func orbitCompleted(orbitId: String, output: OrbitOutput) {
+            // Dispatch to background queue
+            queue.async {
+                self.sendToAnalytics(output)
+            }
+
+            // Don't block main execution
+        }
+
+        private func sendToAnalytics(_ output: OrbitOutput) {
+            // Network call, calculations, etc.
+        }
+    }
+
+    // 2. Batch telemetry events
+    final class BatchingTelemetryManager: TelemetryManager {
+        private var eventBatch: [TelemetryEvent] = []
+        private let batchSize = 100
+
+        func logEvent(_ event: TelemetryEvent) {
+            eventBatch.append(event)
+
+            if eventBatch.count >= batchSize {
+                flushBatch()
+            }
+        }
+
+        private func flushBatch() {
+            Task.detached {
+                await self.sendBatch(self.eventBatch)
+                self.eventBatch.removeAll()
+            }
+        }
+    }
+
+    // 3. Use local logging instead of network
+    final class LocalTelemetryManager: TelemetryManager {
+        private let logger = Logger()
+
+        func orbitCompleted(orbitId: String, output: OrbitOutput) {
+            // Fast local logging
+            logger.info("Orbit completed: \(output.orbitName)")
+
+            // Sync to remote later
+            syncQueue.add(output)
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Orbits" icon="circle-nodes" href="/orbits">
+    Learn about orbit execution and orchestration
+  </Card>
+
+  <Card title="Tasks" icon="list-check" href="/tasks">
+    Configure tasks and access task metrics
+  </Card>
+
+  <Card title="Agents" icon="user-gear" href="/agents">
+    Monitor agent performance and usage
+  </Card>
+
+  <Card title="Tools" icon="wrench" href="/tools">
+    Track tool usage and execution metrics
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Set up automated daily reports that summarize your telemetry data. Track total costs, token usage trends, and performance metrics to catch issues early and optimize continuously.
+</Tip>

@@ -1,0 +1,2175 @@
+---
+title: "Memory"
+description: "Enable agents to remember context, learn from interactions, and maintain knowledge across sessions."
+---
+
+## Overview
+
+Memory systems in OrbitAI enable agents to retain and recall information across conversations and executions. By providing different types of memory—short-term, long-term, and entity memory—agents can maintain context, learn from past interactions, and build sophisticated knowledge about users, tasks, and environments.
+
+<CardGroup cols={3}>
+  <Card title="Contextual" icon="brain">
+    Maintain conversation context across multiple turns
+  </Card>
+  <Card title="Persistent" icon="database">
+    Store information across sessions and executions
+  </Card>
+  <Card title="Intelligent" icon="sparkles">
+    Retrieve relevant memories using semantic search
+  </Card>
+  <Card title="Entity-Aware" icon="users">
+    Track and remember people, places, and organizations
+  </Card>
+  <Card title="Configurable" icon="sliders">
+    Fine-tune memory behavior with detailed configuration
+  </Card>
+  <Card title="Efficient" icon="gauge-high">
+    Automatic pruning and compression for optimal performance
+  </Card>
+</CardGroup>
+
+### Key Capabilities
+
+<AccordionGroup>
+  <Accordion title="Multi-Type Memory" icon="layer-group">
+    OrbitAI supports three distinct memory types that can be used independently or together: short-term memory for conversations, long-term memory for persistence, and entity memory for tracking named entities.
+  </Accordion>
+
+  <Accordion title="Semantic Retrieval" icon="magnifying-glass">
+    Memory uses embedding-based semantic search to retrieve the most relevant information for current tasks, ensuring agents have access to pertinent past knowledge.
+  </Accordion>
+
+  <Accordion title="Automatic Management" icon="gears">
+    Built-in mechanisms for memory compression, summarization, and pruning prevent memory bloat while maintaining important information.
+  </Accordion>
+
+  <Accordion title="Cross-Session Persistence" icon="floppy-disk">
+    Long-term memory persists to disk, allowing agents to maintain knowledge across application restarts and sessions.
+  </Accordion>
+</AccordionGroup>
+
+## Memory Architecture
+
+```
+Memory System
+    ├── Memory Types
+    │   ├── Short-Term Memory
+    │   │   ├── Conversation Context
+    │   │   ├── Task Sequence State
+    │   │   └── Session-Scoped
+    │   │
+    │   ├── Long-Term Memory
+    │   │   ├── Persistent Storage
+    │   │   ├── Cross-Session Knowledge
+    │   │   └── Historical Data
+    │   │
+    │   └── Entity Memory
+    │       ├── Named Entity Tracking
+    │       ├── Relationship Graphs
+    │       └── Entity Attributes
+    │
+    ├── Memory Storage
+    │   ├── MemoryStorage (Interface)
+    │   ├── In-Memory Store
+    │   ├── Persistent Store
+    │   └── Embedding Index
+    │
+    ├── Memory Configuration
+    │   ├── Storage Limits
+    │   ├── Persistence Settings
+    │   ├── Embedding Configuration
+    │   ├── Retrieval Thresholds
+    │   └── Maintenance Rules
+    │
+    └── Memory Operations
+        ├── Store
+        ├── Retrieve (Semantic Search)
+        ├── Update
+        ├── Delete
+        ├── Compress
+        └── Prune
+```
+
+## Memory Types
+
+OrbitAI provides three complementary memory systems, each designed for specific use cases:
+
+### Short-Term Memory
+
+<Card title="Short-Term Memory" icon="comments">
+  Retains information within a single conversation or task sequence. Ideal for maintaining context in multi-turn interactions.
+</Card>
+
+**Configuration Parameter**: `memory: Bool` (default: `false`)
+
+**Scope**: Current session only (in-memory)
+
+**Use Cases**:
+- Multi-turn conversations where context is needed
+- Sequential task workflows with dependencies
+- Conversational agents that reference prior exchanges
+- Building context progressively within a session
+
+**Example**:
+```swift
+let conversationalAgent = Agent(
+    role: "Customer Support Assistant",
+    purpose: "Help customers with their inquiries",
+    context: """
+    Friendly support agent who remembers the conversation
+    and can reference previous topics discussed.
+    """,
+    memory: true  // Enable short-term memory
+)
+
+// Usage scenario:
+// User: "I need help with my order"
+// Agent: "I'd be happy to help! Can you provide your order number?"
+// User: "It's 12345"
+// Agent: "Thank you! Let me look up order 12345 for you..."
+//       [Agent remembers the order number from previous message]
+```
+
+<Tabs>
+  <Tab title="Benefits">
+    ✅ **Fast Access**: In-memory storage for quick retrieval
+    ✅ **Context Continuity**: Maintains conversation flow
+    ✅ **No Persistence Overhead**: Clears when session ends
+    ✅ **Privacy Friendly**: Data doesn't persist after session
+  </Tab>
+
+  <Tab title="Limitations">
+    ❌ **Session-Scoped**: Lost when application restarts
+    ❌ **Limited Capacity**: Constrained by memory limits
+    ❌ **No Cross-Session**: Can't recall previous sessions
+    ❌ **Single Conversation**: Doesn't span multiple orbits
+  </Tab>
+
+  <Tab title="When to Use">
+    **Enable short-term memory when**:
+    - Building chatbots or conversational interfaces
+    - Tasks require reference to earlier in the conversation
+    - Users expect agents to "remember" what was just said
+    - Multi-step processes within a single session
+
+    **Skip short-term memory when**:
+    - Single-turn question-answering
+    - Stateless API calls
+    - Simple, independent tasks
+    - Memory overhead not justified
+  </Tab>
+</Tabs>
+
+### Long-Term Memory
+
+<Card title="Long-Term Memory" icon="hard-drive">
+  Persists information across sessions and executions. Perfect for tracking user preferences, historical data, and learning over time.
+</Card>
+
+**Configuration Parameter**: `longTermMemory: Bool` (default: `false`)
+
+**Scope**: Cross-session (persistent storage)
+
+**Use Cases**:
+- User preference tracking and personalization
+- Historical interaction analysis
+- Learning from past successes and failures
+- Building knowledge bases over time
+
+**Example**:
+```swift
+let personalAssistant = Agent(
+    role: "Personal Assistant",
+    purpose: "Provide personalized help based on user history",
+    context: """
+    Remembers user preferences, past requests, and habits
+    to provide increasingly personalized assistance.
+    """,
+    longTermMemory: true  // Enable persistent memory
+)
+
+// Usage scenario:
+// Session 1:
+// User: "I prefer emails in the morning at 8 AM"
+// Agent: "Got it! I'll remember to send summaries at 8 AM"
+//       [Stores preference in long-term memory]
+//
+// Session 2 (next day):
+// Agent: "Good morning! Here's your 8 AM email summary"
+//       [Retrieved preference from previous session]
+```
+
+<Tabs>
+  <Tab title="Benefits">
+    ✅ **Cross-Session**: Remembers across app restarts
+    ✅ **User Personalization**: Learns preferences over time
+    ✅ **Historical Context**: Access to past interactions
+    ✅ **Knowledge Accumulation**: Builds expertise progressively
+  </Tab>
+
+  <Tab title="Limitations">
+    ❌ **Storage Overhead**: Requires disk space
+    ❌ **Slower Retrieval**: Disk I/O adds latency
+    ❌ **Privacy Concerns**: Persistent data requires management
+    ❌ **Complexity**: Needs pruning and maintenance
+  </Tab>
+
+  <Tab title="When to Use">
+    **Enable long-term memory when**:
+    - Building personal assistants with user preferences
+    - Tracking customer interactions over time
+    - Learning from historical patterns
+    - Maintaining knowledge bases
+
+    **Skip long-term memory when**:
+    - Privacy-sensitive applications
+    - Short-lived tasks or one-off operations
+    - Storage constraints exist
+    - No cross-session benefit
+  </Tab>
+</Tabs>
+
+### Entity Memory
+
+<Card title="Entity Memory" icon="address-card">
+  Tracks and remembers named entities—people, places, organizations, products—and their attributes and relationships.
+</Card>
+
+**Configuration Parameter**: `entityMemory: Bool` (default: `false`)
+
+**Scope**: Entity graph (in-memory or persistent)
+
+**Use Cases**:
+- Customer relationship management (CRM)
+- Knowledge graph construction
+- Entity relationship tracking
+- Person/place/organization awareness
+
+**Example**:
+```swift
+let crmAgent = Agent(
+    role: "Sales Assistant",
+    purpose: "Manage customer relationships and track interactions",
+    context: """
+    Expert at remembering customer details, preferences,
+    and interaction history to provide personalized service.
+    """,
+    entityMemory: true  // Enable entity tracking
+)
+
+// Usage scenario:
+// User: "John Smith from Acme Corp called about the Enterprise plan"
+// Agent: "I'll note that John Smith (Acme Corp) is interested in Enterprise"
+//       [Creates entities: Person(John Smith), Organization(Acme Corp)]
+//       [Links: John Smith WORKS_AT Acme Corp]
+//       [Links: Acme Corp INTERESTED_IN Enterprise Plan]
+//
+// Later:
+// User: "What did John want?"
+// Agent: "John Smith from Acme Corp was interested in the Enterprise plan"
+//       [Retrieved entity relationships]
+```
+
+<Tabs>
+  <Tab title="Benefits">
+    ✅ **Entity Recognition**: Automatically identifies entities
+    ✅ **Relationship Tracking**: Maintains entity connections
+    ✅ **Structured Knowledge**: Organized entity graphs
+    ✅ **Contextual Awareness**: Understands entity context
+  </Tab>
+
+  <Tab title="Limitations">
+    ❌ **Complexity**: Requires entity extraction and linking
+    ❌ **Accuracy**: May misidentify or conflate entities
+    ❌ **Storage Growth**: Entity graphs can grow large
+    ❌ **Maintenance**: Needs deduplication and cleanup
+  </Tab>
+
+  <Tab title="When to Use">
+    **Enable entity memory when**:
+    - Building CRM or sales systems
+    - Tracking people, companies, or products
+    - Creating knowledge graphs
+    - Maintaining relationship networks
+
+    **Skip entity memory when**:
+    - No named entities in domain
+    - Simple information retrieval
+    - Entity tracking not beneficial
+    - Storage or compute constraints
+  </Tab>
+</Tabs>
+
+### Memory Type Combinations
+
+You can enable multiple memory types simultaneously for sophisticated agents:
+
+```swift
+let sophisticatedAgent = Agent(
+    role: "Executive Assistant",
+    purpose: "Comprehensive personal and professional assistance",
+    context: """
+    Advanced assistant with full memory capabilities:
+    - Remembers conversations (short-term)
+    - Learns preferences over time (long-term)
+    - Tracks contacts and relationships (entity)
+    """,
+    memory: true,           // Short-term: conversation context
+    longTermMemory: true,   // Long-term: persistent preferences
+    entityMemory: true      // Entity: people and organizations
+)
+```
+
+<Info>
+**Recommendation**: Start with short-term memory only, then add long-term and entity memory as specific needs arise. Each type adds overhead, so enable only what you need.
+</Info>
+
+## Memory Configuration
+
+The `MemoryConfiguration` object provides fine-grained control over memory behavior, storage, and performance characteristics.
+
+### Configuration Parameters
+
+<ParamField path="maxMemoryItems" type="Int" default="100">
+  Maximum number of memory items to store before automatic pruning.
+
+  **Range**: 10-10000
+  **Recommendation**: 50-100 for most use cases
+</ParamField>
+
+<ParamField path="persistencePath" type="String" default="./memory">
+  File system path where long-term memory is persisted.
+
+  **Examples**:
+  - `"./memory"` - Default location
+  - `"./data/agent-memory"` - Custom directory
+  - `"~/Documents/OrbitMemory"` - User directory
+</ParamField>
+
+<ParamField path="embeddingModel" type="String" default="text-embedding-ada-002">
+  Embedding model used for semantic memory retrieval.
+
+  **Options**:
+  - `"text-embedding-ada-002"` - OpenAI (high quality)
+  - `"text-embedding-3-small"` - OpenAI (efficient)
+  - `"text-embedding-3-large"` - OpenAI (highest quality)
+</ParamField>
+
+<ParamField path="similarityThreshold" type="Double" default="0.7">
+  Minimum similarity score (0.0-1.0) for memory retrieval.
+
+  **Range**: 0.0 (retrieve all) to 1.0 (exact match only)
+  **Recommendation**:
+  - `0.6-0.7` - Broad retrieval
+  - `0.75-0.8` - Balanced (recommended)
+  - `0.85-0.95` - Precise retrieval
+</ParamField>
+
+<ParamField path="compressionEnabled" type="Bool" default="false">
+  Enable automatic memory compression and summarization.
+
+  When enabled, older memory items are automatically summarized to reduce storage while retaining key information.
+</ParamField>
+
+<ParamField path="autoSummarize" type="Bool" default="false">
+  Automatically summarize memory items after a threshold.
+
+  Works with `compressionEnabled` to create concise memory representations.
+</ParamField>
+
+<ParamField path="pruneOldItems" type="Bool" default="false">
+  Automatically remove oldest memory items when `maxMemoryItems` is reached.
+
+  **Strategy**: FIFO (First In, First Out) or importance-based ranking
+</ParamField>
+
+### Configuration Examples
+
+#### Basic Memory Configuration
+
+```swift
+let basicConfig = MemoryConfiguration(
+    maxMemoryItems: 100,
+    persistencePath: "./memory",
+    similarityThreshold: 0.75
+)
+
+let agent = Agent(
+    role: "Assistant",
+    purpose: "General assistance with memory",
+    context: "Helpful assistant",
+    memory: true,
+    longTermMemory: true,
+    memoryConfig: basicConfig
+)
+```
+
+#### High-Quality Memory Configuration
+
+```swift
+let highQualityConfig = MemoryConfiguration(
+    maxMemoryItems: 200,
+    persistencePath: "./memory/high-quality",
+    embeddingModel: "text-embedding-3-large",  // Best quality
+    similarityThreshold: 0.85,                 // Precise retrieval
+    compressionEnabled: false,                 // Keep full detail
+    pruneOldItems: false                       // Keep all items
+)
+
+let premiumAgent = Agent(
+    role: "Premium Assistant",
+    purpose: "High-quality personalized assistance",
+    context: "Premium service with excellent memory",
+    memory: true,
+    longTermMemory: true,
+    memoryConfig: highQualityConfig
+)
+```
+
+#### Memory-Efficient Configuration
+
+```swift
+let efficientConfig = MemoryConfiguration(
+    maxMemoryItems: 50,                        // Smaller limit
+    persistencePath: "./memory/compact",
+    embeddingModel: "text-embedding-3-small",  // Efficient model
+    similarityThreshold: 0.7,                  // Broader retrieval
+    compressionEnabled: true,                  // Auto-compress
+    autoSummarize: true,                       // Summarize old items
+    pruneOldItems: true                        // Remove old entries
+)
+
+let efficientAgent = Agent(
+    role: "Efficient Assistant",
+    purpose: "Memory-efficient assistance",
+    context: "Optimized for resource constraints",
+    memory: true,
+    longTermMemory: true,
+    memoryConfig: efficientConfig
+)
+```
+
+#### Large-Scale Memory Configuration
+
+```swift
+let largeScaleConfig = MemoryConfiguration(
+    maxMemoryItems: 1000,                      // Large capacity
+    persistencePath: "./memory/large-scale",
+    embeddingModel: "text-embedding-3-large",
+    similarityThreshold: 0.80,
+    compressionEnabled: true,                  // Manage size
+    autoSummarize: true,                       // Keep summaries
+    pruneOldItems: true                        // Auto-prune
+)
+
+let knowledgeAgent = Agent(
+    role: "Knowledge Assistant",
+    purpose: "Manage large knowledge bases",
+    context: "Expert with extensive memory",
+    memory: true,
+    longTermMemory: true,
+    entityMemory: true,
+    memoryConfig: largeScaleConfig
+)
+```
+
+## Enabling and Disabling Memory
+
+Memory can be configured at both agent and orbit levels, providing flexibility for different architectural patterns.
+
+### Agent-Level Memory
+
+Enable memory for individual agents to give them context retention capabilities:
+
+```swift
+// Agent with all memory types
+let fullMemoryAgent = Agent(
+    role: "Personal Assistant",
+    purpose: "Comprehensive personal assistance",
+    context: "Assistant with full memory capabilities",
+    memory: true,           // Short-term memory
+    longTermMemory: true,   // Persistent memory
+    entityMemory: true,     // Entity tracking
+    memoryConfig: memoryConfig
+)
+
+// Agent with selective memory
+let selectiveAgent = Agent(
+    role: "Conversational Agent",
+    purpose: "Handle conversations",
+    context: "Conversational interface",
+    memory: true,           // Only short-term
+    longTermMemory: false,  // No persistence
+    entityMemory: false     // No entity tracking
+)
+
+// Agent with no memory
+let statelessAgent = Agent(
+    role: "Simple Responder",
+    purpose: "Answer single questions",
+    context: "Stateless question answering",
+    memory: false,          // No memory overhead
+    longTermMemory: false,
+    entityMemory: false
+)
+```
+
+<Tabs>
+  <Tab title="When to Use">
+    **Agent-level memory is ideal when**:
+    - Different agents have different memory needs
+    - Some agents need persistence, others don't
+    - Fine-grained control over memory usage
+    - Each agent maintains separate context
+
+    **Example**:
+    ```swift
+    let researcher = Agent(
+        role: "Researcher",
+        memory: true,         // Needs conversation context
+        longTermMemory: true  // Stores findings
+    )
+
+    let calculator = Agent(
+        role: "Calculator",
+        memory: false  // Stateless calculations
+    )
+    ```
+  </Tab>
+
+  <Tab title="Memory Isolation">
+    Each agent with memory enabled maintains its own memory space:
+
+    ```swift
+    let agent1 = Agent(
+        role: "Agent 1",
+        memory: true
+    )
+
+    let agent2 = Agent(
+        role: "Agent 2",
+        memory: true
+    )
+
+    // agent1 and agent2 have separate memory stores
+    // They don't share memory by default
+    ```
+
+    <Info>
+    For shared memory across agents, configure memory at the orbit level instead.
+    </Info>
+  </Tab>
+
+  <Tab title="Best Practices">
+    ✅ Enable memory only where needed
+    ✅ Use selective memory types (not all three)
+    ✅ Configure appropriate `maxMemoryItems` limits
+    ✅ Match memory to agent purpose
+
+    ❌ Don't enable all memory types by default
+    ❌ Don't use memory for simple stateless tasks
+    ❌ Don't forget to configure memory limits
+    ❌ Don't share memory config objects (create unique configs)
+  </Tab>
+</Tabs>
+
+### Orbit-Level Memory
+
+Enable memory at the orbit level for shared memory across all agents:
+
+```swift
+let sharedMemoryOrbit = try await Orbit.create(
+    name: "Collaborative Workflow",
+    agents: [agent1, agent2, agent3],
+    tasks: tasks,
+    memory: true,           // Shared short-term memory
+    longTermMemory: true,   // Shared persistent memory
+    entityMemory: true,     // Shared entity tracking
+    memoryConfig: memoryConfig
+)
+```
+
+<Tabs>
+  <Tab title="Shared Memory">
+    **Orbit-level memory creates a shared memory space** accessible to all agents in the orbit:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Team Collaboration",
+        agents: [researcher, analyst, writer],
+        tasks: [researchTask, analysisTask, writingTask],
+        memory: true  // All agents share this memory
+    )
+
+    // Execution flow:
+    // 1. Researcher stores findings in memory
+    // 2. Analyst accesses researcher's findings
+    // 3. Writer uses both researcher and analyst memory
+    // All agents see the same shared memory
+    ```
+
+    **Benefits**:
+    - Agents can build on each other's work
+    - Context flows naturally through workflow
+    - Reduces redundant information storage
+    - Natural collaboration pattern
+  </Tab>
+
+  <Tab title="Memory Priority">
+    **When both agent and orbit have memory enabled**, the resolution is:
+
+    ```swift
+    Effective Memory = Orbit Memory ?? Agent Memory
+    ```
+
+    **Priority Rules**:
+    1. If orbit has memory enabled → All agents use orbit memory (shared)
+    2. If orbit has no memory → Agents use their own memory (isolated)
+    3. Orbit memory settings override agent memory settings
+
+    **Example**:
+    ```swift
+    let agent = Agent(
+        role: "Agent",
+        memory: true  // Agent-level memory
+    )
+
+    let orbit = try await Orbit.create(
+        name: "Orbit",
+        agents: [agent],
+        tasks: [task],
+        memory: true  // Orbit-level memory (takes priority)
+    )
+
+    // Agent uses orbit memory (shared), not its own
+    ```
+  </Tab>
+
+  <Tab title="When to Use">
+    **Orbit-level memory is ideal when**:
+    - Agents need to share context
+    - Building collaborative workflows
+    - Information flows between agents
+    - Creating a unified knowledge base
+
+    **Example**:
+    ```swift
+    // Customer support workflow
+    let supportOrbit = try await Orbit.create(
+        name: "Customer Support",
+        agents: [
+            ticketAgent,    // Logs issue
+            techAgent,      // Diagnoses problem
+            responseAgent   // Crafts response
+        ],
+        tasks: tasks,
+        memory: true,  // Shared customer context
+        entityMemory: true  // Track customer entities
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### Disabling Memory
+
+Explicitly disable memory when not needed to save resources:
+
+```swift
+// Explicitly no memory
+let noMemoryAgent = Agent(
+    role: "Stateless Worker",
+    purpose: "Process independent tasks",
+    context: "Simple task processor",
+    memory: false,
+    longTermMemory: false,
+    entityMemory: false
+)
+
+// Default is no memory (can omit parameters)
+let defaultAgent = Agent(
+    role: "Default Agent",
+    purpose: "Basic task execution",
+    context: "Simple agent"
+    // memory defaults to false
+)
+```
+
+<Warning>
+**Memory adds overhead**: Each enabled memory type consumes CPU, memory, and storage. Disable memory when agents don't need to retain context between interactions.
+</Warning>
+
+### Memory Configuration Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start Simple" icon="seedling">
+    Begin with short-term memory only. Add long-term and entity memory as specific needs emerge.
+
+    ```swift
+    // Phase 1: Start here
+    memory: true
+
+    // Phase 2: Add if needed
+    memory: true,
+    longTermMemory: true
+
+    // Phase 3: Add if needed
+    memory: true,
+    longTermMemory: true,
+    entityMemory: true
+    ```
+  </Card>
+
+  <Card title="Match Use Case" icon="bullseye">
+    Enable memory types that match your use case:
+
+    **Chatbot**: `memory: true`
+    **Personal assistant**: `memory: true`, `longTermMemory: true`
+    **CRM**: All three types
+    **API worker**: `memory: false`
+  </Card>
+
+  <Card title="Configure Limits" icon="gauge">
+    Always set appropriate memory limits:
+
+    ```swift
+    let config = MemoryConfiguration(
+        maxMemoryItems: 100,    // Set limit
+        compressionEnabled: true,  // Auto-compress
+        pruneOldItems: true     // Auto-prune
+    )
+    ```
+  </Card>
+
+  <Card title="Monitor Usage" icon="chart-line">
+    Track memory usage and adjust configuration:
+
+    ```swift
+    // Log memory stats
+    print("Memory items: \(memoryStorage.count)")
+    print("Storage size: \(memoryStorage.sizeInBytes)")
+
+    // Adjust if needed
+    if memoryStorage.count > 80 {
+        config.maxMemoryItems = 50
+    }
+    ```
+  </Card>
+</CardGroup>
+
+## Memory Operations
+
+Memory systems provide several operations for storing, retrieving, and managing information.
+
+### Accessing Memory
+
+Memory is accessed through the `TaskExecutionContext`:
+
+```swift
+public struct TaskExecutionContext: Sendable {
+    /// Previous task outputs
+    public var taskOutputs: [TaskOutput]
+
+    /// Orbit-level inputs
+    public var inputs: Metadata
+
+    /// Shared memory storage
+    public var memory: MemoryStorage?
+
+    /// Knowledge base access
+    public var knowledgeBase: KnowledgeBase?
+
+    /// Available tools
+    public var availableTools: [String]
+}
+```
+
+Agents automatically use memory through the execution context—no manual memory operations needed in most cases.
+
+### Memory Storage Interface
+
+The `MemoryStorage` protocol defines memory operations:
+
+```swift
+public protocol MemoryStorage: Sendable {
+    /// Store a memory item
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws
+
+    /// Retrieve memories by semantic search
+    func retrieve(
+        query: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [MemoryItem]
+
+    /// Get specific memory by key
+    func get(key: String) async throws -> MemoryItem?
+
+    /// Update existing memory
+    func update(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws
+
+    /// Delete memory item
+    func delete(key: String) async throws
+
+    /// Clear all memories
+    func clear() async throws
+
+    /// Get memory count
+    var count: Int { get async }
+
+    /// Persist to storage
+    func persist() async throws
+
+    /// Load from storage
+    func load() async throws
+}
+```
+
+### Memory Item Structure
+
+```swift
+public struct MemoryItem: Codable, Sendable {
+    public let key: String
+    public let value: String
+    public let metadata: [String: String]
+    public let timestamp: Date
+    public let embedding: [Double]?
+    public var accessCount: Int
+    public var lastAccessed: Date
+}
+```
+
+### Automatic Memory Management
+
+OrbitAI automatically manages memory without manual intervention:
+
+```swift
+// Memory is automatically:
+// 1. Stored when agents generate information
+// 2. Retrieved when relevant to current task
+// 3. Updated when information changes
+// 4. Persisted when orbit completes
+// 5. Pruned when limits are reached
+
+let orbit = try await Orbit.create(
+    name: "Automated Memory",
+    agents: [agent],
+    tasks: [task],
+    memory: true,
+    longTermMemory: true,
+    memoryConfig: MemoryConfiguration(
+        maxMemoryItems: 100,
+        compressionEnabled: true,
+        pruneOldItems: true  // Automatic management
+    )
+)
+
+let output = try await orbit.run()
+// Memory automatically persisted on completion
+```
+
+### Manual Memory Operations
+
+For advanced use cases, you can manually interact with memory:
+
+```swift
+import OrbitAI
+
+// Custom task with manual memory access
+let customTask = ORTask(
+    description: "Store and retrieve specific information",
+    expectedOutput: "Memory operation results",
+    customHandler: { context in
+        guard let memory = context.memory else {
+            return "Memory not available"
+        }
+
+        // Store information
+        try await memory.store(
+            key: "user_preference",
+            value: "Morning emails at 8 AM",
+            metadata: ["category": "preferences", "priority": "high"]
+        )
+
+        // Retrieve by semantic search
+        let results = try await memory.retrieve(
+            query: "email preferences",
+            limit: 5,
+            threshold: 0.75
+        )
+
+        // Get specific item
+        if let preference = try await memory.get(key: "user_preference") {
+            print("Found preference: \(preference.value)")
+        }
+
+        // Update existing memory
+        try await memory.update(
+            key: "user_preference",
+            value: "Morning emails at 7 AM",  // Updated time
+            metadata: ["category": "preferences", "priority": "high"]
+        )
+
+        return "Memory operations completed"
+    }
+)
+```
+
+### Memory Lifecycle
+
+```
+Memory Lifecycle in Orbit Execution
+    ├── 1. Initialization
+    │   ├── Load existing memories (if long-term enabled)
+    │   └── Initialize in-memory storage
+    │
+    ├── 2. During Execution
+    │   ├── Agent generates output → Stored in memory
+    │   ├── Agent needs context → Retrieved from memory
+    │   ├── Information updates → Memory updated
+    │   └── Memory limit reached → Automatic pruning
+    │
+    ├── 3. Retrieval Process
+    │   ├── Query generated from task context
+    │   ├── Query embedded using embedding model
+    │   ├── Similarity search against memory embeddings
+    │   ├── Results filtered by threshold
+    │   └── Top-k results returned to agent
+    │
+    └── 4. Completion
+        ├── Memory compression (if enabled)
+        ├── Memory persistence (if long-term enabled)
+        └── Memory cleanup (short-term cleared)
+```
+
+## Advanced Memory Setup
+
+### Custom Memory Storage
+
+Implement custom memory storage for specialized backends:
+
+```swift
+import OrbitAI
+
+final class CustomMemoryStorage: MemoryStorage {
+    private var storage: [String: MemoryItem] = [:]
+    private let database: Database  // Custom database
+
+    var count: Int {
+        get async { storage.count }
+    }
+
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        let item = MemoryItem(
+            key: key,
+            value: value,
+            metadata: metadata ?? [:],
+            timestamp: Date(),
+            embedding: try await generateEmbedding(for: value),
+            accessCount: 0,
+            lastAccessed: Date()
+        )
+
+        storage[key] = item
+
+        // Store in custom database
+        try await database.insert(item)
+    }
+
+    func retrieve(
+        query: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [MemoryItem] {
+        let queryEmbedding = try await generateEmbedding(for: query)
+        let threshold = threshold ?? 0.7
+
+        // Semantic search
+        let scored = storage.values.compactMap { item -> (MemoryItem, Double)? in
+            guard let embedding = item.embedding else { return nil }
+            let similarity = cosineSimilarity(queryEmbedding, embedding)
+            return similarity >= threshold ? (item, similarity) : nil
+        }
+
+        // Sort by similarity and take top-k
+        return scored
+            .sorted { $0.1 > $1.1 }
+            .prefix(limit)
+            .map { $0.0 }
+    }
+
+    func get(key: String) async throws -> MemoryItem? {
+        storage[key]
+    }
+
+    func update(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        guard var item = storage[key] else {
+            throw MemoryError.itemNotFound
+        }
+
+        item.value = value
+        item.metadata = metadata ?? item.metadata
+        item.lastAccessed = Date()
+
+        storage[key] = item
+        try await database.update(item)
+    }
+
+    func delete(key: String) async throws {
+        storage.removeValue(forKey: key)
+        try await database.delete(key: key)
+    }
+
+    func clear() async throws {
+        storage.removeAll()
+        try await database.deleteAll()
+    }
+
+    func persist() async throws {
+        // Custom persistence logic
+        try await database.saveAll(Array(storage.values))
+    }
+
+    func load() async throws {
+        // Custom loading logic
+        let items = try await database.loadAll()
+        storage = Dictionary(uniqueKeysWithValues: items.map { ($0.key, $0) })
+    }
+
+    private func generateEmbedding(for text: String) async throws -> [Double] {
+        // Call embedding API
+        // Return embedding vector
+    }
+
+    private func cosineSimilarity(_ a: [Double], _ b: [Double]) -> Double {
+        // Calculate cosine similarity
+    }
+}
+```
+
+### Memory with Vector Databases
+
+Integrate with vector databases for scalable memory:
+
+```swift
+import OrbitAI
+import Pinecone  // Example vector database
+
+final class VectorMemoryStorage: MemoryStorage {
+    private let pinecone: PineconeClient
+    private let indexName: String
+    private let embeddingModel: EmbeddingModel
+
+    init(
+        apiKey: String,
+        indexName: String,
+        embeddingModel: EmbeddingModel
+    ) {
+        self.pinecone = PineconeClient(apiKey: apiKey)
+        self.indexName = indexName
+        self.embeddingModel = embeddingModel
+    }
+
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        // Generate embedding
+        let embedding = try await embeddingModel.embed(text: value)
+
+        // Store in Pinecone
+        try await pinecone.upsert(
+            index: indexName,
+            vectors: [
+                Vector(
+                    id: key,
+                    values: embedding,
+                    metadata: metadata ?? [:]
+                )
+            ]
+        )
+    }
+
+    func retrieve(
+        query: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [MemoryItem] {
+        // Generate query embedding
+        let queryEmbedding = try await embeddingModel.embed(text: query)
+
+        // Query Pinecone
+        let results = try await pinecone.query(
+            index: indexName,
+            vector: queryEmbedding,
+            topK: limit,
+            includeMetadata: true
+        )
+
+        // Convert to MemoryItems
+        return results.matches.compactMap { match in
+            guard let threshold = threshold,
+                  match.score >= threshold else { return nil }
+
+            return MemoryItem(
+                key: match.id,
+                value: match.metadata["value"] as? String ?? "",
+                metadata: match.metadata as? [String: String] ?? [:],
+                timestamp: Date(),
+                embedding: match.values,
+                accessCount: 0,
+                lastAccessed: Date()
+            )
+        }
+    }
+
+    // Implement other methods...
+}
+```
+
+### Memory Caching
+
+Add caching layer for frequently accessed memories:
+
+```swift
+final class CachedMemoryStorage: MemoryStorage {
+    private let underlying: MemoryStorage
+    private var cache: [String: (item: MemoryItem, expiry: Date)] = [:]
+    private let cacheExpiry: TimeInterval = 300  // 5 minutes
+
+    init(underlying: MemoryStorage) {
+        self.underlying = underlying
+    }
+
+    func get(key: String) async throws -> MemoryItem? {
+        // Check cache first
+        if let cached = cache[key],
+           cached.expiry > Date() {
+            return cached.item
+        }
+
+        // Fetch from underlying storage
+        if let item = try await underlying.get(key: key) {
+            // Update cache
+            cache[key] = (item, Date().addingTimeInterval(cacheExpiry))
+            return item
+        }
+
+        return nil
+    }
+
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        // Store in underlying
+        try await underlying.store(key: key, value: value, metadata: metadata)
+
+        // Invalidate cache
+        cache.removeValue(forKey: key)
+    }
+
+    func retrieve(
+        query: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [MemoryItem] {
+        // For semantic search, bypass cache
+        return try await underlying.retrieve(
+            query: query,
+            limit: limit,
+            threshold: threshold
+        )
+    }
+
+    // Implement other methods with cache invalidation...
+}
+```
+
+### Memory Compression
+
+Implement custom compression strategies:
+
+```swift
+final class CompressingMemoryStorage: MemoryStorage {
+    private let underlying: MemoryStorage
+    private let llm: LLMProvider
+    private let compressionThreshold: Int = 50
+
+    init(underlying: MemoryStorage, llm: LLMProvider) {
+        self.underlying = underlying
+        self.llm = llm
+    }
+
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        var finalValue = value
+
+        // Compress long values
+        if value.count > compressionThreshold {
+            let prompt = """
+            Summarize the following information concisely while retaining key details:
+
+            \(value)
+            """
+
+            let summary = try await llm.generateResponse(
+                for: LLMRequest(messages: [.user(prompt)])
+            )
+
+            finalValue = summary.content
+
+            // Mark as compressed
+            var newMetadata = metadata ?? [:]
+            newMetadata["compressed"] = "true"
+            newMetadata["original_length"] = "\(value.count)"
+
+            try await underlying.store(
+                key: key,
+                value: finalValue,
+                metadata: newMetadata
+            )
+        } else {
+            try await underlying.store(
+                key: key,
+                value: finalValue,
+                metadata: metadata
+            )
+        }
+    }
+
+    // Delegate other methods to underlying storage
+}
+```
+
+## Memory vs Context Window
+
+Understanding when to use memory systems versus the LLM's context window:
+
+<Tabs>
+  <Tab title="Memory Systems">
+    **Memory Systems:**
+    - Store information **externally** (outside context window)
+    - Retrieve relevant data **as needed** via semantic search
+    - **Not limited** by token count
+    - **Slower access** (retrieval step required)
+    - Best for: Large knowledge bases, long-term retention
+
+    **Example**:
+    ```swift
+    let agent = Agent(
+        role: "Knowledge Assistant",
+        purpose: "Answer questions using large knowledge base",
+        longTermMemory: true,  // Store 1000s of items
+        memoryConfig: MemoryConfiguration(
+            maxMemoryItems: 5000  // Far exceeds context window
+        )
+    )
+    ```
+  </Tab>
+
+  <Tab title="Context Window">
+    **Context Window:**
+    - All data in **active conversation** buffer
+    - **Immediate access** (no retrieval needed)
+    - **Limited** by model's token count (4k-128k tokens)
+    - **Faster processing**
+    - Best for: Recent context, current conversation
+
+    **Example**:
+    ```swift
+    let agent = Agent(
+        role: "Conversational Agent",
+        purpose: "Chat with users",
+        memory: false,  // Use context window only
+        respectContextWindow: true  // Manage token limits
+    )
+    ```
+  </Tab>
+
+  <Tab title="Hybrid Approach">
+    **Best Practice: Use Both**
+
+    Combine memory systems with context window management:
+
+    ```swift
+    let hybridAgent = Agent(
+        role: "Advanced Assistant",
+        purpose: "Provide informed assistance",
+        memory: true,              // Short-term in context
+        longTermMemory: true,      // External knowledge
+        respectContextWindow: true, // Manage context size
+        memoryConfig: MemoryConfiguration(
+            maxMemoryItems: 1000,
+            similarityThreshold: 0.8  // Retrieve only relevant
+        )
+    )
+    ```
+
+    **Execution flow**:
+    1. Recent conversation stays in context window (fast)
+    2. Historical/knowledge in long-term memory (unlimited)
+    3. Relevant memories retrieved into context as needed
+    4. Old context pruned when approaching token limits
+  </Tab>
+
+  <Tab title="Decision Guide">
+    **Use Memory Systems when**:
+    - Knowledge base exceeds context window
+    - Need persistence across sessions
+    - Building up knowledge over time
+    - Tracking entities and relationships
+
+    **Use Context Window when**:
+    - Recent conversation is sufficient
+    - One-off tasks
+    - Fast response required
+    - No persistence needed
+
+    **Use Both when**:
+    - Building sophisticated agents
+    - Need both recency and history
+    - Balancing speed and knowledge
+    - Production applications
+  </Tab>
+</Tabs>
+
+<Info>
+**Context Window Management**: When `respectContextWindow: true`, OrbitAI automatically prunes old messages when approaching the model's token limit while retaining system messages and recent context.
+</Info>
+
+## Best Practices
+
+### Memory Configuration Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Enable Selectively" icon="toggle-on">
+    Only enable memory types you actually need:
+
+    **Good**:
+    ```swift
+    // Chatbot needs conversation memory
+    memory: true,
+    longTermMemory: false
+    ```
+
+    **Bad**:
+    ```swift
+    // Overkill for simple chatbot
+    memory: true,
+    longTermMemory: true,
+    entityMemory: true
+    ```
+  </Card>
+
+  <Card title="Set Appropriate Limits" icon="gauge-high">
+    Configure memory limits based on use case:
+
+    **Quick tasks**: 20-50 items
+    **General agents**: 50-100 items
+    **Knowledge workers**: 100-500 items
+    **Large scale**: 500-5000 items
+
+    ```swift
+    let config = MemoryConfiguration(
+        maxMemoryItems: 100  // Match your needs
+    )
+    ```
+  </Card>
+
+  <Card title="Use Compression" icon="file-zipper">
+    Enable compression for long-running agents:
+
+    ```swift
+    let config = MemoryConfiguration(
+        compressionEnabled: true,
+        autoSummarize: true,
+        pruneOldItems: true
+    )
+    ```
+
+    **Benefits**:
+    - Reduced storage usage
+    - Better retrieval performance
+    - Automatic maintenance
+  </Card>
+
+  <Card title="Tune Similarity Threshold" icon="sliders">
+    Adjust threshold based on precision needs:
+
+    **Broad retrieval**: 0.6-0.7
+    **Balanced**: 0.75-0.8 (recommended)
+    **Precise**: 0.85-0.95
+
+    ```swift
+    let config = MemoryConfiguration(
+        similarityThreshold: 0.75  // Start here
+    )
+    ```
+  </Card>
+
+  <Card title="Organize by Path" icon="folder-tree">
+    Use descriptive persistence paths:
+
+    ```swift
+    // Good organization
+    persistencePath: "./memory/agents/assistant"
+    persistencePath: "./memory/agents/researcher"
+    persistencePath: "./memory/orbits/workflow-1"
+
+    // Avoids conflicts and aids debugging
+    ```
+  </Card>
+
+  <Card title="Monitor Memory Growth" icon="chart-line">
+    Track and manage memory usage:
+
+    ```swift
+    // Log memory stats periodically
+    print("Items: \(memory.count)")
+    print("Size: \(memory.sizeInBytes)")
+
+    // Adjust configuration if needed
+    if memory.count > 80% of max {
+        // Increase limit or enable pruning
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Architecture Best Practices
+
+<Tabs>
+  <Tab title="Agent Memory Design">
+    **Design agents with appropriate memory for their role**:
+
+    ```swift
+    // Stateless worker - no memory
+    let workerAgent = Agent(
+        role: "Data Processor",
+        purpose: "Process data batches",
+        memory: false
+    )
+
+    // Conversational - short-term only
+    let chatAgent = Agent(
+        role: "Chat Assistant",
+        purpose: "Engage in conversations",
+        memory: true,
+        longTermMemory: false
+    )
+
+    // Personal assistant - full memory
+    let personalAgent = Agent(
+        role: "Personal Assistant",
+        purpose: "Personalized assistance",
+        memory: true,
+        longTermMemory: true,
+        entityMemory: true
+    )
+    ```
+  </Tab>
+
+  <Tab title="Orbit Memory Design">
+    **Use orbit memory for shared context**:
+
+    ```swift
+    // Collaborative workflow - shared memory
+    let collaborativeOrbit = try await Orbit.create(
+        name: "Team Workflow",
+        agents: [researcher, analyst, writer],
+        tasks: tasks,
+        memory: true,  // Shared across agents
+        longTermMemory: true
+    )
+
+    // Independent agents - separate memory
+    let independentOrbit = try await Orbit.create(
+        name: "Parallel Processing",
+        agents: [
+            // Each has own memory
+            Agent(role: "Worker 1", memory: true),
+            Agent(role: "Worker 2", memory: true)
+        ],
+        tasks: tasks
+        // No orbit-level memory
+    )
+    ```
+  </Tab>
+
+  <Tab title="Scaling Considerations">
+    **Plan for scale from the start**:
+
+    ```swift
+    // For high-volume production
+    let scalableConfig = MemoryConfiguration(
+        maxMemoryItems: 1000,
+        persistencePath: "./memory/production",
+        compressionEnabled: true,      // Manage growth
+        autoSummarize: true,           // Keep concise
+        pruneOldItems: true,           // Auto-cleanup
+        similarityThreshold: 0.8       // Quality retrieval
+    )
+
+    // Consider external storage
+    let vectorMemory = VectorMemoryStorage(
+        apiKey: pineconeKey,
+        indexName: "production-memory"
+    )
+    ```
+
+    **Scaling strategies**:
+    - Use vector databases for large memory
+    - Implement caching for hot memories
+    - Distribute memory across agents
+    - Regular memory maintenance
+  </Tab>
+</Tabs>
+
+### Performance Best Practices
+
+<AccordionGroup>
+  <Accordion title="Optimize Embedding Costs" icon="dollar-sign">
+    Embeddings can be expensive. Optimize usage:
+
+    ```swift
+    // Cache embeddings
+    private var embeddingCache: [String: [Double]] = [:]
+
+    func getEmbedding(for text: String) async throws -> [Double] {
+        if let cached = embeddingCache[text] {
+            return cached
+        }
+
+        let embedding = try await embeddingModel.embed(text: text)
+        embeddingCache[text] = embedding
+        return embedding
+    }
+
+    // Use efficient embedding models
+    let config = MemoryConfiguration(
+        embeddingModel: "text-embedding-3-small"  // Cheaper than large
+    )
+
+    // Batch embedding requests
+    let embeddings = try await embeddingModel.embedBatch(texts: texts)
+    ```
+  </Accordion>
+
+  <Accordion title="Minimize Retrieval Overhead" icon="clock">
+    Reduce memory retrieval latency:
+
+    ```swift
+    // Retrieve fewer items
+    let results = try await memory.retrieve(
+        query: query,
+        limit: 5,  // Top 5 instead of 10
+        threshold: 0.8  // Higher threshold = fewer results
+    )
+
+    // Use caching for frequent queries
+    let cachedMemory = CachedMemoryStorage(underlying: memory)
+
+    // Pre-load critical memories at startup
+    let criticalKeys = ["user_preferences", "system_config"]
+    for key in criticalKeys {
+        _ = try await memory.get(key: key)  // Warms cache
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Manage Memory Lifecycle" icon="arrows-rotate">
+    Properly manage memory throughout lifecycle:
+
+    ```swift
+    // Initialize
+    let orbit = try await Orbit.create(
+        name: "Workflow",
+        agents: agents,
+        tasks: tasks,
+        memory: true,
+        longTermMemory: true,
+        memoryConfig: config
+    )
+
+    // Execute
+    let output = try await orbit.run()
+    // Memory automatically persisted
+
+    // Cleanup when done
+    if temporaryOrbit {
+        try await orbit.memory?.clear()
+        try await orbit.memory?.deletePersistedFiles()
+    }
+
+    // Periodic maintenance
+    Task {
+        while isRunning {
+            try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)  // 1 hour
+            try await memory.compress()  // Compress old memories
+            try await memory.prune()     // Remove stale items
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Security and Privacy Best Practices
+
+<Warning>
+**Memory contains sensitive data**. Implement appropriate security measures.
+</Warning>
+
+```swift
+// 1. Secure persistence paths
+let config = MemoryConfiguration(
+    persistencePath: "./memory/encrypted"  // Use encrypted storage
+)
+
+// 2. Implement data retention policies
+let retentionConfig = MemoryConfiguration(
+    maxMemoryItems: 100,
+    pruneOldItems: true,  // Auto-delete old data
+    // Custom: Delete after 30 days
+)
+
+// 3. Filter sensitive data
+final class SecureMemoryStorage: MemoryStorage {
+    func store(
+        key: String,
+        value: String,
+        metadata: [String: String]?
+    ) async throws {
+        // Filter sensitive information
+        let filtered = filterSensitiveData(value)
+
+        // Encrypt before storage
+        let encrypted = try encrypt(filtered)
+
+        try await underlying.store(
+            key: key,
+            value: encrypted,
+            metadata: metadata
+        )
+    }
+
+    private func filterSensitiveData(_ text: String) -> String {
+        var filtered = text
+
+        // Remove credit card numbers
+        filtered = filtered.replacingOccurrences(
+            of: #"\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}"#,
+            with: "[REDACTED]",
+            options: .regularExpression
+        )
+
+        // Remove email addresses
+        filtered = filtered.replacingOccurrences(
+            of: #"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}"#,
+            with: "[EMAIL]",
+            options: [.regularExpression, .caseInsensitive]
+        )
+
+        // Remove SSN
+        filtered = filtered.replacingOccurrences(
+            of: #"\d{3}-\d{2}-\d{4}"#,
+            with: "[SSN]",
+            options: .regularExpression
+        )
+
+        return filtered
+    }
+}
+
+// 4. Implement access controls
+final class AccessControlledMemory: MemoryStorage {
+    func retrieve(
+        query: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [MemoryItem] {
+        // Check permissions
+        guard await hasReadPermission() else {
+            throw MemoryError.accessDenied
+        }
+
+        return try await underlying.retrieve(
+            query: query,
+            limit: limit,
+            threshold: threshold
+        )
+    }
+}
+```
+
+## Troubleshooting
+
+### Common Memory Issues
+
+<AccordionGroup>
+  <Accordion title="High Memory Usage" icon="memory">
+    **Symptom**: Application uses excessive RAM or disk space.
+
+    **Causes**:
+    - `maxMemoryItems` set too high
+    - Compression disabled
+    - No pruning enabled
+    - Large embeddings cached
+    - Memory not cleared between sessions
+
+    **Diagnosis**:
+    ```swift
+    // Check memory usage
+    print("Memory items: \(await memory.count)")
+    print("Storage size: \(await memory.sizeInBytes)")
+    print("Cache size: \(embeddingCache.count)")
+
+    // Profile memory allocations
+    let stats = await memory.statistics()
+    print("Average item size: \(stats.averageItemSize)")
+    print("Total embeddings: \(stats.embeddingCount)")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Reduce memory limit
+    let config = MemoryConfiguration(
+        maxMemoryItems: 50  // Down from 100
+    )
+
+    // 2. Enable compression
+    let config = MemoryConfiguration(
+        compressionEnabled: true,
+        autoSummarize: true,
+        pruneOldItems: true
+    )
+
+    // 3. Clear memory periodically
+    Task {
+        try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)
+        try await memory.clear()
+    }
+
+    // 4. Use more efficient embedding model
+    let config = MemoryConfiguration(
+        embeddingModel: "text-embedding-3-small"  // Smaller vectors
+    )
+
+    // 5. Disable memory if not needed
+    let agent = Agent(
+        role: "Worker",
+        memory: false  // No memory overhead
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Memory Not Persisting" icon="floppy-disk">
+    **Symptom**: Long-term memory doesn't persist across sessions.
+
+    **Causes**:
+    - `longTermMemory` not enabled
+    - Invalid `persistencePath`
+    - Insufficient disk permissions
+    - Application crashes before persistence
+    - Memory not explicitly persisted
+
+    **Diagnosis**:
+    ```swift
+    // Check configuration
+    print("Long-term memory enabled: \(agent.longTermMemory)")
+    print("Persistence path: \(config.persistencePath)")
+
+    // Check file system
+    let path = config.persistencePath
+    let fileManager = FileManager.default
+
+    if !fileManager.fileExists(atPath: path) {
+        print("Error: Persistence path doesn't exist")
+    }
+
+    if !fileManager.isWritableFile(atPath: path) {
+        print("Error: No write permission")
+    }
+
+    // Check for persisted files
+    let files = try fileManager.contentsOfDirectory(atPath: path)
+    print("Persisted files: \(files)")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Enable long-term memory
+    let agent = Agent(
+        role: "Assistant",
+        longTermMemory: true  // Must be enabled
+    )
+
+    // 2. Use valid persistence path
+    let config = MemoryConfiguration(
+        persistencePath: "./memory"  // Valid path
+    )
+
+    // Create directory if needed
+    try FileManager.default.createDirectory(
+        atPath: "./memory",
+        withIntermediateDirectories: true
+    )
+
+    // 3. Explicitly persist before exit
+    let orbit = try await Orbit.create(/*...*/)
+    let output = try await orbit.run()
+
+    // Persist memory
+    try await orbit.memory?.persist()
+
+    // 4. Handle graceful shutdown
+    signal(SIGINT) { _ in
+        Task {
+            try await orbit.memory?.persist()
+            exit(0)
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Poor Memory Retrieval" icon="magnifying-glass">
+    **Symptom**: Relevant memories not retrieved or irrelevant memories returned.
+
+    **Causes**:
+    - `similarityThreshold` too high or too low
+    - Poor embedding model
+    - Query doesn't match stored content
+    - Insufficient memory items stored
+    - Embedding generation issues
+
+    **Diagnosis**:
+    ```swift
+    // Test retrieval with known items
+    try await memory.store(
+        key: "test",
+        value: "The user prefers emails in the morning",
+        metadata: nil
+    )
+
+    let results = try await memory.retrieve(
+        query: "email preferences",
+        limit: 10,
+        threshold: 0.5  // Lower threshold for testing
+    )
+
+    print("Retrieved \(results.count) items")
+    for (index, item) in results.enumerated() {
+        print("\(index + 1). \(item.key): \(item.value)")
+        if let embedding = item.embedding {
+            print("   Embedding dimensions: \(embedding.count)")
+        }
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Adjust similarity threshold
+    let config = MemoryConfiguration(
+        similarityThreshold: 0.7  // Start lower, tune up
+    )
+
+    // Test different thresholds
+    for threshold in [0.5, 0.6, 0.7, 0.8, 0.9] {
+        let results = try await memory.retrieve(
+            query: query,
+            limit: 5,
+            threshold: threshold
+        )
+        print("Threshold \(threshold): \(results.count) results")
+    }
+
+    // 2. Use better embedding model
+    let config = MemoryConfiguration(
+        embeddingModel: "text-embedding-3-large"  // Higher quality
+    )
+
+    // 3. Improve query formulation
+    // Bad query: "emails"
+    // Good query: "user email preferences and notification settings"
+
+    // 4. Store more context
+    try await memory.store(
+        key: "email_prefs",
+        value: """
+        User email preferences:
+        - Timing: Morning emails at 8 AM
+        - Frequency: Daily summaries
+        - Format: HTML with images
+        """,  // Richer context for retrieval
+        metadata: ["category": "preferences"]
+    )
+
+    // 5. Verify embeddings are generated
+    if let item = try await memory.get(key: "test"),
+       item.embedding == nil {
+        print("Warning: No embedding generated")
+        // Check embedding model configuration
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Memory Conflicts" icon="triangle-exclamation">
+    **Symptom**: Memory inconsistencies or conflicts between agents.
+
+    **Causes**:
+    - Multiple agents writing to same keys
+    - Orbit memory vs agent memory confusion
+    - Concurrent writes without coordination
+    - Stale memory reads
+
+    **Diagnosis**:
+    ```swift
+    // Log memory operations
+    final class LoggingMemoryStorage: MemoryStorage {
+        func store(
+            key: String,
+            value: String,
+            metadata: [String: String]?
+        ) async throws {
+            print("[STORE] Key: \(key) by \(currentAgent)")
+            try await underlying.store(key: key, value: value, metadata: metadata)
+        }
+
+        func get(key: String) async throws -> MemoryItem? {
+            let item = try await underlying.get(key: key)
+            print("[GET] Key: \(key) by \(currentAgent) - Found: \(item != nil)")
+            return item
+        }
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Use orbit-level memory for shared state
+    let orbit = try await Orbit.create(
+        name: "Shared State",
+        agents: agents,
+        tasks: tasks,
+        memory: true  // Shared memory (no conflicts)
+    )
+
+    // 2. Use unique keys per agent
+    try await memory.store(
+        key: "\(agent.id)_preference",  // Agent-specific
+        value: preference,
+        metadata: ["agent": agent.role]
+    )
+
+    // 3. Implement versioning
+    try await memory.store(
+        key: "shared_state",
+        value: newValue,
+        metadata: [
+            "version": "\(currentVersion + 1)",
+            "updated_by": agent.id,
+            "timestamp": "\(Date().timeIntervalSince1970)"
+        ]
+    )
+
+    // 4. Use metadata for coordination
+    if let existing = try await memory.get(key: "resource"),
+       existing.metadata["locked_by"] != nil {
+        // Resource locked, wait or skip
+    } else {
+        // Acquire lock
+        try await memory.update(
+            key: "resource",
+            value: existing.value,
+            metadata: ["locked_by": agent.id]
+        )
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Slow Memory Operations" icon="hourglass">
+    **Symptom**: Memory storage/retrieval is slow.
+
+    **Causes**:
+    - Large number of memory items
+    - Expensive embedding generation
+    - Slow disk I/O
+    - No caching
+    - Inefficient similarity search
+
+    **Diagnosis**:
+    ```swift
+    // Measure operation times
+    let storeStart = Date()
+    try await memory.store(key: "test", value: "data", metadata: nil)
+    print("Store time: \(Date().timeIntervalSince(storeStart))s")
+
+    let retrieveStart = Date()
+    let results = try await memory.retrieve(query: "test", limit: 10, threshold: 0.7)
+    print("Retrieve time: \(Date().timeIntervalSince(retrieveStart))s")
+
+    // Profile embedding generation
+    let embedStart = Date()
+    let embedding = try await embeddingModel.embed(text: "test")
+    print("Embedding time: \(Date().timeIntervalSince(embedStart))s")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Implement caching
+    let cachedMemory = CachedMemoryStorage(underlying: memory)
+
+    // 2. Use vector database for large scale
+    let vectorMemory = VectorMemoryStorage(
+        apiKey: apiKey,
+        indexName: "fast-memory"
+    )
+
+    // 3. Batch operations
+    let items = try await memory.retrieveBatch(
+        queries: queries,  // Multiple queries at once
+        limit: 10
+    )
+
+    // 4. Use faster embedding model
+    let config = MemoryConfiguration(
+        embeddingModel: "text-embedding-3-small"  // Faster
+    )
+
+    // 5. Reduce memory size
+    let config = MemoryConfiguration(
+        maxMemoryItems: 50,  // Smaller = faster
+        compressionEnabled: true
+    )
+
+    // 6. Async prefetching
+    Task.detached {
+        // Prefetch likely needed memories
+        try await memory.retrieve(
+            query: predictedQuery,
+            limit: 5,
+            threshold: 0.8
+        )
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Debugging Memory
+
+Create a debug utility for memory inspection:
+
+```swift
+final class MemoryDebugger {
+    let memory: MemoryStorage
+
+    init(memory: MemoryStorage) {
+        self.memory = memory
+    }
+
+    func printAllMemories() async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Memory Contents")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        let count = await memory.count
+        print("Total items: \(count)")
+
+        // Retrieve all memories (use broad threshold)
+        let allMemories = try await memory.retrieve(
+            query: "",
+            limit: count,
+            threshold: 0.0
+        )
+
+        for (index, item) in allMemories.enumerated() {
+            print("\n[\(index + 1)] \(item.key)")
+            print("   Value: \(item.value)")
+            print("   Timestamp: \(item.timestamp)")
+            print("   Access count: \(item.accessCount)")
+            print("   Last accessed: \(item.lastAccessed)")
+            print("   Metadata: \(item.metadata)")
+            if let embedding = item.embedding {
+                print("   Embedding: \(embedding.count) dimensions")
+            }
+        }
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    func testRetrieval(query: String) async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Testing Retrieval: \"\(query)\"")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        for threshold in [0.5, 0.6, 0.7, 0.8, 0.9] {
+            let results = try await memory.retrieve(
+                query: query,
+                limit: 10,
+                threshold: threshold
+            )
+
+            print("\nThreshold \(threshold): \(results.count) results")
+            for (index, item) in results.prefix(3).enumerated() {
+                print("  \(index + 1). \(item.key): \(item.value.prefix(50))...")
+            }
+        }
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    func statistics() async -> MemoryStatistics {
+        // Calculate and return statistics
+    }
+}
+
+// Usage
+let debugger = MemoryDebugger(memory: orbit.memory!)
+try await debugger.printAllMemories()
+try await debugger.testRetrieval(query: "user preferences")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Agent Configuration" icon="user-gear" href="/agents">
+    Learn how to configure agents with memory systems
+  </Card>
+
+  <Card title="Orbit Workflows" icon="circle-nodes" href="/orbits">
+    Understand memory in orbit execution contexts
+  </Card>
+
+  <Card title="Knowledge Sources" icon="book" href="/agents#knowledge-sources">
+    Explore knowledge sources for external knowledge integration
+  </Card>
+
+  <Card title="Performance Optimization" icon="gauge-high" href="/agents#performance-considerations">
+    Optimize memory and agent performance
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Start with short-term memory only (`memory: true`). Monitor your agent's behavior and add long-term or entity memory only when you have a specific need for persistence or entity tracking. Each memory type adds complexity and overhead.
+</Tip>

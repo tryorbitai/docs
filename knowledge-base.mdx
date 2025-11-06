@@ -1,0 +1,3279 @@
+---
+title: "Knowledge Base"
+description: "Empower agents with domain knowledge through document ingestion, semantic search, and RAG capabilities."
+---
+
+## Overview
+
+Knowledge Bases in OrbitAI enable agents to access and retrieve information from external documents and data sources. Using Retrieval Augmented Generation (RAG), agents can ground their responses in factual information, answer questions about specific domains, and provide accurate, contextual assistance based on your organization's knowledge.
+
+<CardGroup cols={3}>
+  <Card title="RAG-Enabled" icon="arrows-turn-to-dots">
+    Retrieval Augmented Generation for grounded responses
+  </Card>
+  <Card title="Multi-Format" icon="file-lines">
+    Support for PDF, Markdown, JSON, and text documents
+  </Card>
+  <Card title="Semantic Search" icon="magnifying-glass-chart">
+    Embedding-based retrieval finds relevant information
+  </Card>
+  <Card title="Automatic" icon="wand-magic-sparkles">
+    Agents automatically query knowledge during execution
+  </Card>
+  <Card title="Scalable" icon="arrow-up-right-dots">
+    Handle large document collections efficiently
+  </Card>
+  <Card title="Dynamic" icon="rotate">
+    Add or update knowledge sources at runtime
+  </Card>
+</CardGroup>
+
+### Key Capabilities
+
+<AccordionGroup>
+  <Accordion title="Retrieval Augmented Generation (RAG)" icon="brain-circuit">
+    RAG combines the power of LLMs with factual information from your knowledge base. Agents automatically retrieve relevant context from documents and use it to generate accurate, grounded responses.
+  </Accordion>
+
+  <Accordion title="Semantic Document Search" icon="magnifying-glass">
+    Using vector embeddings, the knowledge base performs semantic search to find relevant information even when queries don't exactly match document text. This enables natural language queries over your documents.
+  </Accordion>
+
+  <Accordion title="Automatic Context Injection" icon="syringe">
+    When agents execute tasks, relevant knowledge is automatically retrieved and injected into the LLM context, requiring no manual intervention or query operations.
+  </Accordion>
+
+  <Accordion title="Multi-Document Synthesis" icon="layer-group">
+    Agents can synthesize information from multiple documents simultaneously, creating comprehensive answers that draw from your entire knowledge base.
+  </Accordion>
+</AccordionGroup>
+
+## How Knowledge Bases Work
+
+### RAG Architecture
+
+```
+Knowledge Base RAG Pipeline
+    ├── 1. Document Ingestion
+    │   ├── Load documents from file paths
+    │   ├── Parse content (PDF, MD, JSON, TXT)
+    │   ├── Split into chunks (with overlap)
+    │   └── Extract metadata
+    │
+    ├── 2. Embedding & Indexing
+    │   ├── Generate embeddings for each chunk
+    │   ├── Create vector index
+    │   ├── Store in vector database
+    │   └── Build metadata index
+    │
+    ├── 3. Query Processing
+    │   ├── Agent generates query from task
+    │   ├── Embed query using same model
+    │   ├── Vector similarity search
+    │   └── Rank results by relevance
+    │
+    ├── 4. Context Retrieval
+    │   ├── Retrieve top-k relevant chunks
+    │   ├── Apply similarity threshold
+    │   ├── Rerank if needed
+    │   └── Format as context
+    │
+    └── 5. Response Generation
+        ├── Inject retrieved context into prompt
+        ├── LLM generates response
+        ├── Ground response in source documents
+        └── Return with citations (optional)
+```
+
+### Embedding-Based Retrieval
+
+Knowledge bases use vector embeddings to enable semantic search:
+
+<Tabs>
+  <Tab title="How It Works">
+    **Step 1: Document Processing**
+    ```
+    Document: "The OrbitAI framework enables multi-agent orchestration"
+    ↓
+    Chunks: ["The OrbitAI framework enables", "enables multi-agent orchestration"]
+    ↓
+    Embeddings: [0.234, -0.112, 0.445, ...], [0.556, -0.223, 0.334, ...]
+    ```
+
+    **Step 2: Query Processing**
+    ```
+    Query: "How does OrbitAI work?"
+    ↓
+    Query Embedding: [0.245, -0.108, 0.432, ...]
+    ↓
+    Similarity Search: Find closest document embeddings
+    ```
+
+    **Step 3: Retrieval**
+    ```
+    Similarity Scores:
+      Chunk 1: 0.92 (very relevant) ✓
+      Chunk 2: 0.88 (very relevant) ✓
+      Chunk 3: 0.65 (less relevant) ✗
+    ↓
+    Return top-k chunks above threshold
+    ```
+  </Tab>
+
+  <Tab title="Vector Similarity">
+    **Cosine Similarity**
+
+    Measures the angle between vectors:
+    ```
+    similarity = (A · B) / (||A|| × ||B||)
+    ```
+
+    **Interpretation**:
+    - `1.0` - Identical meaning
+    - `0.9-0.95` - Very similar
+    - `0.8-0.9` - Related
+    - `0.7-0.8` - Somewhat related
+    - `<0.7` - Different topics
+
+    **Example**:
+    ```swift
+    Query: "agent capabilities"
+
+    Results:
+      "Agents have tools and memory" → 0.94
+      "Agent architecture overview" → 0.87
+      "Task execution process" → 0.72
+      "System installation" → 0.45
+    ```
+  </Tab>
+
+  <Tab title="Embedding Models">
+    **Supported Models**:
+
+    | Model | Dimensions | Quality | Speed | Cost |
+    |-------|------------|---------|-------|------|
+    | text-embedding-3-small | 1536 | Good | Fast | $ |
+    | text-embedding-ada-002 | 1536 | Good | Medium | $$ |
+    | text-embedding-3-large | 3072 | Best | Slow | $$$ |
+
+    **Recommendation**:
+    - **Development**: text-embedding-3-small
+    - **Production**: text-embedding-ada-002
+    - **High-Quality**: text-embedding-3-large
+
+    **Configuration** (via memory config pattern):
+    ```swift
+    let config = MemoryConfiguration(
+        embeddingModel: "text-embedding-ada-002"
+    )
+    ```
+  </Tab>
+</Tabs>
+
+### System Integration
+
+```
+OrbitAI Execution Flow with Knowledge Base
+    ├── User Request
+    │   └── "What are the agent capabilities?"
+    │
+    ├── Orbit Orchestrator
+    │   └── Routes to appropriate agent
+    │
+    ├── Agent Execution
+    │   ├── Analyzes task requirements
+    │   ├── Formulates knowledge query
+    │   └── Triggers knowledge retrieval
+    │
+    ├── Knowledge Base Query
+    │   ├── Embeds query
+    │   ├── Searches vector index
+    │   ├── Retrieves relevant chunks
+    │   └── Returns context
+    │
+    ├── LLM Processing
+    │   ├── Context: Retrieved knowledge
+    │   ├── Task: User request
+    │   ├── Agent: Role and purpose
+    │   └── Generates response
+    │
+    └── Response
+        └── "Agents have tools, memory, and knowledge..."
+```
+
+<Info>
+Knowledge retrieval happens **automatically** during agent execution. You don't need to manually query the knowledge base—agents do it for you based on task requirements.
+</Info>
+
+## Configuration and Usage
+
+### Basic Configuration
+
+Add knowledge sources to agents or orbits using simple file paths:
+
+```swift
+import OrbitAI
+
+let agent = Agent(
+    role: "Documentation Assistant",
+    purpose: "Answer questions about product documentation",
+    context: "Expert assistant with access to all product docs",
+    knowledgeSources: [
+        "./docs/user-guide.pdf",
+        "./docs/api-reference.md",
+        "./docs/faq.txt"
+    ]
+)
+```
+
+### Agent-Level Knowledge Base
+
+Configure knowledge bases for individual agents:
+
+<Steps>
+  <Step title="Define Knowledge Sources">
+    Specify document paths when creating the agent:
+
+    ```swift
+    let knowledgeAgent = Agent(
+        role: "Knowledge Expert",
+        purpose: "Provide expert answers using company knowledge",
+        context: """
+        Expert assistant with deep knowledge of:
+        - Company policies
+        - Product specifications
+        - Customer FAQs
+        - Technical documentation
+        """,
+        knowledgeSources: [
+            // Company policies
+            "./knowledge/policies/employee-handbook.pdf",
+            "./knowledge/policies/code-of-conduct.md",
+
+            // Product information
+            "./knowledge/products/catalog.json",
+            "./knowledge/products/specifications.pdf",
+
+            // Support documentation
+            "./knowledge/support/faq.txt",
+            "./knowledge/support/troubleshooting.md"
+        ]
+    )
+    ```
+  </Step>
+
+  <Step title="Create Tasks">
+    Create tasks that leverage the knowledge base:
+
+    ```swift
+    let queryTask = ORTask(
+        description: """
+        Answer the user's question using information from the knowledge base.
+        Provide accurate, detailed responses with specific references.
+        """,
+        expectedOutput: "Comprehensive answer with source references",
+        agent: knowledgeAgent
+    )
+    ```
+  </Step>
+
+  <Step title="Execute">
+    Run the orbit—knowledge is automatically queried:
+
+    ```swift
+    let orbit = try await Orbit.create(
+        name: "Knowledge Query System",
+        agents: [knowledgeAgent],
+        tasks: [queryTask],
+        inputs: ["user_query": "What is our return policy?"]
+    )
+
+    let result = try await orbit.run()
+    // Agent automatically queried knowledge base
+    // Response grounded in return policy document
+    print(result.output)
+    ```
+  </Step>
+</Steps>
+
+### Orbit-Level Knowledge Base
+
+Share knowledge across all agents in an orbit:
+
+```swift
+let orbit = try await Orbit.create(
+    name: "Documentation System",
+    agents: [searchAgent, summaryAgent, answerAgent],
+    tasks: [searchTask, summaryTask, answerTask],
+    process: .sequential,
+    knowledgeSources: [
+        // Shared knowledge for all agents
+        "./docs/product-manual.pdf",
+        "./docs/api-reference.md",
+        "./data/product-catalog.json"
+    ]
+)
+```
+
+<Tabs>
+  <Tab title="When to Use">
+    **Agent-level knowledge base**:
+    - Agents need different domain knowledge
+    - Specialized agents with unique document sets
+    - Fine-grained control over knowledge access
+    - Separate knowledge bases per role
+
+    **Orbit-level knowledge base**:
+    - All agents need same knowledge
+    - Collaborative workflows
+    - Shared company knowledge
+    - Simplified configuration
+
+    **Example**:
+    ```swift
+    // Different knowledge per agent
+    let legalAgent = Agent(
+        role: "Legal Advisor",
+        knowledgeSources: ["./legal/contracts.pdf"]
+    )
+
+    let hrAgent = Agent(
+        role: "HR Assistant",
+        knowledgeSources: ["./hr/policies.pdf"]
+    )
+
+    // vs. shared knowledge
+    let orbit = try await Orbit.create(
+        name: "Company Assistant",
+        agents: [generalAgent1, generalAgent2],
+        knowledgeSources: [  // Shared by all
+            "./company/handbook.pdf"
+        ]
+    )
+    ```
+  </Tab>
+
+  <Tab title="Priority Rules">
+    **When both agent and orbit have knowledge sources**:
+
+    ```swift
+    Effective Knowledge = Agent Knowledge + Orbit Knowledge
+    ```
+
+    **Key Rules**:
+    1. Agent knowledge sources are always available to that agent
+    2. Orbit knowledge sources are available to all agents
+    3. **Both are merged** (unlike memory or tools which override)
+    4. Agents can access both their own and orbit knowledge
+
+    **Example**:
+    ```swift
+    let agent = Agent(
+        role: "Specialist",
+        knowledgeSources: [
+            "./specialist/domain-docs.pdf"  // Agent-specific
+        ]
+    )
+
+    let orbit = try await Orbit.create(
+        name: "System",
+        agents: [agent],
+        knowledgeSources: [
+            "./general/company-info.pdf"  // Shared
+        ]
+    )
+
+    // Agent has access to BOTH:
+    // - ./specialist/domain-docs.pdf
+    // - ./general/company-info.pdf
+    ```
+  </Tab>
+
+  <Tab title="Best Practices">
+    ✅ **Agent-specific knowledge** for specialized domains
+    ✅ **Orbit-level knowledge** for shared information
+    ✅ Combine both for flexible access control
+    ✅ Organize documents by domain/role
+
+    ❌ Don't duplicate documents across agents and orbit
+    ❌ Don't put all knowledge at orbit level if agents have different needs
+    ❌ Don't create overly large knowledge bases (limit to relevant docs)
+  </Tab>
+</Tabs>
+
+### Dynamic Knowledge Sources
+
+Add knowledge sources dynamically after creation:
+
+```swift
+// Create orbit
+let orbit = try await Orbit.create(
+    name: "Adaptive System",
+    agents: [agent],
+    tasks: [task],
+    knowledgeSources: [
+        "./initial-knowledge.pdf"
+    ]
+)
+
+// Add new knowledge source at runtime
+await orbit.addKnowledgeSource("./new-document.pdf")
+await orbit.addKnowledgeSource("./updated-policy.md")
+
+// Knowledge base automatically updates
+// Agents can now access new documents
+let result = try await orbit.run()
+```
+
+**Use Cases**:
+- Loading documents based on user input
+- Adding knowledge as it becomes available
+- A/B testing different knowledge sources
+- Incremental knowledge base building
+
+## Knowledge Sources
+
+OrbitAI supports multiple document formats for knowledge ingestion:
+
+### Supported File Formats
+
+<CardGroup cols={2}>
+  <Card title="PDF Documents" icon="file-pdf">
+    **Format**: `.pdf`
+    **Use Cases**: Manuals, reports, research papers, books
+    **Features**:
+    - Text extraction from pages
+    - Metadata preservation
+    - Table detection
+    - Multi-page support
+
+    **Example**:
+    ```swift
+    knowledgeSources: [
+        "./manuals/user-guide.pdf",
+        "./reports/annual-report-2024.pdf",
+        "./research/whitepaper.pdf"
+    ]
+    ```
+  </Card>
+
+  <Card title="Markdown Files" icon="markdown">
+    **Format**: `.md`, `.mdx`
+    **Use Cases**: Documentation, wikis, README files
+    **Features**:
+    - Native markdown parsing
+    - Header hierarchy preservation
+    - Code block handling
+    - Link resolution
+
+    **Example**:
+    ```swift
+    knowledgeSources: [
+        "./wiki/getting-started.md",
+        "./docs/api-reference.mdx",
+        "./README.md"
+    ]
+    ```
+  </Card>
+
+  <Card title="JSON Data" icon="brackets-curly">
+    **Format**: `.json`
+    **Use Cases**: Structured data, catalogs, configuration
+    **Features**:
+    - Structured data parsing
+    - Nested object handling
+    - Array processing
+    - Schema-aware search
+
+    **Example**:
+    ```swift
+    knowledgeSources: [
+        "./data/product-catalog.json",
+        "./config/settings.json",
+        "./customers/profiles.json"
+    ]
+    ```
+  </Card>
+
+  <Card title="Plain Text" icon="file-lines">
+    **Format**: `.txt`
+    **Use Cases**: FAQs, notes, transcripts, logs
+    **Features**:
+    - Simple text ingestion
+    - Fast processing
+    - No formatting overhead
+    - Universal compatibility
+
+    **Example**:
+    ```swift
+    knowledgeSources: [
+        "./support/faq.txt",
+        "./notes/meeting-notes.txt",
+        "./data/customer-feedback.txt"
+    ]
+    ```
+  </Card>
+</CardGroup>
+
+### File Path Specifications
+
+Knowledge sources accept various path formats:
+
+<Tabs>
+  <Tab title="Relative Paths">
+    **Relative to current working directory**:
+
+    ```swift
+    knowledgeSources: [
+        "./docs/guide.pdf",              // Current dir + docs/
+        "../shared/knowledge.md",        // Parent dir + shared/
+        "local-file.txt"                 // Current dir
+    ]
+    ```
+
+    **Best for**: Project-relative documents
+  </Tab>
+
+  <Tab title="Absolute Paths">
+    **Full file system paths**:
+
+    ```swift
+    knowledgeSources: [
+        "/Users/username/Documents/knowledge/manual.pdf",
+        "/var/data/company/policies.md",
+        "~/Documents/personal-notes.txt"  // Home directory
+    ]
+    ```
+
+    **Best for**: System-wide documents, shared resources
+  </Tab>
+
+  <Tab title="Directory Paths">
+    **Load all files from a directory**:
+
+    ```swift
+    knowledgeSources: [
+        "./docs/",           // All files in docs/
+        "./knowledge/pdfs/"  // All files in pdfs/
+    ]
+    ```
+
+    **Note**: Subdirectories are included recursively
+    **Best for**: Document collections, organized libraries
+  </Tab>
+
+  <Tab title="URL Paths">
+    **Remote documents** (if supported):
+
+    ```swift
+    knowledgeSources: [
+        "https://example.com/docs/api.pdf",
+        "https://docs.company.com/knowledge.md"
+    ]
+    ```
+
+    **Note**: Check OrbitAI version for URL support
+    **Best for**: Remote documentation, web resources
+  </Tab>
+</Tabs>
+
+### Document Organization
+
+Organize knowledge sources for optimal retrieval:
+
+```swift
+// Poor organization
+knowledgeSources: [
+    "./doc1.pdf",
+    "./doc2.pdf",
+    "./doc3.pdf",
+    "./doc4.pdf",
+    "./doc5.pdf"  // What are these?
+]
+
+// Good organization
+knowledgeSources: [
+    // Product documentation
+    "./knowledge/products/user-guide.pdf",
+    "./knowledge/products/api-reference.md",
+
+    // Company policies
+    "./knowledge/policies/employee-handbook.pdf",
+    "./knowledge/policies/security-policy.md",
+
+    // Support resources
+    "./knowledge/support/faq.txt",
+    "./knowledge/support/troubleshooting.md",
+
+    // Data resources
+    "./knowledge/data/product-catalog.json",
+    "./knowledge/data/pricing.json"
+]
+```
+
+<Tip>
+**Organization Best Practice**: Use a clear directory structure that mirrors your knowledge domains. This makes maintenance easier and helps with debugging retrieval issues.
+</Tip>
+
+### Knowledge Source Examples
+
+<AccordionGroup>
+  <Accordion title="Customer Support System" icon="headset">
+    ```swift
+    let supportAgent = Agent(
+        role: "Customer Support Agent",
+        purpose: "Help customers with issues using knowledge base",
+        context: "Friendly support agent with comprehensive product knowledge",
+        knowledgeSources: [
+            // Product documentation
+            "./kb/products/user-manual.pdf",
+            "./kb/products/quick-start-guide.pdf",
+
+            // Troubleshooting guides
+            "./kb/support/common-issues.md",
+            "./kb/support/error-codes.txt",
+            "./kb/support/troubleshooting-steps.md",
+
+            // FAQ database
+            "./kb/faq/general-faq.txt",
+            "./kb/faq/technical-faq.md",
+
+            // Policy documents
+            "./kb/policies/return-policy.pdf",
+            "./kb/policies/warranty-info.pdf"
+        ]
+    )
+
+    let supportTask = ORTask(
+        description: """
+        Answer the customer's question using the knowledge base.
+        Provide clear, accurate information with specific references.
+        If information is not in knowledge base, say so clearly.
+        """,
+        expectedOutput: "Helpful answer with source references"
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Legal Document Analysis" icon="scale-balanced">
+    ```swift
+    let legalAgent = Agent(
+        role: "Legal Research Assistant",
+        purpose: "Research legal documents and provide analysis",
+        context: "Legal expert with access to contracts and case law",
+        knowledgeSources: [
+            // Contracts
+            "./legal/contracts/vendor-agreements/",
+            "./legal/contracts/employment/",
+
+            // Policies
+            "./legal/policies/data-privacy.pdf",
+            "./legal/policies/terms-of-service.md",
+
+            // Case references
+            "./legal/cases/precedents.json",
+            "./legal/cases/summaries.md",
+
+            // Regulations
+            "./legal/regulations/compliance-requirements.pdf"
+        ]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Product Recommendation Engine" icon="star">
+    ```swift
+    let recommendationAgent = Agent(
+        role: "Product Advisor",
+        purpose: "Recommend products based on customer needs",
+        context: "Expert advisor with complete product knowledge",
+        knowledgeSources: [
+            // Product catalog
+            "./products/catalog.json",
+            "./products/specifications.pdf",
+
+            // Reviews and ratings
+            "./products/reviews.json",
+            "./products/customer-feedback.txt",
+
+            // Comparison guides
+            "./products/comparison-charts.md",
+            "./products/buying-guides.pdf",
+
+            // Inventory information
+            "./products/availability.json",
+            "./products/pricing.json"
+        ]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Technical Documentation Assistant" icon="code">
+    ```swift
+    let techDocsAgent = Agent(
+        role: "Technical Writer Assistant",
+        purpose: "Help with technical documentation queries",
+        context: "Expert in API documentation and technical writing",
+        knowledgeSources: [
+            // API documentation
+            "./docs/api/rest-api.md",
+            "./docs/api/graphql-api.md",
+            "./docs/api/webhooks.md",
+
+            // SDK documentation
+            "./docs/sdks/swift-sdk.md",
+            "./docs/sdks/python-sdk.md",
+
+            // Architecture guides
+            "./docs/architecture/system-design.pdf",
+            "./docs/architecture/deployment.md",
+
+            // Code examples
+            "./docs/examples/quickstart.md",
+            "./docs/examples/tutorials/",
+
+            // Changelog
+            "./docs/changelog.md"
+        ]
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Healthcare Information System" icon="heart-pulse">
+    ```swift
+    let healthcareAgent = Agent(
+        role: "Medical Information Assistant",
+        purpose: "Provide medical information from approved sources",
+        context: "Medical assistant with access to clinical guidelines",
+        knowledgeSources: [
+            // Clinical guidelines
+            "./medical/guidelines/treatment-protocols.pdf",
+            "./medical/guidelines/diagnostic-criteria.md",
+
+            // Drug information
+            "./medical/drugs/formulary.json",
+            "./medical/drugs/interactions.pdf",
+
+            // Procedures
+            "./medical/procedures/standard-procedures.md",
+            "./medical/procedures/safety-protocols.pdf",
+
+            // Patient education
+            "./medical/education/condition-guides.pdf",
+            "./medical/education/preventive-care.md"
+        ]
+    )
+    ```
+
+    <Warning>
+    **Medical Disclaimer**: Healthcare applications require careful validation and should not replace professional medical advice. Always ensure compliance with healthcare regulations (HIPAA, etc.).
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Integration Patterns
+
+### Knowledge Base + Memory
+
+Combine knowledge bases with memory systems for powerful agents:
+
+```swift
+let hybridAgent = Agent(
+    role: "Adaptive Assistant",
+    purpose: "Provide personalized help using both knowledge and memory",
+    context: """
+    Intelligent assistant that:
+    - Uses knowledge base for factual information
+    - Uses memory for user preferences and history
+    - Combines both for personalized, accurate responses
+    """,
+    // Memory for user interactions
+    memory: true,
+    longTermMemory: true,
+    // Knowledge base for factual information
+    knowledgeSources: [
+        "./knowledge/product-docs.pdf",
+        "./knowledge/company-info.md"
+    ]
+)
+```
+
+**How it works**:
+```
+User Query: "What are the features of Product X?"
+    ↓
+Agent Processing:
+    ├── Memory Check: "User previously asked about Product X pricing"
+    ├── Knowledge Query: "Product X features from documentation"
+    └── Synthesis: Personalized response combining both
+    ↓
+Response: "Product X has features A, B, C (from knowledge base).
+           Based on your previous interest in pricing (from memory),
+           you might also want to know that it's available at..."
+```
+
+<Tabs>
+  <Tab title="Use Case: Personalized Support">
+    ```swift
+    let personalizedSupport = Agent(
+        role: "Personal Support Agent",
+        purpose: "Provide personalized customer support",
+        context: "Support agent with knowledge and memory",
+
+        // Remember customer history
+        memory: true,
+        longTermMemory: true,
+
+        // Access support knowledge
+        knowledgeSources: [
+            "./support/faq.txt",
+            "./support/troubleshooting.md"
+        ]
+    )
+
+    // First interaction
+    // User: "How do I reset my password?"
+    // Agent uses: Knowledge base for procedure
+    // Agent stores: User asked about password reset
+
+    // Second interaction (later)
+    // User: "I'm still having issues"
+    // Agent uses: Memory (knows about password reset)
+    //            + Knowledge base (troubleshooting steps)
+    // Response: Contextual help for password reset issues
+    ```
+  </Tab>
+
+  <Tab title="Use Case: Learning System">
+    ```swift
+    let learningAgent = Agent(
+        role: "Learning Assistant",
+        purpose: "Teach users and adapt to their learning style",
+        context: "Educational assistant that learns user preferences",
+
+        // Track learning progress
+        memory: true,
+        longTermMemory: true,
+        entityMemory: true,  // Track concepts learned
+
+        // Educational content
+        knowledgeSources: [
+            "./education/lessons/",
+            "./education/exercises.json"
+        ]
+    )
+
+    // Agent learns:
+    // - User's skill level (memory)
+    // - Concepts already learned (entity memory)
+    // - Teaching content (knowledge base)
+    // Result: Adaptive, personalized learning experience
+    ```
+  </Tab>
+
+  <Tab title="Use Case: Sales Assistant">
+    ```swift
+    let salesAgent = Agent(
+        role: "Sales Assistant",
+        purpose: "Guide customers through sales process",
+        context: "Sales expert with product knowledge and customer memory",
+
+        // Remember customer interactions
+        memory: true,
+        longTermMemory: true,
+        entityMemory: true,  // Track customers and products
+
+        // Product information
+        knowledgeSources: [
+            "./sales/product-catalog.json",
+            "./sales/pricing.json",
+            "./sales/sales-playbook.pdf"
+        ]
+    )
+
+    // Workflow:
+    // 1. Customer asks about Product A (stored in memory)
+    // 2. Agent provides info from knowledge base
+    // 3. Customer returns later asking about "that product"
+    // 4. Agent recalls from memory: Product A
+    // 5. Continues conversation with context
+    ```
+  </Tab>
+</Tabs>
+
+### Knowledge Base + Tools
+
+Combine knowledge bases with tools for action-oriented agents:
+
+```swift
+let actionableAgent = Agent(
+    role: "Executive Assistant",
+    purpose: "Answer questions and take actions",
+    context: "Assistant with knowledge and capabilities to act",
+
+    // Knowledge for information
+    knowledgeSources: [
+        "./calendar-policies.md",
+        "./company-contacts.json"
+    ],
+
+    // Tools for actions
+    tools: [
+        "apple_calendar",  // Create calendar events
+        "send_email",      // Send emails
+        "web_search"       // Search for info not in KB
+    ]
+)
+
+let task = ORTask(
+    description: """
+    Check the company contacts in the knowledge base for John's email,
+    then send him an email about the meeting using the send_email tool,
+    and create a calendar event using the calendar tool based on
+    the meeting policies in the knowledge base.
+    """,
+    expectedOutput: "Confirmation of email sent and event created"
+)
+```
+
+**Agent workflow**:
+1. **Query knowledge base**: Find John's email in contacts
+2. **Query knowledge base**: Check meeting policies for defaults
+3. **Use tool**: Send email to John
+4. **Use tool**: Create calendar event
+5. **Return**: Confirmation with details
+
+### Knowledge Base Access in Tasks
+
+Access knowledge base programmatically in custom tasks:
+
+```swift
+let customTask = ORTask(
+    description: "Custom knowledge retrieval task",
+    expectedOutput: "Processed knowledge results",
+    customHandler: { context in
+        guard let knowledgeBase = context.knowledgeBase else {
+            return "Knowledge base not available"
+        }
+
+        // Query knowledge base
+        let results = try await knowledgeBase.query(
+            query: "product specifications",
+            limit: 5,
+            threshold: 0.75
+        )
+
+        // Process results
+        var output = "Found \(results.count) relevant documents:\n\n"
+
+        for (index, result) in results.enumerated() {
+            output += "\(index + 1). \(result.metadata.filename)\n"
+            output += "   Relevance: \(result.score)\n"
+            output += "   Content: \(result.content.prefix(100))...\n\n"
+        }
+
+        return output
+    }
+)
+```
+
+## Best Practices
+
+### Document Preparation
+
+<CardGroup cols={2}>
+  <Card title="Clean Documents" icon="broom">
+    Prepare documents for optimal retrieval:
+
+    **Do**:
+    - Remove unnecessary formatting
+    - Use clear headings and structure
+    - Include relevant metadata
+    - Keep content focused
+
+    **Don't**:
+    - Include excessive boilerplate
+    - Use unclear abbreviations
+    - Mix unrelated topics
+    - Keep outdated information
+  </Card>
+
+  <Card title="Chunk-Friendly Content" icon="scissors">
+    Structure content for effective chunking:
+
+    **Good structure**:
+    ```markdown
+    ## Feature Name
+
+    Brief description of the feature.
+
+    ### How It Works
+
+    Detailed explanation...
+
+    ### Use Cases
+
+    - Use case 1
+    - Use case 2
+    ```
+
+    **Poor structure**:
+    ```
+    FeatureName:desc:works:cases...
+    [All in one block]
+    ```
+  </Card>
+
+  <Card title="Rich Metadata" icon="tags">
+    Include metadata for better retrieval:
+
+    **PDF**: Use title, author, subject fields
+    **Markdown**: Include frontmatter
+    ```yaml
+    ---
+    title: Feature Documentation
+    category: User Guide
+    version: 2.0
+    ---
+    ```
+
+    **JSON**: Structure with metadata
+    ```json
+    {
+      "metadata": {
+        "category": "products",
+        "updated": "2024-01-15"
+      },
+      "content": {...}
+    }
+    ```
+  </Card>
+
+  <Card title="Document Size" icon="file-contract">
+    Optimal document sizing:
+
+    **Too small**: < 1 page
+    - Merge related documents
+    - Create topic-based documents
+
+    **Optimal**: 5-50 pages
+    - Good chunk coverage
+    - Manageable retrieval
+
+    **Too large**: > 100 pages
+    - Split into logical sections
+    - Create separate documents per topic
+  </Card>
+</CardGroup>
+
+### Knowledge Base Architecture
+
+<Tabs>
+  <Tab title="Small Projects">
+    **< 10 documents**
+
+    ```swift
+    // Simple, flat structure
+    let agent = Agent(
+        role: "Assistant",
+        knowledgeSources: [
+            "./docs/guide.pdf",
+            "./docs/faq.txt",
+            "./data/catalog.json"
+        ]
+    )
+    ```
+
+    **Characteristics**:
+    - Single agent with all knowledge
+    - Flat file structure
+    - No complex organization needed
+  </Tab>
+
+  <Tab title="Medium Projects">
+    **10-100 documents**
+
+    ```swift
+    // Organized by domain
+    let agent = Agent(
+        role: "Knowledge Worker",
+        knowledgeSources: [
+            // Product docs
+            "./kb/products/",
+
+            // Support docs
+            "./kb/support/",
+
+            // Company docs
+            "./kb/company/"
+        ]
+    )
+    ```
+
+    **Characteristics**:
+    - Organized directory structure
+    - Domain-specific grouping
+    - Consider agent specialization
+  </Tab>
+
+  <Tab title="Large Projects">
+    **100+ documents**
+
+    ```swift
+    // Specialized agents
+    let productAgent = Agent(
+        role: "Product Expert",
+        knowledgeSources: ["./kb/products/"]
+    )
+
+    let supportAgent = Agent(
+        role: "Support Expert",
+        knowledgeSources: ["./kb/support/"]
+    )
+
+    let companyAgent = Agent(
+        role: "Company Info Expert",
+        knowledgeSources: ["./kb/company/"]
+    )
+
+    // Router agent delegates to specialists
+    let router = Agent(
+        role: "Router",
+        purpose: "Route queries to specialized agents"
+    )
+    ```
+
+    **Characteristics**:
+    - Specialized agents per domain
+    - Hierarchical knowledge organization
+    - Router pattern for delegation
+    - Consider vector database
+  </Tab>
+
+  <Tab title="Enterprise Scale">
+    **1000+ documents**
+
+    ```swift
+    // Vector database integration
+    let vectorConfig = VectorDatabaseConfig(
+        provider: "pinecone",
+        indexName: "enterprise-knowledge",
+        dimensions: 1536
+    )
+
+    let agent = Agent(
+        role: "Enterprise Assistant",
+        knowledgeSources: [
+            "vector://enterprise-knowledge"
+        ],
+        knowledgeConfig: KnowledgeConfiguration(
+            vectorDatabase: vectorConfig,
+            chunkSize: 512,
+            chunkOverlap: 50,
+            retrievalLimit: 10
+        )
+    )
+    ```
+
+    **Characteristics**:
+    - External vector database
+    - Distributed storage
+    - Advanced indexing strategies
+    - Caching and optimization
+  </Tab>
+</Tabs>
+
+### Retrieval Optimization
+
+<AccordionGroup>
+  <Accordion title="Tune Similarity Thresholds" icon="sliders">
+    Adjust thresholds based on retrieval quality:
+
+    ```swift
+    // Low threshold (0.6-0.7): Broad retrieval
+    // More results, some may be less relevant
+    let broadConfig = KnowledgeConfiguration(
+        similarityThreshold: 0.65
+    )
+
+    // Medium threshold (0.75-0.8): Balanced
+    // Good balance of recall and precision
+    let balancedConfig = KnowledgeConfiguration(
+        similarityThreshold: 0.75  // Recommended
+    )
+
+    // High threshold (0.85-0.95): Precise
+    // Fewer results, high relevance
+    let preciseConfig = KnowledgeConfiguration(
+        similarityThreshold: 0.90
+    )
+    ```
+
+    **Testing approach**:
+    ```swift
+    // Test different thresholds
+    for threshold in [0.6, 0.7, 0.75, 0.8, 0.85, 0.9] {
+        let results = try await kb.query(
+            query: testQuery,
+            threshold: threshold
+        )
+        print("Threshold \(threshold): \(results.count) results")
+        // Evaluate quality and adjust
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Limit Result Count" icon="list-ol">
+    Retrieve optimal number of results:
+
+    ```swift
+    // Too few (1-2): May miss relevant info
+    let tooFew = try await kb.query(query: query, limit: 1)
+
+    // Optimal (3-10): Good context without overload
+    let optimal = try await kb.query(query: query, limit: 5)
+
+    // Too many (20+): Context overload, slower
+    let tooMany = try await kb.query(query: query, limit: 25)
+    ```
+
+    **Guidelines**:
+    - **Quick answers**: 3-5 results
+    - **Comprehensive analysis**: 5-10 results
+    - **Research tasks**: 10-20 results
+    - **Monitor context window**: Don't exceed LLM limits
+  </Accordion>
+
+  <Accordion title="Query Formulation" icon="comment-dots">
+    Formulate effective queries:
+
+    **Poor queries**:
+    ```
+    "product"          // Too vague
+    "x"                // Too short
+    "aslkdjf"          // Nonsense
+    ```
+
+    **Good queries**:
+    ```
+    "product features and specifications"
+    "return policy for damaged items"
+    "API authentication methods"
+    ```
+
+    **Best practice**:
+    ```swift
+    // Let agents formulate queries naturally
+    let task = ORTask(
+        description: """
+        Answer the user's question about our return policy.
+        Be specific about damaged items versus change of mind.
+        """,
+        expectedOutput: "Detailed return policy explanation"
+    )
+    // Agent will formulate appropriate knowledge query
+    ```
+  </Accordion>
+
+  <Accordion title="Caching Strategies" icon="database">
+    Cache frequently accessed knowledge:
+
+    ```swift
+    final class CachedKnowledgeBase {
+        private var queryCache: [String: [KnowledgeResult]] = [:]
+        private let cacheExpiry: TimeInterval = 3600  // 1 hour
+
+        func query(
+            query: String,
+            limit: Int,
+            threshold: Double
+        ) async throws -> [KnowledgeResult] {
+            // Check cache
+            if let cached = queryCache[query] {
+                return Array(cached.prefix(limit))
+            }
+
+            // Query knowledge base
+            let results = try await performQuery(
+                query: query,
+                limit: limit,
+                threshold: threshold
+            )
+
+            // Cache results
+            queryCache[query] = results
+
+            return results
+        }
+
+        // Periodic cache cleanup
+        func cleanupCache() {
+            // Remove old entries
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Production Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Version Control" icon="code-branch">
+    Track knowledge base changes:
+
+    ```bash
+    # Store knowledge in version control
+    git add knowledge/
+    git commit -m "Update product documentation"
+
+    # Tag knowledge versions
+    git tag -a kb-v1.2 -m "Knowledge base v1.2"
+    ```
+
+    **Benefits**:
+    - Track document changes
+    - Rollback if needed
+    - Coordinate with code releases
+  </Card>
+
+  <Card title="Validation" icon="check-double">
+    Validate knowledge base setup:
+
+    ```swift
+    func validateKnowledgeBase() async throws {
+        // Check files exist
+        for source in knowledgeSources {
+            guard FileManager.default.fileExists(
+                atPath: source
+            ) else {
+                throw ValidationError.fileNotFound(source)
+            }
+        }
+
+        // Test retrieval
+        let testQuery = "test query"
+        let results = try await kb.query(
+            query: testQuery,
+            limit: 1
+        )
+
+        guard !results.isEmpty else {
+            throw ValidationError.noResults
+        }
+
+        print("✓ Knowledge base validated")
+    }
+    ```
+  </Card>
+
+  <Card title="Monitoring" icon="chart-line">
+    Monitor knowledge base usage:
+
+    ```swift
+    // Log queries
+    let stats = KnowledgeStats()
+
+    func query(...) async throws -> [Result] {
+        stats.queryCount += 1
+        let start = Date()
+
+        let results = try await performQuery(...)
+
+        stats.avgLatency = updateAverage(
+            Date().timeIntervalSince(start)
+        )
+        stats.avgResultCount = updateAverage(
+            results.count
+        )
+
+        return results
+    }
+
+    // Regular reporting
+    print("""
+    Knowledge Base Stats:
+      Queries: \(stats.queryCount)
+      Avg Latency: \(stats.avgLatency)s
+      Avg Results: \(stats.avgResultCount)
+    """)
+    ```
+  </Card>
+
+  <Card title="Documentation" icon="book">
+    Document your knowledge base:
+
+    ```markdown
+    # Knowledge Base Documentation
+
+    ## Structure
+    - `/knowledge/products/` - Product docs
+    - `/knowledge/support/` - Support docs
+    - `/knowledge/company/` - Company info
+
+    ## Update Process
+    1. Update source documents
+    2. Validate changes
+    3. Deploy to production
+    4. Monitor retrieval quality
+
+    ## Maintenance
+    - Review quarterly
+    - Remove outdated docs
+    - Add new information
+    ```
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Knowledge Base Not Loading" icon="circle-xmark">
+    **Symptom**: Agent can't access knowledge base or documents not found.
+
+    **Causes**:
+    - Invalid file paths
+    - Missing files
+    - Permission issues
+    - Unsupported file format
+
+    **Diagnosis**:
+    ```swift
+    // Check file existence
+    for source in knowledgeSources {
+        let exists = FileManager.default.fileExists(atPath: source)
+        print("\(source): \(exists ? "✓" : "✗ NOT FOUND")")
+
+        if exists {
+            let isReadable = FileManager.default.isReadableFile(
+                atPath: source
+            )
+            print("  Readable: \(isReadable ? "✓" : "✗")")
+        }
+    }
+
+    // Check file format
+    let path = knowledgeSources[0]
+    let ext = (path as NSString).pathExtension
+    print("File extension: .\(ext)")
+    print("Supported: \(["pdf", "md", "mdx", "json", "txt"].contains(ext))")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Use absolute paths
+    let homeDir = FileManager.default.homeDirectoryForCurrentUser
+    let docPath = homeDir.appendingPathComponent("Documents/knowledge/doc.pdf")
+
+    knowledgeSources: [
+        docPath.path  // Absolute path
+    ]
+
+    // 2. Verify paths before creating agent
+    func validatePaths(_ paths: [String]) throws {
+        for path in paths {
+            guard FileManager.default.fileExists(atPath: path) else {
+                throw KBError.fileNotFound(path)
+            }
+        }
+    }
+
+    try validatePaths(knowledgeSources)
+
+    // 3. Create directory if needed
+    let kbDir = "./knowledge"
+    try FileManager.default.createDirectory(
+        atPath: kbDir,
+        withIntermediateDirectories: true
+    )
+
+    // 4. Check file permissions
+    // Ensure files are readable (not protected)
+    ```
+  </Accordion>
+
+  <Accordion title="Poor Retrieval Quality" icon="magnifying-glass-minus">
+    **Symptom**: Irrelevant results or missing relevant information.
+
+    **Causes**:
+    - Threshold too high or too low
+    - Poor embedding model
+    - Document quality issues
+    - Query formulation problems
+    - Insufficient knowledge coverage
+
+    **Diagnosis**:
+    ```swift
+    // Test with known queries
+    let testCases = [
+        ("product features", 5),
+        ("return policy", 3),
+        ("technical specifications", 5)
+    ]
+
+    for (query, expectedMin) in testCases {
+        let results = try await kb.query(
+            query: query,
+            limit: 10,
+            threshold: 0.7
+        )
+
+        print("\nQuery: \(query)")
+        print("Results: \(results.count) (expected ≥ \(expectedMin))")
+
+        if results.isEmpty {
+            print("⚠️  No results - check documents contain this info")
+        }
+
+        for (i, result) in results.prefix(3).enumerated() {
+            print("\(i+1). Score: \(result.score) - \(result.metadata.filename)")
+            print("   \(result.content.prefix(100))...")
+        }
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Lower similarity threshold
+    let config = KnowledgeConfiguration(
+        similarityThreshold: 0.65  // Down from 0.75
+    )
+
+    // 2. Increase result limit
+    let results = try await kb.query(
+        query: query,
+        limit: 10  // Up from 5
+    )
+
+    // 3. Improve documents
+    // - Add more context
+    // - Use clear headings
+    // - Include synonyms and related terms
+
+    // 4. Better embedding model
+    let config = KnowledgeConfiguration(
+        embeddingModel: "text-embedding-3-large"  // Higher quality
+    )
+
+    // 5. Add missing documents
+    await orbit.addKnowledgeSource("./additional-docs.pdf")
+
+    // 6. Test query variations
+    let queries = [
+        "product features",
+        "what are the features",
+        "product capabilities",
+        "features and benefits"
+    ]
+
+    for query in queries {
+        let results = try await kb.query(query: query, limit: 5)
+        print("\(query): \(results.count) results")
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Slow Knowledge Retrieval" icon="hourglass">
+    **Symptom**: Knowledge queries take too long.
+
+    **Causes**:
+    - Large knowledge base
+    - Expensive embedding generation
+    - No caching
+    - Inefficient vector search
+    - Network latency (remote embeddings)
+
+    **Diagnosis**:
+    ```swift
+    // Measure query time
+    let start = Date()
+    let results = try await kb.query(
+        query: "test query",
+        limit: 5,
+        threshold: 0.75
+    )
+    let duration = Date().timeIntervalSince(start)
+
+    print("Query took: \(duration)s")
+
+    if duration > 2.0 {
+        print("⚠️  Slow query (> 2s)")
+    }
+
+    // Profile components
+    let embedStart = Date()
+    let embedding = try await generateEmbedding("test")
+    print("Embedding: \(Date().timeIntervalSince(embedStart))s")
+
+    let searchStart = Date()
+    let searchResults = try await vectorSearch(embedding)
+    print("Search: \(Date().timeIntervalSince(searchStart))s")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Implement caching
+    let cachedKB = CachedKnowledgeBase(underlying: kb)
+
+    // 2. Use faster embedding model
+    let config = KnowledgeConfiguration(
+        embeddingModel: "text-embedding-3-small"  // Faster
+    )
+
+    // 3. Reduce knowledge base size
+    // Remove unused documents
+    // Split into specialized agents
+
+    // 4. Use vector database for large scale
+    let vectorDB = VectorDatabaseConfig(
+        provider: "pinecone",
+        // Optimized for fast retrieval
+    )
+
+    // 5. Prefetch likely queries
+    Task.detached {
+        let commonQueries = ["faq", "pricing", "features"]
+        for query in commonQueries {
+            try await kb.query(query: query, limit: 5)
+            // Warms cache
+        }
+    }
+
+    // 6. Batch embeddings
+    let embeddings = try await generateEmbeddingsBatch(queries)
+    // Faster than individual calls
+    ```
+  </Accordion>
+
+  <Accordion title="Knowledge Not Updating" icon="arrows-rotate">
+    **Symptom**: Updated documents not reflected in retrieval.
+
+    **Causes**:
+    - Cache not invalidated
+    - Index not refreshed
+    - Using old orbit instance
+    - Documents not reprocessed
+
+    **Diagnosis**:
+    ```swift
+    // Check document modification time
+    let path = "./knowledge/doc.pdf"
+    let attrs = try FileManager.default.attributesOfItem(atPath: path)
+    let modDate = attrs[.modificationDate] as? Date
+    print("Document modified: \(modDate ?? Date())")
+
+    // Check index update time
+    let indexDate = try await kb.getLastIndexUpdate()
+    print("Index updated: \(indexDate)")
+
+    if let mod = modDate, let idx = indexDate, mod > idx {
+        print("⚠️  Document newer than index - needs reindex")
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Recreate knowledge base
+    let newOrbit = try await Orbit.create(
+        name: "Updated System",
+        agents: agents,
+        tasks: tasks,
+        knowledgeSources: knowledgeSources  // Will reprocess
+    )
+
+    // 2. Clear cache
+    await kb.clearCache()
+
+    // 3. Force reindex
+    await kb.reindex()
+
+    // 4. Dynamic update
+    // Remove old source
+    await orbit.removeKnowledgeSource("./old-doc.pdf")
+    // Add updated source
+    await orbit.addKnowledgeSource("./updated-doc.pdf")
+
+    // 5. Implement auto-refresh
+    Task {
+        while isRunning {
+            try await Task.sleep(nanoseconds: 3600 * 1_000_000_000)
+            await kb.reindexIfNeeded()  // Check for changes
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Out of Memory Errors" icon="memory">
+    **Symptom**: Application crashes or memory errors when loading knowledge base.
+
+    **Causes**:
+    - Too many documents
+    - Documents too large
+    - All documents loaded at once
+    - Embeddings cached in memory
+
+    **Diagnosis**:
+    ```swift
+    // Check memory usage
+    let memoryUsage = getMemoryUsage()
+    print("Memory: \(memoryUsage) MB")
+
+    // Count documents
+    print("Knowledge sources: \(knowledgeSources.count)")
+
+    // Check file sizes
+    var totalSize: Int64 = 0
+    for source in knowledgeSources {
+        let attrs = try FileManager.default.attributesOfItem(
+            atPath: source
+        )
+        let size = attrs[.size] as? Int64 ?? 0
+        totalSize += size
+        print("\(source): \(size / 1024 / 1024) MB")
+    }
+    print("Total: \(totalSize / 1024 / 1024) MB")
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Reduce knowledge base size
+    // Use only essential documents
+    knowledgeSources: [
+        "./essential-docs.pdf"  // Not entire library
+    ]
+
+    // 2. Split into specialized agents
+    let agent1 = Agent(
+        role: "Product Expert",
+        knowledgeSources: ["./products/"]  // Subset
+    )
+
+    let agent2 = Agent(
+        role: "Support Expert",
+        knowledgeSources: ["./support/"]  // Different subset
+    )
+
+    // 3. Use lazy loading
+    let config = KnowledgeConfiguration(
+        loadingStrategy: .lazy  // Load on demand
+    )
+
+    // 4. External vector database
+    // Don't load all in memory
+    let vectorDB = VectorDatabaseConfig(
+        provider: "pinecone"  // External storage
+    )
+
+    // 5. Limit document size
+    // Split large PDFs into smaller documents
+
+    // 6. Clear embeddings cache periodically
+    await kb.clearEmbeddingsCache()
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Debugging Knowledge Bases
+
+Create debugging utilities for knowledge base inspection:
+
+```swift
+final class KnowledgeBaseDebugger {
+    let knowledgeBase: KnowledgeBase
+
+    init(knowledgeBase: KnowledgeBase) {
+        self.knowledgeBase = knowledgeBase
+    }
+
+    func printStatistics() async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Knowledge Base Statistics")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        let stats = try await knowledgeBase.getStatistics()
+
+        print("Documents: \(stats.documentCount)")
+        print("Chunks: \(stats.chunkCount)")
+        print("Total size: \(stats.totalSizeBytes / 1024 / 1024) MB")
+        print("Avg chunks per doc: \(stats.chunkCount / max(stats.documentCount, 1))")
+        print("Index size: \(stats.indexSizeBytes / 1024 / 1024) MB")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    func listDocuments() async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Knowledge Base Documents")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        let docs = try await knowledgeBase.listDocuments()
+
+        for (index, doc) in docs.enumerated() {
+            print("\n[\(index + 1)] \(doc.filename)")
+            print("   Path: \(doc.path)")
+            print("   Format: \(doc.format)")
+            print("   Size: \(doc.sizeBytes / 1024) KB")
+            print("   Chunks: \(doc.chunkCount)")
+            print("   Indexed: \(doc.indexedDate)")
+        }
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    func testQuery(_ query: String) async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Testing Query: \"\(query)\"")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        // Test various thresholds
+        for threshold in [0.6, 0.7, 0.75, 0.8, 0.9] {
+            let results = try await knowledgeBase.query(
+                query: query,
+                limit: 10,
+                threshold: threshold
+            )
+
+            print("\nThreshold \(threshold): \(results.count) results")
+
+            for (i, result) in results.prefix(3).enumerated() {
+                print("  \(i+1). Score: \(String(format: "%.3f", result.score))")
+                print("     Source: \(result.metadata.filename)")
+                print("     Content: \(result.content.prefix(80))...")
+            }
+        }
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    func validateSources(_ sources: [String]) {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Validating Knowledge Sources")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        var valid = 0
+        var invalid = 0
+
+        for source in sources {
+            let exists = FileManager.default.fileExists(atPath: source)
+            let readable = FileManager.default.isReadableFile(atPath: source)
+
+            if exists && readable {
+                print("✓ \(source)")
+                valid += 1
+            } else {
+                print("✗ \(source)")
+                if !exists {
+                    print("  Error: File not found")
+                } else if !readable {
+                    print("  Error: Not readable")
+                }
+                invalid += 1
+            }
+        }
+
+        print("\nSummary: \(valid) valid, \(invalid) invalid")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+}
+
+// Usage
+let debugger = KnowledgeBaseDebugger(knowledgeBase: orbit.knowledgeBase!)
+try await debugger.printStatistics()
+try await debugger.listDocuments()
+try await debugger.testQuery("product features")
+debugger.validateSources(knowledgeSources)
+```
+
+## Advanced Configuration
+
+### Knowledge Base Configuration Object
+
+For advanced use cases, configure knowledge base behavior with `KnowledgeConfiguration`:
+
+```swift
+let knowledgeConfig = KnowledgeConfiguration(
+    // Chunking parameters
+    chunkSize: 512,              // Characters per chunk
+    chunkOverlap: 50,            // Overlap between chunks
+
+    // Retrieval parameters
+    retrievalLimit: 10,          // Max chunks to retrieve
+    similarityThreshold: 0.75,   // Minimum similarity score
+
+    // Embedding configuration
+    embeddingModel: "text-embedding-ada-002",
+    embeddingDimensions: 1536,
+
+    // Processing options
+    preprocessText: true,        // Clean text before embedding
+    extractMetadata: true,       // Parse document metadata
+
+    // Caching
+    enableCache: true,
+    cacheExpiry: 3600,          // Cache TTL in seconds
+
+    // Vector storage
+    vectorStore: .inMemory,     // or .persistent, .pinecone, etc.
+    persistencePath: "./kb-vectors"
+)
+
+let agent = Agent(
+    role: "Advanced Knowledge Agent",
+    knowledgeSources: ["./docs/"],
+    knowledgeConfig: knowledgeConfig
+)
+```
+
+### Chunking Strategies
+
+Different chunking strategies for different document types:
+
+<Tabs>
+  <Tab title="Fixed-Size Chunking">
+    **Best for**: General documents, mixed content
+
+    ```swift
+    let fixedConfig = KnowledgeConfiguration(
+        chunkSize: 512,           // Fixed size
+        chunkOverlap: 50,         // 10% overlap
+        chunkingStrategy: .fixedSize
+    )
+    ```
+
+    **Pros**:
+    - Predictable chunk sizes
+    - Simple implementation
+    - Works for most documents
+
+    **Cons**:
+    - May split mid-sentence
+    - Doesn't respect structure
+  </Tab>
+
+  <Tab title="Semantic Chunking">
+    **Best for**: Narrative documents, articles
+
+    ```swift
+    let semanticConfig = KnowledgeConfiguration(
+        chunkSize: 512,
+        chunkingStrategy: .semantic,
+        semanticBoundaries: [.paragraph, .sentence]
+    )
+    ```
+
+    **Pros**:
+    - Respects semantic boundaries
+    - Complete thoughts per chunk
+    - Better context preservation
+
+    **Cons**:
+    - Variable chunk sizes
+    - More complex processing
+  </Tab>
+
+  <Tab title="Structural Chunking">
+    **Best for**: Structured documents (Markdown, HTML)
+
+    ```swift
+    let structuralConfig = KnowledgeConfiguration(
+        chunkingStrategy: .structural,
+        structuralElements: [.heading, .section, .codeBlock]
+    )
+    ```
+
+    **Pros**:
+    - Respects document structure
+    - Preserves hierarchy
+    - Natural boundaries
+
+    **Cons**:
+    - Requires structured input
+    - Variable sizes
+  </Tab>
+
+  <Tab title="Sliding Window">
+    **Best for**: Dense technical documents
+
+    ```swift
+    let slidingConfig = KnowledgeConfiguration(
+        chunkSize: 512,
+        chunkOverlap: 128,        // 25% overlap
+        chunkingStrategy: .slidingWindow
+    )
+    ```
+
+    **Pros**:
+    - High overlap ensures context
+    - No information loss at boundaries
+    - Good for technical content
+
+    **Cons**:
+    - More chunks = more storage
+    - Slower retrieval
+    - Higher costs
+  </Tab>
+</Tabs>
+
+### Vector Store Options
+
+Choose the appropriate vector storage backend:
+
+<CardGroup cols={2}>
+  <Card title="In-Memory Store" icon="microchip">
+    **Best for**: Development, small knowledge bases
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        vectorStore: .inMemory
+    )
+    ```
+
+    **Characteristics**:
+    - ✅ Fast retrieval
+    - ✅ No setup required
+    - ✅ Simple debugging
+    - ❌ Lost on restart
+    - ❌ Memory limited
+    - ❌ Single instance only
+
+    **Recommended**: < 1000 documents
+  </Card>
+
+  <Card title="Persistent Store" icon="hard-drive">
+    **Best for**: Production, medium knowledge bases
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        vectorStore: .persistent,
+        persistencePath: "./kb-vectors"
+    )
+    ```
+
+    **Characteristics**:
+    - ✅ Survives restarts
+    - ✅ Reasonable performance
+    - ✅ No external dependencies
+    - ❌ Slower than in-memory
+    - ❌ Limited scalability
+
+    **Recommended**: 1000-10,000 documents
+  </Card>
+
+  <Card title="Pinecone" icon="database">
+    **Best for**: Large-scale production
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        vectorStore: .pinecone,
+        pineconeConfig: PineconeConfig(
+            apiKey: "your-api-key",
+            environment: "us-west1-gcp",
+            indexName: "knowledge-base"
+        )
+    )
+    ```
+
+    **Characteristics**:
+    - ✅ Massive scalability
+    - ✅ Fast at any scale
+    - ✅ Managed service
+    - ❌ External dependency
+    - ❌ Additional cost
+
+    **Recommended**: 10,000+ documents
+  </Card>
+
+  <Card title="Custom Backend" icon="code">
+    **Best for**: Specialized requirements
+
+    ```swift
+    final class CustomVectorStore: VectorStore {
+        func store(
+            vectors: [Vector],
+            metadata: [Metadata]
+        ) async throws {
+            // Custom storage logic
+        }
+
+        func search(
+            query: [Double],
+            limit: Int
+        ) async throws -> [VectorResult] {
+            // Custom search logic
+        }
+    }
+
+    let config = KnowledgeConfiguration(
+        vectorStore: .custom(CustomVectorStore())
+    )
+    ```
+
+    **Use cases**:
+    - Integration with existing systems
+    - Specialized search algorithms
+    - Custom security requirements
+  </Card>
+</CardGroup>
+
+### Metadata Extraction and Filtering
+
+Extract and use metadata for enhanced retrieval:
+
+```swift
+// Configure metadata extraction
+let config = KnowledgeConfiguration(
+    extractMetadata: true,
+    metadataFields: [
+        .title,
+        .author,
+        .createdDate,
+        .modifiedDate,
+        .category,
+        .tags
+    ]
+)
+
+// Query with metadata filters
+let results = try await knowledgeBase.query(
+    query: "product specifications",
+    filters: [
+        .category("products"),
+        .dateRange(from: startDate, to: endDate),
+        .tags(["version-2.0", "approved"])
+    ]
+)
+
+// Example: Multi-tenant knowledge base
+let customerResults = try await knowledgeBase.query(
+    query: "pricing information",
+    filters: [
+        .metadata("customer_id", equals: customerId),
+        .metadata("access_level", greaterThan: 2)
+    ]
+)
+```
+
+### Reranking Strategies
+
+Improve retrieval quality with reranking:
+
+```swift
+let config = KnowledgeConfiguration(
+    retrievalLimit: 20,          // Initial broad retrieval
+    rerankingEnabled: true,
+    rerankingStrategy: .crossEncoder,
+    rerankingLimit: 5,           // Final results after reranking
+    crossEncoderModel: "cross-encoder/ms-marco-MiniLM-L-12-v2"
+)
+```
+
+<Tabs>
+  <Tab title="No Reranking">
+    **Speed**: Fastest
+    **Quality**: Good
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        retrievalLimit: 5,
+        rerankingEnabled: false
+    )
+    ```
+
+    Vector similarity only
+  </Tab>
+
+  <Tab title="Cross-Encoder">
+    **Speed**: Medium
+    **Quality**: Best
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        retrievalLimit: 20,
+        rerankingEnabled: true,
+        rerankingStrategy: .crossEncoder
+    )
+    ```
+
+    Two-stage: vector search + cross-encoder reranking
+  </Tab>
+
+  <Tab title="LLM Reranking">
+    **Speed**: Slowest
+    **Quality**: Excellent
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        retrievalLimit: 20,
+        rerankingEnabled: true,
+        rerankingStrategy: .llm,
+        rerankingPrompt: """
+        Rank these passages by relevance to: {query}
+        Consider: accuracy, completeness, recency
+        """
+    )
+    ```
+
+    Use LLM to intelligently rerank results
+  </Tab>
+
+  <Tab title="Hybrid">
+    **Speed**: Medium
+    **Quality**: Very Good
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        retrievalLimit: 20,
+        rerankingEnabled: true,
+        rerankingStrategy: .hybrid,
+        hybridWeights: [
+            .vectorSimilarity: 0.6,
+            .bm25Score: 0.2,
+            .metadataMatch: 0.2
+        ]
+    )
+    ```
+
+    Combine multiple ranking signals
+  </Tab>
+</Tabs>
+
+## Performance Optimization
+
+### Optimization Checklist
+
+<Steps>
+  <Step title="Optimize Chunk Size">
+    Test different chunk sizes for your content:
+
+    ```swift
+    // Test chunk sizes
+    let chunkSizes = [256, 512, 1024, 2048]
+
+    for size in chunkSizes {
+        let config = KnowledgeConfiguration(chunkSize: size)
+        let kb = try await KnowledgeBase(
+            sources: testSources,
+            config: config
+        )
+
+        // Measure retrieval quality
+        let results = try await kb.query(query: testQuery)
+        print("Chunk size \(size): \(results.count) results")
+        // Evaluate quality manually
+    }
+    ```
+
+    **Guidelines**:
+    - **Small (256-512)**: Precise retrieval, technical docs
+    - **Medium (512-1024)**: Balanced, general use
+    - **Large (1024-2048)**: Broader context, narratives
+  </Step>
+
+  <Step title="Tune Retrieval Parameters">
+    Optimize retrieval for your use case:
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        retrievalLimit: 5,           // Start small
+        similarityThreshold: 0.75,   // Adjust based on quality
+        rerankingEnabled: true       // Enable for better results
+    )
+    ```
+
+    **Performance tips**:
+    - Lower `retrievalLimit` = faster, may miss information
+    - Higher `similarityThreshold` = fewer but better results
+    - Enable reranking for quality, disable for speed
+  </Step>
+
+  <Step title="Implement Caching">
+    Cache frequently accessed queries:
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        enableCache: true,
+        cacheExpiry: 3600,         // 1 hour
+        cacheStrategy: .lru,       // Least Recently Used
+        maxCacheSize: 1000         // Max cached queries
+    )
+    ```
+
+    **Cache strategies**:
+    - **LRU**: Good for varied queries
+    - **LFU**: Good for repeated queries
+    - **TTL**: Good for time-sensitive data
+  </Step>
+
+  <Step title="Choose Efficient Embedding Model">
+    Balance quality vs. performance:
+
+    ```swift
+    // Development: Fast and cheap
+    embeddingModel: "text-embedding-3-small"
+
+    // Production: Balanced
+    embeddingModel: "text-embedding-ada-002"
+
+    // High-quality: Best results
+    embeddingModel: "text-embedding-3-large"
+    ```
+  </Step>
+
+  <Step title="Batch Processing">
+    Process documents in batches:
+
+    ```swift
+    let sources = // ... large list of sources
+    let batchSize = 10
+
+    for batch in sources.chunked(into: batchSize) {
+        try await knowledgeBase.addSourcesBatch(batch)
+        // Process in manageable chunks
+    }
+    ```
+  </Step>
+
+  <Step title="Lazy Loading">
+    Load documents on-demand:
+
+    ```swift
+    let config = KnowledgeConfiguration(
+        loadingStrategy: .lazy,    // Load when needed
+        preloadPriority: [         // Preload critical docs
+            "./critical-docs.pdf"
+        ]
+    )
+    ```
+  </Step>
+</Steps>
+
+### Performance Benchmarking
+
+Benchmark your knowledge base setup:
+
+```swift
+import Foundation
+
+final class KnowledgeBaseBenchmark {
+    let knowledgeBase: KnowledgeBase
+
+    func runBenchmark() async throws -> BenchmarkResults {
+        var results = BenchmarkResults()
+
+        // Test queries
+        let testQueries = [
+            "product features",
+            "pricing information",
+            "technical specifications",
+            "return policy",
+            "customer support"
+        ]
+
+        // Warm up
+        for query in testQueries {
+            _ = try await knowledgeBase.query(query: query, limit: 5)
+        }
+
+        // Benchmark retrieval speed
+        var retrievalTimes: [TimeInterval] = []
+
+        for query in testQueries {
+            let start = Date()
+            let queryResults = try await knowledgeBase.query(
+                query: query,
+                limit: 5,
+                threshold: 0.75
+            )
+            let duration = Date().timeIntervalSince(start)
+
+            retrievalTimes.append(duration)
+            results.queryResults[query] = queryResults.count
+        }
+
+        results.avgRetrievalTime = retrievalTimes.reduce(0, +) / Double(retrievalTimes.count)
+        results.minRetrievalTime = retrievalTimes.min() ?? 0
+        results.maxRetrievalTime = retrievalTimes.max() ?? 0
+
+        // Benchmark embedding generation
+        let embeddingStart = Date()
+        _ = try await knowledgeBase.generateEmbedding(for: "test query")
+        results.embeddingTime = Date().timeIntervalSince(embeddingStart)
+
+        // Memory usage
+        results.memoryUsage = getMemoryUsage()
+
+        // Cache hit rate
+        results.cacheHitRate = knowledgeBase.getCacheHitRate()
+
+        return results
+    }
+
+    func printResults(_ results: BenchmarkResults) {
+        print("""
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        Knowledge Base Benchmark Results
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        Retrieval Performance:
+          Average: \(String(format: "%.3f", results.avgRetrievalTime))s
+          Min: \(String(format: "%.3f", results.minRetrievalTime))s
+          Max: \(String(format: "%.3f", results.maxRetrievalTime))s
+
+        Embedding Generation: \(String(format: "%.3f", results.embeddingTime))s
+        Memory Usage: \(results.memoryUsage) MB
+        Cache Hit Rate: \(String(format: "%.1f", results.cacheHitRate * 100))%
+
+        Query Results:
+        """)
+
+        for (query, count) in results.queryResults {
+            print("  \(query): \(count) results")
+        }
+
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+
+    private func getMemoryUsage() -> Int {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+
+        guard kerr == KERN_SUCCESS else { return 0 }
+        return Int(info.resident_size) / 1024 / 1024
+    }
+}
+
+struct BenchmarkResults {
+    var avgRetrievalTime: TimeInterval = 0
+    var minRetrievalTime: TimeInterval = 0
+    var maxRetrievalTime: TimeInterval = 0
+    var embeddingTime: TimeInterval = 0
+    var memoryUsage: Int = 0
+    var cacheHitRate: Double = 0
+    var queryResults: [String: Int] = [:]
+}
+
+// Usage
+let benchmark = KnowledgeBaseBenchmark(knowledgeBase: kb)
+let results = try await benchmark.runBenchmark()
+benchmark.printResults(results)
+```
+
+## Security and Privacy
+
+### Sensitive Data Handling
+
+Implement safeguards for sensitive information:
+
+```swift
+final class SecureKnowledgeBase: KnowledgeBase {
+    private let sensitivePatterns: [String: NSRegularExpression] = [
+        "ssn": try! NSRegularExpression(pattern: #"\d{3}-\d{2}-\d{4}"#),
+        "credit_card": try! NSRegularExpression(pattern: #"\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}"#),
+        "email": try! NSRegularExpression(pattern: #"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}"#, options: .caseInsensitive),
+        "phone": try! NSRegularExpression(pattern: #"\+?\d{10,}"#)
+    ]
+
+    override func processDocument(_ content: String) async throws -> ProcessedDocument {
+        // Redact sensitive information
+        var sanitized = content
+
+        for (type, pattern) in sensitivePatterns {
+            let range = NSRange(sanitized.startIndex..., in: sanitized)
+            sanitized = pattern.stringByReplacingMatches(
+                in: sanitized,
+                range: range,
+                withTemplate: "[\(type.uppercased())]"
+            )
+        }
+
+        return try await super.processDocument(sanitized)
+    }
+
+    func setCustomPattern(name: String, pattern: String) throws {
+        let regex = try NSRegularExpression(pattern: pattern)
+        sensitivePatterns[name] = regex
+    }
+}
+
+// Usage
+let secureKB = SecureKnowledgeBase()
+try secureKB.setCustomPattern(
+    name: "employee_id",
+    pattern: #"EMP-\d{6}"#
+)
+```
+
+### Access Control
+
+Implement role-based access to knowledge:
+
+```swift
+final class AccessControlledKnowledgeBase: KnowledgeBase {
+    private var documentPermissions: [String: Set<String>] = [:]
+
+    func setDocumentPermissions(
+        documentPath: String,
+        roles: Set<String>
+    ) {
+        documentPermissions[documentPath] = roles
+    }
+
+    override func query(
+        query: String,
+        userRole: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [KnowledgeResult] {
+        // Get all results
+        let allResults = try await super.query(
+            query: query,
+            limit: limit * 2,  // Get more to filter
+            threshold: threshold
+        )
+
+        // Filter by permissions
+        let filtered = allResults.filter { result in
+            guard let requiredRoles = documentPermissions[result.sourcePath] else {
+                return true  // No restrictions
+            }
+            return requiredRoles.contains(userRole)
+        }
+
+        return Array(filtered.prefix(limit))
+    }
+}
+
+// Usage
+let acKB = AccessControlledKnowledgeBase()
+
+// Set permissions
+acKB.setDocumentPermissions(
+    documentPath: "./confidential/executive-plan.pdf",
+    roles: ["executive", "board"]
+)
+
+acKB.setDocumentPermissions(
+    documentPath: "./public/user-guide.pdf",
+    roles: ["employee", "customer", "public"]
+)
+
+// Query with role
+let results = try await acKB.query(
+    query: "company strategy",
+    userRole: currentUser.role,
+    limit: 5
+)
+```
+
+### Encryption
+
+Encrypt knowledge base storage:
+
+```swift
+import CryptoKit
+
+final class EncryptedKnowledgeBase: KnowledgeBase {
+    private let encryptionKey: SymmetricKey
+
+    init(encryptionKey: SymmetricKey) {
+        self.encryptionKey = encryptionKey
+        super.init()
+    }
+
+    override func persistVectors(
+        vectors: [Vector],
+        path: String
+    ) async throws {
+        // Serialize vectors
+        let data = try JSONEncoder().encode(vectors)
+
+        // Encrypt
+        let sealedBox = try AES.GCM.seal(
+            data,
+            using: encryptionKey
+        )
+
+        // Write encrypted data
+        try sealedBox.combined?.write(to: URL(fileURLWithPath: path))
+    }
+
+    override func loadVectors(from path: String) async throws -> [Vector] {
+        // Read encrypted data
+        let encryptedData = try Data(contentsOf: URL(fileURLWithPath: path))
+
+        // Decrypt
+        let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
+        let decryptedData = try AES.GCM.open(sealedBox, using: encryptionKey)
+
+        // Deserialize
+        return try JSONDecoder().decode([Vector].self, from: decryptedData)
+    }
+}
+
+// Usage
+let encryptionKey = SymmetricKey(size: .bits256)
+let encryptedKB = EncryptedKnowledgeBase(encryptionKey: encryptionKey)
+```
+
+### Audit Logging
+
+Track knowledge base access:
+
+```swift
+final class AuditedKnowledgeBase: KnowledgeBase {
+    private let auditLogger: AuditLogger
+
+    override func query(
+        query: String,
+        userId: String,
+        limit: Int,
+        threshold: Double?
+    ) async throws -> [KnowledgeResult] {
+        // Log query
+        await auditLogger.log(
+            event: .knowledgeQuery,
+            userId: userId,
+            details: [
+                "query": query,
+                "limit": "\(limit)",
+                "threshold": "\(threshold ?? 0.7)"
+            ]
+        )
+
+        let results = try await super.query(
+            query: query,
+            limit: limit,
+            threshold: threshold
+        )
+
+        // Log results
+        await auditLogger.log(
+            event: .knowledgeResults,
+            userId: userId,
+            details: [
+                "query": query,
+                "resultCount": "\(results.count)",
+                "sources": results.map { $0.sourcePath }.joined(separator: ", ")
+            ]
+        )
+
+        return results
+    }
+}
+
+// Audit Logger
+actor AuditLogger {
+    private var logs: [AuditLog] = []
+
+    func log(event: AuditEvent, userId: String, details: [String: String]) {
+        let log = AuditLog(
+            timestamp: Date(),
+            event: event,
+            userId: userId,
+            details: details
+        )
+        logs.append(log)
+
+        // Persist to secure storage
+        Task {
+            try await persistLog(log)
+        }
+    }
+
+    private func persistLog(_ log: AuditLog) async throws {
+        // Write to secure audit log
+    }
+}
+
+struct AuditLog {
+    let timestamp: Date
+    let event: AuditEvent
+    let userId: String
+    let details: [String: String]
+}
+
+enum AuditEvent {
+    case knowledgeQuery
+    case knowledgeResults
+    case documentAdded
+    case documentRemoved
+}
+```
+
+## Real-World Examples
+
+### Example 1: Customer Support Bot
+
+Complete implementation of a knowledge-powered support system:
+
+```swift
+import OrbitAI
+
+// Configure knowledge base
+let supportKB = KnowledgeConfiguration(
+    chunkSize: 512,
+    retrievalLimit: 5,
+    similarityThreshold: 0.75,
+    rerankingEnabled: true,
+    enableCache: true
+)
+
+// Create support agent
+let supportAgent = Agent(
+    role: "Customer Support Specialist",
+    purpose: """
+    Provide accurate customer support using the knowledge base.
+    Always cite sources and provide helpful, friendly responses.
+    """,
+    context: """
+    Expert support agent with access to:
+    - Product documentation
+    - Troubleshooting guides
+    - FAQ database
+    - Return policies
+
+    Guidelines:
+    - Always check knowledge base before responding
+    - Provide specific references to documentation
+    - Escalate if information not in knowledge base
+    - Be friendly and empathetic
+    """,
+    knowledgeSources: [
+        "./kb/products/user-manual.pdf",
+        "./kb/support/troubleshooting.md",
+        "./kb/support/faq.txt",
+        "./kb/policies/returns.pdf",
+        "./kb/policies/warranty.pdf"
+    ],
+    knowledgeConfig: supportKB,
+    memory: true,  // Remember conversation
+    tools: [
+        "create_support_ticket",
+        "check_order_status",
+        "send_email"
+    ]
+)
+
+// Create tasks
+let analyzeQuery = ORTask(
+    description: """
+    Analyze the customer's question and determine:
+    1. What information they need
+    2. Which knowledge sources are relevant
+    3. If tools are needed (order lookup, ticket creation)
+    """,
+    expectedOutput: "Analysis of customer needs"
+)
+
+let provideAnswer = ORTask(
+    description: """
+    Using the knowledge base and any tool results:
+    1. Answer the customer's question accurately
+    2. Cite specific documentation sources
+    3. Provide step-by-step instructions if needed
+    4. Offer additional relevant information
+    """,
+    expectedOutput: "Complete answer with citations"
+)
+
+let followUp = ORTask(
+    description: """
+    Based on the answer provided:
+    1. Check if question was fully answered
+    2. Suggest related resources
+    3. Ask if customer needs further assistance
+    4. Create support ticket if needed
+    """,
+    expectedOutput: "Follow-up message"
+)
+
+// Create orbit
+let supportOrbit = try await Orbit.create(
+    name: "Customer Support System",
+    agents: [supportAgent],
+    tasks: [analyzeQuery, provideAnswer, followUp],
+    process: .sequential,
+    verbose: true
+)
+
+// Handle customer inquiry
+func handleCustomerInquiry(_ inquiry: String) async throws -> String {
+    let result = try await supportOrbit.run(
+        inputs: [
+            "customer_inquiry": inquiry,
+            "timestamp": Date().description
+        ]
+    )
+
+    return result.output
+}
+
+// Example usage
+let response = try await handleCustomerInquiry(
+    "How do I reset my password? I've tried the forgot password link but didn't receive an email."
+)
+
+print(response)
+// Output includes:
+// - Steps from user manual
+// - Troubleshooting tips from knowledge base
+// - Offer to check email settings
+// - Create support ticket if issue persists
+```
+
+### Example 2: Legal Document Analysis
+
+RAG-powered legal research assistant:
+
+```swift
+// Legal knowledge configuration
+let legalKBConfig = KnowledgeConfiguration(
+    chunkSize: 1024,           // Larger chunks for legal text
+    chunkOverlap: 200,         // High overlap for context
+    retrievalLimit: 10,        // More results for comprehensive analysis
+    similarityThreshold: 0.80, // Higher precision
+    rerankingEnabled: true,
+    rerankingStrategy: .crossEncoder,
+    extractMetadata: true,
+    metadataFields: [.title, .createdDate, .category, .tags]
+)
+
+// Legal research agent
+let legalAgent = Agent(
+    role: "Legal Research Assistant",
+    purpose: "Analyze legal documents and provide research summaries",
+    context: """
+    Expert legal researcher with access to:
+    - Contract templates and precedents
+    - Case law summaries
+    - Regulatory documents
+    - Legal opinions
+
+    Guidelines:
+    - Provide accurate citations
+    - Note jurisdictional differences
+    - Identify relevant precedents
+    - Flag potential issues
+    - Maintain confidentiality
+    """,
+    knowledgeSources: [
+        "./legal/contracts/vendor-agreements/",
+        "./legal/contracts/employment/",
+        "./legal/cases/precedents/",
+        "./legal/regulations/compliance/",
+        "./legal/opinions/internal/"
+    ],
+    knowledgeConfig: legalKBConfig,
+    longTermMemory: true,      // Track research history
+    entityMemory: true         // Track cases, statutes, parties
+)
+
+// Research workflow
+let researchTask = ORTask(
+    description: """
+    Research the legal question using the knowledge base:
+    1. Identify relevant legal documents
+    2. Extract key clauses and precedents
+    3. Note jurisdictional considerations
+    4. Summarize findings with citations
+    """,
+    expectedOutput: "Legal research memo with citations"
+)
+
+let analysisTask = ORTask(
+    description: """
+    Analyze the research findings:
+    1. Identify potential legal issues
+    2. Compare with precedents
+    3. Note compliance requirements
+    4. Recommend next steps
+    """,
+    expectedOutput: "Legal analysis with recommendations"
+)
+
+// Create orbit with metadata filtering
+let legalOrbit = try await Orbit.create(
+    name: "Legal Research System",
+    agents: [legalAgent],
+    tasks: [researchTask, analysisTask],
+    process: .sequential
+)
+
+// Perform research with filters
+func performLegalResearch(
+    question: String,
+    jurisdiction: String,
+    dateRange: (Date, Date)?
+) async throws -> String {
+    var filters: [MetadataFilter] = [
+        .metadata("jurisdiction", equals: jurisdiction)
+    ]
+
+    if let (start, end) = dateRange {
+        filters.append(.dateRange(from: start, to: end))
+    }
+
+    let result = try await legalOrbit.run(
+        inputs: [
+            "question": question,
+            "jurisdiction": jurisdiction,
+            "filters": filters.description
+        ]
+    )
+
+    return result.output
+}
+```
+
+### Example 3: Medical Information System
+
+HIPAA-compliant medical knowledge system:
+
+```swift
+// Medical knowledge configuration
+let medicalKBConfig = KnowledgeConfiguration(
+    chunkSize: 768,
+    retrievalLimit: 5,
+    similarityThreshold: 0.85,  // High precision for medical info
+    rerankingEnabled: true,
+    enableCache: false,         // Don't cache sensitive data
+    extractMetadata: true
+)
+
+// Secure medical knowledge base
+let secureMe dicalKB = SecureKnowledgeBase()
+
+// Medical information agent
+let medicalAgent = Agent(
+    role: "Medical Information Specialist",
+    purpose: "Provide evidence-based medical information",
+    context: """
+    Medical information specialist with access to:
+    - Clinical guidelines
+    - Treatment protocols
+    - Drug formulary
+    - Patient education materials
+
+    IMPORTANT:
+    - Only provide information from approved sources
+    - Include proper disclaimers
+    - Never diagnose or prescribe
+    - Refer to healthcare providers when appropriate
+    - Maintain HIPAA compliance
+    """,
+    knowledgeSources: [
+        "./medical/guidelines/treatment-protocols.pdf",
+        "./medical/guidelines/diagnostic-criteria.pdf",
+        "./medical/drugs/formulary.json",
+        "./medical/procedures/standard-procedures.md",
+        "./medical/education/patient-guides.pdf"
+    ],
+    knowledgeConfig: medicalKBConfig,
+    memory: false,              // No persistent memory (privacy)
+    tools: [
+        "check_drug_interactions",
+        "search_medical_literature"
+    ]
+)
+
+// Add medical disclaimer
+let disclaimerTask = ORTask(
+    description: """
+    Add appropriate medical disclaimers:
+    - Information is for educational purposes only
+    - Not a substitute for professional medical advice
+    - Consult healthcare provider for medical decisions
+    """,
+    expectedOutput: "Response with disclaimer"
+)
+
+let medicalOrbit = try await Orbit.create(
+    name: "Medical Information System",
+    agents: [medicalAgent],
+    tasks: [disclaimerTask],
+    process: .sequential,
+    memory: false  // HIPAA compliance
+)
+```
+
+<Warning>
+**Medical Applications**: Healthcare applications must comply with regulations (HIPAA, GDPR, etc.). This example is for educational purposes. Consult legal and compliance experts before deploying medical AI systems.
+</Warning>
+
+## Migration and Maintenance
+
+### Migrating Existing Knowledge
+
+Migrate from other RAG systems to OrbitAI:
+
+```swift
+// Migration from LangChain
+func migrateLangChainKnowledgeBase(
+    langchainVectorStore: String
+) async throws {
+    // Load LangChain vectors
+    let vectors = try await loadLangChainVectors(from: langchainVectorStore)
+
+    // Convert to OrbitAI format
+    let orbitVectors = vectors.map { lc in
+        Vector(
+            id: lc.id,
+            embedding: lc.embedding,
+            metadata: Metadata(from: lc.metadata),
+            content: lc.pageContent
+        )
+    }
+
+    // Create OrbitAI knowledge base
+    let kb = try await KnowledgeBase()
+    try await kb.importVectors(orbitVectors)
+
+    print("Migrated \(orbitVectors.count) vectors")
+}
+
+// Migration from custom system
+func migrateCustomKnowledgeBase(
+    documentsPath: String
+) async throws {
+    // List all documents
+    let fileManager = FileManager.default
+    let documents = try fileManager.contentsOfDirectory(atPath: documentsPath)
+
+    // Create knowledge sources list
+    let sources = documents.map { doc in
+        "\(documentsPath)/\(doc)"
+    }
+
+    // Create new knowledge base
+    let kb = try await KnowledgeBase(sources: sources)
+
+    print("Migrated \(documents.count) documents")
+}
+```
+
+### Knowledge Base Versioning
+
+Version your knowledge base for rollback capability:
+
+```swift
+final class VersionedKnowledgeBase {
+    private var versions: [String: KnowledgeBase] = [:]
+    private var currentVersion: String
+
+    init(initialVersion: String = "v1.0") {
+        self.currentVersion = initialVersion
+    }
+
+    func createVersion(
+        version: String,
+        sources: [String],
+        config: KnowledgeConfiguration
+    ) async throws {
+        let kb = try await KnowledgeBase(
+            sources: sources,
+            config: config
+        )
+
+        versions[version] = kb
+
+        // Persist version metadata
+        try await saveVersionMetadata(version: version, sources: sources)
+    }
+
+    func switchVersion(_ version: String) throws {
+        guard versions[version] != nil else {
+            throw KBError.versionNotFound(version)
+        }
+
+        currentVersion = version
+        print("Switched to version \(version)")
+    }
+
+    func getCurrentKB() -> KnowledgeBase? {
+        return versions[currentVersion]
+    }
+
+    func listVersions() -> [String] {
+        return Array(versions.keys).sorted()
+    }
+
+    private func saveVersionMetadata(
+        version: String,
+        sources: [String]
+    ) async throws {
+        let metadata = VersionMetadata(
+            version: version,
+            createdAt: Date(),
+            sources: sources
+        )
+
+        // Persist to disk
+        let data = try JSONEncoder().encode(metadata)
+        try data.write(to: URL(fileURLWithPath: "./kb-versions/\(version).json"))
+    }
+}
+
+struct VersionMetadata: Codable {
+    let version: String
+    let createdAt: Date
+    let sources: [String]
+}
+
+// Usage
+let versionedKB = VersionedKnowledgeBase()
+
+// Create v1.0
+try await versionedKB.createVersion(
+    version: "v1.0",
+    sources: ["./docs/v1/"],
+    config: config
+)
+
+// Create v2.0 with updated docs
+try await versionedKB.createVersion(
+    version: "v2.0",
+    sources: ["./docs/v2/"],
+    config: config
+)
+
+// Rollback if needed
+try versionedKB.switchVersion("v1.0")
+```
+
+### Maintenance Operations
+
+Regular maintenance for optimal performance:
+
+```swift
+final class KnowledgeBaseMaintenanceManager {
+    let knowledgeBase: KnowledgeBase
+
+    // Remove duplicate documents
+    func deduplicateDocuments() async throws {
+        let docs = try await knowledgeBase.listDocuments()
+        var seen: Set<String> = []
+        var duplicates: [String] = []
+
+        for doc in docs {
+            let hash = try await doc.contentHash()
+            if seen.contains(hash) {
+                duplicates.append(doc.path)
+            } else {
+                seen.insert(hash)
+            }
+        }
+
+        // Remove duplicates
+        for duplicate in duplicates {
+            try await knowledgeBase.removeSource(duplicate)
+            print("Removed duplicate: \(duplicate)")
+        }
+
+        print("Removed \(duplicates.count) duplicates")
+    }
+
+    // Reindex modified documents
+    func reindexModifiedDocuments() async throws {
+        let docs = try await knowledgeBase.listDocuments()
+        var reindexed = 0
+
+        for doc in docs {
+            let fileModDate = try await doc.fileModificationDate()
+            let indexDate = doc.indexedDate
+
+            if fileModDate > indexDate {
+                try await knowledgeBase.reindexDocument(doc.path)
+                reindexed += 1
+                print("Reindexed: \(doc.filename)")
+            }
+        }
+
+        print("Reindexed \(reindexed) documents")
+    }
+
+    // Remove orphaned vectors
+    func cleanupOrphanedVectors() async throws {
+        let vectors = try await knowledgeBase.getAllVectors()
+        let docs = try await knowledgeBase.listDocuments()
+        let validPaths = Set(docs.map { $0.path })
+
+        var removed = 0
+
+        for vector in vectors {
+            if !validPaths.contains(vector.sourcePath) {
+                try await knowledgeBase.removeVector(vector.id)
+                removed += 1
+            }
+        }
+
+        print("Removed \(removed) orphaned vectors")
+    }
+
+    // Optimize vector index
+    func optimizeIndex() async throws {
+        print("Optimizing vector index...")
+        try await knowledgeBase.optimizeIndex()
+        print("Index optimization complete")
+    }
+
+    // Run full maintenance
+    func runFullMaintenance() async throws {
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("Knowledge Base Maintenance")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+        try await deduplicateDocuments()
+        try await reindexModifiedDocuments()
+        try await cleanupOrphanedVectors()
+        try await optimizeIndex()
+
+        print("Maintenance complete")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    }
+}
+
+// Schedule regular maintenance
+Task {
+    let maintenanceManager = KnowledgeBaseMaintenanceManager(
+        knowledgeBase: kb
+    )
+
+    while isRunning {
+        // Run weekly
+        try await Task.sleep(nanoseconds: 7 * 24 * 3600 * 1_000_000_000)
+        try await maintenanceManager.runFullMaintenance()
+    }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Memory Systems" icon="brain" href="/memory">
+    Learn about memory systems for dynamic knowledge
+  </Card>
+
+  <Card title="Agent Configuration" icon="user-gear" href="/agents">
+    Configure agents with knowledge bases
+  </Card>
+
+  <Card title="Tools" icon="wrench" href="/tools">
+    Combine knowledge with tools for action-oriented agents
+  </Card>
+
+  <Card title="Orbit Workflows" icon="circle-nodes" href="/orbits">
+    Orchestrate knowledge-powered agent workflows
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Start with a small, well-organized knowledge base (5-10 essential documents) and expand based on retrieval gaps. Monitor which queries return poor results and add targeted documents to fill those gaps.
+</Tip>

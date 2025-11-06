@@ -1,0 +1,1804 @@
+---
+title: "Tools"
+description: "Extend agent capabilities with built-in and custom tools for real-world interactions and specialized functionality."
+---
+
+## Overview
+
+Tools are the mechanism through which OrbitAI agents interact with the external world and perform specialized operations. They enable agents to go beyond language processing to take concrete actions, access external resources, and manipulate data.
+
+<CardGroup cols={3}>
+  <Card title="Extensible" icon="plug">
+    Built-in tools and custom tool creation support
+  </Card>
+  <Card title="Type-Safe" icon="shield-check">
+    JSON Schema validation ensures correct usage
+  </Card>
+  <Card title="Async-Ready" icon="bolt">
+    Fully asynchronous execution with Swift Concurrency
+  </Card>
+  <Card title="Traceable" icon="chart-line">
+    Comprehensive metrics and execution tracking
+  </Card>
+  <Card title="Intelligent" icon="brain">
+    LLM-driven automatic tool selection
+  </Card>
+  <Card title="Composable" icon="cubes">
+    Combine tools for complex workflows
+  </Card>
+</CardGroup>
+
+### Key Capabilities
+
+<AccordionGroup>
+  <Accordion title="Automatic Tool Selection" icon="wand-magic-sparkles">
+    Agents automatically determine which tools to use based on task requirements, available tools, and context. The LLM reasons about tool usage and orchestrates multi-tool workflows.
+  </Accordion>
+
+  <Accordion title="Schema Validation" icon="check-double">
+    Every tool defines its input parameters using JSON Schema, ensuring type safety and preventing invalid tool usage before execution.
+  </Accordion>
+
+  <Accordion title="Execution Tracking" icon="magnifying-glass-chart">
+    Tool execution is monitored with detailed metrics including execution time, success status, input/output sizes, and error information.
+  </Accordion>
+
+  <Accordion title="Error Handling" icon="triangle-exclamation">
+    Built-in error handling mechanisms ensure graceful failures with detailed error messages and recovery strategies.
+  </Accordion>
+</AccordionGroup>
+
+## Tool Architecture
+
+```
+Tool System
+    ├── ToolsHandler (Singleton)
+    │   ├── Tool Registry
+    │   ├── Registration/Lookup
+    │   └── Lifecycle Management
+    │
+    ├── BaseTool (Base Class)
+    │   ├── Name & Description
+    │   ├── Parameters Schema
+    │   └── Execute Method
+    │
+    ├── Built-in Tools
+    │   ├── File Operations
+    │   ├── Web Access
+    │   ├── Apple Platform APIs
+    │   └── Data Processing
+    │
+    ├── Custom Tools
+    │   ├── User-Defined Logic
+    │   ├── External API Integration
+    │   └── Domain-Specific Tools
+    │
+    └── Tool Execution
+        ├── Parameter Validation
+        ├── Async Execution
+        ├── Result Handling
+        └── Metrics Collection
+```
+
+## Built-in Tools
+
+OrbitAI includes a comprehensive suite of built-in tools for common operations:
+
+### File & Data Operations
+
+<CardGroup cols={2}>
+  <Card title="file_reader" icon="file">
+    **Description**: Read and process file contents
+    **Parameters**: `path` (string), `encoding` (optional)
+    **Returns**: File contents as string or data
+  </Card>
+
+  <Card title="file_writer" icon="file-pen">
+    **Description**: Write or update file contents
+    **Parameters**: `path` (string), `content` (string), `mode` (append/overwrite)
+    **Returns**: Success status and file path
+  </Card>
+
+  <Card title="directory_list" icon="folder-tree">
+    **Description**: List directory contents with filtering
+    **Parameters**: `path` (string), `recursive` (boolean), `filter` (regex)
+    **Returns**: Array of file/directory information
+  </Card>
+
+  <Card title="csv_processor" icon="table">
+    **Description**: Parse and manipulate CSV data
+    **Parameters**: `file_path` (string), `operation` (read/write/transform)
+    **Returns**: Structured data or success status
+  </Card>
+
+  <Card title="data_analyzer" icon="chart-bar">
+    **Description**: Analyze datasets with statistical operations
+    **Parameters**: `data` (array), `operations` (mean/median/std/etc)
+    **Returns**: Statistical analysis results
+  </Card>
+</CardGroup>
+
+### Web & Network Tools
+
+<CardGroup cols={2}>
+  <Card title="web_search" icon="magnifying-glass">
+    **Description**: Search the internet for current information
+    **Parameters**: `query` (string), `num_results` (integer, 1-10)
+    **Returns**: Array of search results with URLs and snippets
+  </Card>
+
+  <Card title="web_scraping" icon="spider-web">
+    **Description**: Extract content from web pages
+    **Parameters**: `url` (string), `selectors` (CSS/XPath)
+    **Returns**: Extracted content and metadata
+  </Card>
+
+  <Card title="api_caller" icon="plug">
+    **Description**: Make HTTP requests to external APIs
+    **Parameters**: `url`, `method`, `headers`, `body`, `auth`
+    **Returns**: Response data and status
+  </Card>
+
+  <Card title="geocoding" icon="location-dot">
+    **Description**: Convert addresses to coordinates and vice versa
+    **Parameters**: `query` (string), `type` (forward/reverse)
+    **Returns**: Location data with coordinates
+  </Card>
+</CardGroup>
+
+### Apple Platform Integration
+
+<CardGroup cols={2}>
+  <Card title="apple_calendar" icon="calendar">
+    **Description**: Interact with Apple Calendar (EventKit)
+    **Parameters**: `operation` (read/create/update/delete), `event_data`
+    **Returns**: Calendar events or success status
+  </Card>
+
+  <Card title="apple_reminders" icon="list-check">
+    **Description**: Manage Apple Reminders
+    **Parameters**: `operation`, `reminder_data`, `list_name`
+    **Returns**: Reminders or success status
+  </Card>
+
+  <Card title="local_notifications" icon="bell">
+    **Description**: Schedule and manage local notifications
+    **Parameters**: `title`, `body`, `trigger`, `identifier`
+    **Returns**: Notification identifier and delivery status
+  </Card>
+
+  <Card title="core_location" icon="location-crosshairs">
+    **Description**: Access device location services
+    **Parameters**: `accuracy` (best/kilometer/etc), `continuous` (boolean)
+    **Returns**: Location coordinates and metadata
+  </Card>
+
+  <Card title="weather_kit" icon="cloud-sun">
+    **Description**: Retrieve weather information using WeatherKit
+    **Parameters**: `location` (coordinates/place), `forecast_type`
+    **Returns**: Weather data and forecasts
+  </Card>
+</CardGroup>
+
+### Computation Tools
+
+<CardGroup cols={2}>
+  <Card title="calculator" icon="calculator">
+    **Description**: Perform mathematical calculations
+    **Parameters**: `expression` (string), `precision` (integer)
+    **Returns**: Calculation result
+  </Card>
+
+  <Card title="code_executor" icon="code">
+    **Description**: Execute code in sandboxed environment
+    **Parameters**: `code` (string), `language` (python/swift/js)
+    **Returns**: Execution output and status
+  </Card>
+
+  <Card title="chart_generator" icon="chart-line">
+    **Description**: Create data visualizations
+    **Parameters**: `data`, `chart_type`, `styling`
+    **Returns**: Chart image or data URL
+  </Card>
+</CardGroup>
+
+<Info>
+Built-in tools are automatically registered with `ToolsHandler` when OrbitAI initializes. No manual registration is required.
+</Info>
+
+## Tool Assignment
+
+Tools can be assigned at both the agent and task levels, providing flexibility in tool availability and usage.
+
+### Agent-Level Tools
+
+Assign tools to an agent to define its general capabilities across all tasks:
+
+```swift
+let researchAgent = Agent(
+    role: "Research Analyst",
+    purpose: "Conduct comprehensive market research and analysis",
+    context: """
+    Expert researcher with access to web resources,
+    data analysis tools, and visualization capabilities.
+    """,
+    tools: [
+        "web_search",
+        "web_scraping",
+        "data_analyzer",
+        "chart_generator",
+        "file_writer"
+    ]
+)
+```
+
+**When to use**: When tools are fundamental to the agent's role and will be used across multiple tasks.
+
+### Task-Level Tools
+
+Assign tools to specific tasks for fine-grained control:
+
+```swift
+let analysisTask = ORTask(
+    description: """
+    Download the quarterly sales data, analyze trends,
+    and generate a visualization report.
+    """,
+    expectedOutput: "Sales trend report with charts",
+    agent: dataAgent,
+    tools: [
+        "api_caller",          // Fetch sales data
+        "csv_processor",       // Process data
+        "data_analyzer",       // Analyze trends
+        "chart_generator",     // Create visualizations
+        "file_writer"          // Save report
+    ]
+)
+```
+
+**When to use**: When specific tools are only needed for particular tasks or to restrict tool usage.
+
+### Agent Tools vs Task Tools
+
+<Tabs>
+  <Tab title="Tool Resolution">
+    When both agent and task define tools, OrbitAI uses the following resolution logic:
+
+    ```swift
+    Effective Tools = Task Tools.isEmpty ? Agent Tools : Task Tools
+    ```
+
+    **Key Rules**:
+    1. If task has tools defined → Use only task tools
+    2. If task has no tools → Use agent tools
+    3. Task tools **override** agent tools (not merge)
+    4. Empty tool list `[]` means no tools available
+
+  </Tab>
+
+  <Tab title="Best Practices">
+    **Agent Tools**:
+    - ✅ General capabilities (web_search, calculator)
+    - ✅ Role-specific tools (code_executor for developers)
+    - ✅ Frequently used tools across tasks
+    - ❌ Highly specialized one-time tools
+    - ❌ Task-specific integrations
+
+    **Task Tools**:
+    - ✅ Task-specific operations
+    - ✅ Temporary tool restrictions
+    - ✅ Override agent tools for security
+    - ✅ External API integrations for specific tasks
+    - ❌ Common tools used by all tasks (define in agent)
+
+  </Tab>
+
+  <Tab title="Examples">
+    ```swift
+    // Example 1: Agent tools used (task has no tools)
+    let agent = Agent(
+        role: "Writer",
+        tools: ["web_search", "file_writer"]
+    )
+    let task = ORTask(
+        description: "Write an article about AI trends",
+        agent: agent
+        // No tools specified → uses agent's tools
+    )
+    // Available tools: web_search, file_writer
+
+    // Example 2: Task tools override agent tools
+    let restrictedTask = ORTask(
+        description: "Analyze existing data only",
+        agent: agent,  // Has web_search, file_writer
+        tools: ["data_analyzer"]  // Only this tool available
+    )
+    // Available tools: data_analyzer (agent tools ignored)
+
+    // Example 3: No tools available
+    let thinkingTask = ORTask(
+        description: "Plan the project approach",
+        agent: agent,
+        tools: []  // Explicitly no tools
+    )
+    // Available tools: none (pure reasoning task)
+    ```
+
+  </Tab>
+</Tabs>
+
+<Warning>
+Task tools completely override agent tools—they do not merge. If you need agent tools plus additional task tools, explicitly list all required tools in the task definition.
+</Warning>
+
+## Creating Custom Tools
+
+Custom tools enable integration with proprietary systems, external APIs, and domain-specific functionality.
+
+### Basic Custom Tool
+
+Create a custom tool by extending `BaseTool`:
+
+<Steps>
+  <Step title="Define Tool Class">
+    ```swift
+    import OrbitAI
+
+    final class DatabaseQueryTool: BaseTool {
+        override var name: String {
+            "database_query"
+        }
+
+        override var description: String {
+            """
+            Query the company database for information.
+            Use this when you need to retrieve records,
+            check inventory, or analyze stored data.
+            """
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Define Parameters Schema">
+    ```swift
+    override var parametersSchema: JSONSchema {
+        JSONSchema(
+            type: .object,
+            properties: [
+                "query": JSONSchema(
+                    type: .string,
+                    description: "SQL query to execute"
+                ),
+                "limit": JSONSchema(
+                    type: .integer,
+                    description: "Maximum rows to return (1-1000)"
+                ),
+                "timeout": JSONSchema(
+                    type: .number,
+                    description: "Query timeout in seconds"
+                )
+            ],
+            required: ["query"]
+        )
+    }
+    ```
+  </Step>
+
+  <Step title="Implement Execute Method">
+    ```swift
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        // Validate parameters
+        guard let query = parameters["query"]?.stringValue else {
+            throw OrbitAIError.invalidToolParameters(
+                "Missing required parameter: query"
+            )
+        }
+
+        // Apply defaults
+        let limit = parameters["limit"]?.intValue ?? 100
+        let timeout = parameters["timeout"]?.doubleValue ?? 30.0
+
+        // Validate constraints
+        guard (1...1000).contains(limit) else {
+            throw OrbitAIError.invalidToolParameters(
+                "Limit must be between 1 and 1000"
+            )
+        }
+
+        // Execute operation
+        let results = try await database.execute(
+            query,
+            limit: limit,
+            timeout: timeout
+        )
+
+        // Format results
+        var resultData = Metadata()
+        resultData["rows"] = .array(results.map { .dictionary($0) })
+        resultData["count"] = .int(results.count)
+        resultData["query"] = .string(query)
+
+        return ToolResult(success: true, data: resultData)
+    }
+    ```
+  </Step>
+
+  <Step title="Register Tool">
+    ```swift
+    // Register globally
+    let toolsHandler = ToolsHandler.shared
+    await toolsHandler.registerTool(DatabaseQueryTool())
+
+    // Now available to all agents
+    let agent = Agent(
+        role: "Data Analyst",
+        purpose: "Query and analyze company data",
+        context: "Expert in SQL and data analysis",
+        tools: ["database_query", "data_analyzer"]
+    )
+    ```
+  </Step>
+</Steps>
+
+### Advanced Custom Tool Example
+
+Here's a more sophisticated tool with error handling, validation, and metrics:
+
+```swift
+import OrbitAI
+import Foundation
+
+final class EmailSenderTool: BaseTool {
+    private let emailService: EmailService
+
+    init(emailService: EmailService) {
+        self.emailService = emailService
+    }
+
+    override var name: String { "send_email" }
+
+    override var description: String {
+        """
+        Send email messages to recipients with optional attachments.
+        Supports both plain text and HTML formatting.
+        """
+    }
+
+    override var parametersSchema: JSONSchema {
+        JSONSchema(
+            type: .object,
+            properties: [
+                "to": JSONSchema(
+                    type: .array,
+                    items: JSONSchema(type: .string),
+                    description: "Recipient email addresses"
+                ),
+                "subject": JSONSchema(
+                    type: .string,
+                    description: "Email subject line"
+                ),
+                "body": JSONSchema(
+                    type: .string,
+                    description: "Email body content"
+                ),
+                "format": JSONSchema(
+                    type: .string,
+                    enum: ["text", "html"],
+                    description: "Body format (default: text)"
+                ),
+                "attachments": JSONSchema(
+                    type: .array,
+                    items: JSONSchema(type: .string),
+                    description: "File paths to attach"
+                ),
+                "cc": JSONSchema(
+                    type: .array,
+                    items: JSONSchema(type: .string),
+                    description: "CC recipients (optional)"
+                ),
+                "bcc": JSONSchema(
+                    type: .array,
+                    items: JSONSchema(type: .string),
+                    description: "BCC recipients (optional)"
+                )
+            ],
+            required: ["to", "subject", "body"]
+        )
+    }
+
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        // Validate required parameters
+        guard let recipients = parameters["to"]?.arrayValue?.compactMap({
+            $0.stringValue
+        }), !recipients.isEmpty else {
+            return ToolResult(
+                success: false,
+                error: "At least one recipient email is required"
+            )
+        }
+
+        guard let subject = parameters["subject"]?.stringValue,
+              !subject.isEmpty else {
+            return ToolResult(
+                success: false,
+                error: "Email subject cannot be empty"
+            )
+        }
+
+        guard let body = parameters["body"]?.stringValue else {
+            return ToolResult(
+                success: false,
+                error: "Email body is required"
+            )
+        }
+
+        // Validate email addresses
+        for email in recipients {
+            guard isValidEmail(email) else {
+                return ToolResult(
+                    success: false,
+                    error: "Invalid email address: \(email)"
+                )
+            }
+        }
+
+        // Parse optional parameters
+        let format = parameters["format"]?.stringValue ?? "text"
+        let cc = parameters["cc"]?.arrayValue?.compactMap {
+            $0.stringValue
+        } ?? []
+        let bcc = parameters["bcc"]?.arrayValue?.compactMap {
+            $0.stringValue
+        } ?? []
+        let attachmentPaths = parameters["attachments"]?.arrayValue?.compactMap {
+            $0.stringValue
+        } ?? []
+
+        // Validate attachments exist
+        for path in attachmentPaths {
+            guard FileManager.default.fileExists(atPath: path) else {
+                return ToolResult(
+                    success: false,
+                    error: "Attachment not found: \(path)"
+                )
+            }
+        }
+
+        // Send email
+        do {
+            let messageID = try await emailService.send(
+                to: recipients,
+                cc: cc,
+                bcc: bcc,
+                subject: subject,
+                body: body,
+                format: format == "html" ? .html : .text,
+                attachments: attachmentPaths
+            )
+
+            // Build result
+            var resultData = Metadata()
+            resultData["message_id"] = .string(messageID)
+            resultData["recipients_count"] = .int(recipients.count)
+            resultData["sent_at"] = .string(ISO8601DateFormatter().string(from: Date()))
+
+            return ToolResult(success: true, data: resultData)
+
+        } catch {
+            return ToolResult(
+                success: false,
+                error: "Failed to send email: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = #"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$"#
+        return email.range(
+            of: emailRegex,
+            options: [.caseInsensitive, .regularExpression]
+        ) != nil
+    }
+}
+```
+
+<Tip>
+Always return detailed error messages in `ToolResult` when execution fails. This helps agents understand what went wrong and potentially retry with corrected parameters.
+</Tip>
+
+## Tool Integration
+
+### With LLM Function Calling
+
+OrbitAI integrates tools with LLM function calling for intelligent tool usage:
+
+```swift
+// Tools are automatically converted to LLM function schemas
+let webSearchTool = ToolSchema(
+    function: FunctionSchema(
+        name: "web_search",
+        description: "Search the web for current information",
+        parameters: JSONSchema(
+            type: .object,
+            properties: [
+                "query": JSONSchema(
+                    type: .string,
+                    description: "Search query"
+                ),
+                "num_results": JSONSchema(
+                    type: .integer,
+                    description: "Number of results (1-10)"
+                )
+            ],
+            required: ["query"]
+        )
+    )
+)
+
+// LLM request with tool
+let request = LLMRequest(
+    messages: [
+        .system("You can search the web for current information."),
+        .user("What are the latest AI developments this week?")
+    ],
+    tools: [webSearchTool]
+)
+
+// LLM decides to use the tool
+let response = try await llm.generateResponse(for: request)
+
+if case .toolCall(let toolCall) = response.finishReason {
+    // Execute the tool
+    let tool = await toolsHandler.tool(named: toolCall.name)
+    let result = try await tool?.execute(with: toolCall.parameters)
+}
+```
+
+### Multi-Tool Workflows
+
+Agents automatically orchestrate multi-tool workflows:
+
+```swift
+let task = ORTask(
+    description: """
+    Research the top 5 AI companies by market cap,
+    analyze their stock performance over the last year,
+    create a comparative chart, and save a report.
+    """,
+    expectedOutput: "Stock performance analysis report with charts",
+    tools: [
+        "web_search",      // 1. Find top AI companies
+        "api_caller",      // 2. Fetch stock data
+        "data_analyzer",   // 3. Analyze performance
+        "chart_generator", // 4. Create charts
+        "file_writer"      // 5. Save report
+    ]
+)
+
+// Agent automatically:
+// 1. Uses web_search to find companies
+// 2. Uses api_caller to get stock data for each
+// 3. Uses data_analyzer to compute metrics
+// 4. Uses chart_generator to visualize
+// 5. Uses file_writer to save final report
+```
+
+### Tool Chaining
+
+Tools can use outputs from previous tools:
+
+```swift
+// Example: Scrape → Analyze → Visualize pipeline
+let pipeline = ORTask(
+    description: """
+    Scrape product reviews from the given URLs,
+    perform sentiment analysis on the reviews,
+    and create a sentiment distribution chart.
+    """,
+    expectedOutput: "Sentiment analysis chart",
+    context: """
+    URLs: https://example.com/product/reviews
+    Analyze positive, negative, and neutral sentiments.
+    """,
+    tools: [
+        "web_scraping",    // Output: Review texts
+        "data_analyzer",   // Input: Review texts → Output: Sentiments
+        "chart_generator"  // Input: Sentiments → Output: Chart
+    ]
+)
+```
+
+The agent automatically chains tool outputs as inputs to subsequent tools based on the LLM's reasoning about the task flow.
+
+## Tool Execution
+
+### Execution Lifecycle
+
+```
+Tool Execution Lifecycle
+    ├── 1. Tool Selection
+    │   └── LLM chooses tool based on task
+    │
+    ├── 2. Parameter Preparation
+    │   ├── LLM generates parameters
+    │   └── Schema validation
+    │
+    ├── 3. Pre-Execution
+    │   ├── Check tool availability
+    │   └── Validate parameters against schema
+    │
+    ├── 4. Execution
+    │   ├── Call tool's execute() method
+    │   ├── Async operation
+    │   └── Monitor progress
+    │
+    ├── 5. Result Handling
+    │   ├── Parse ToolResult
+    │   ├── Check success status
+    │   └── Extract data or error
+    │
+    └── 6. Post-Execution
+        ├── Record metrics
+        ├── Update agent memory
+        └── Continue task or return result
+```
+
+### Execution Model
+
+All tool execution in OrbitAI is asynchronous using Swift Concurrency:
+
+```swift
+override func execute(
+    with parameters: Metadata
+) async throws -> ToolResult {
+    // Tools can perform long-running operations
+    let data = try await performAsyncOperation()
+
+    // Can make multiple async calls
+    async let result1 = fetchData()
+    async let result2 = processData()
+
+    let combined = try await [result1, result2]
+
+    return ToolResult(success: true, data: formatResults(combined))
+}
+```
+
+### Timeout Handling
+
+Implement timeouts for long-running tools:
+
+```swift
+override func execute(
+    with parameters: Metadata
+) async throws -> ToolResult {
+    let timeout = parameters["timeout"]?.doubleValue ?? 30.0
+
+    do {
+        return try await withThrowingTaskGroup(of: ToolResult.self) { group in
+            // Add main execution task
+            group.addTask {
+                let result = try await self.performOperation(parameters)
+                return ToolResult(success: true, data: result)
+            }
+
+            // Add timeout task
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw ToolError.timeout
+            }
+
+            // Return first result (execution or timeout)
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
+    } catch is ToolError {
+        return ToolResult(
+            success: false,
+            error: "Operation timed out after \(timeout)s"
+        )
+    }
+}
+```
+
+## Advanced Tool Setup
+
+### Tool Registry & Management
+
+The `ToolsHandler` singleton manages all tools:
+
+```swift
+let toolsHandler = ToolsHandler.shared
+
+// Register tools
+await toolsHandler.registerTool(CustomTool())
+await toolsHandler.registerTool(AnotherTool())
+
+// Check tool availability
+let isAvailable = await toolsHandler.isToolAvailable(named: "custom_tool")
+
+// Get tool instance
+if let tool = await toolsHandler.tool(named: "custom_tool") {
+    let result = try await tool.execute(with: params)
+}
+
+// List all registered tools
+let allTools = await toolsHandler.registeredToolNames()
+print("Available tools: \(allTools)")
+```
+
+### Enabling/Disabling Tools
+
+Control tool availability dynamically:
+
+```swift
+final class ConditionalTool: BaseTool {
+    private var isEnabled: Bool = true
+
+    override var name: String { "conditional_tool" }
+
+    func enable() {
+        isEnabled = true
+    }
+
+    func disable() {
+        isEnabled = false
+    }
+
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        guard isEnabled else {
+            return ToolResult(
+                success: false,
+                error: "Tool is currently disabled"
+            )
+        }
+
+        // Normal execution
+        return try await performOperation(parameters)
+    }
+}
+
+// Usage
+let conditionalTool = ConditionalTool()
+await toolsHandler.registerTool(conditionalTool)
+
+// Disable during maintenance
+conditionalTool.disable()
+
+// Re-enable when ready
+conditionalTool.enable()
+```
+
+### Tool Introspection
+
+Tools can be introspected for debugging and documentation:
+
+```swift
+final class IntrospectableAgent {
+    let agent: Agent
+
+    func inspectTools() async -> [ToolInfo] {
+        var toolInfos: [ToolInfo] = []
+
+        for toolName in agent.tools {
+            if let tool = await ToolsHandler.shared.tool(named: toolName) {
+                let info = ToolInfo(
+                    name: tool.name,
+                    description: tool.description,
+                    schema: tool.parametersSchema,
+                    requiredParams: extractRequiredParams(from: tool),
+                    optionalParams: extractOptionalParams(from: tool)
+                )
+                toolInfos.append(info)
+            }
+        }
+
+        return toolInfos
+    }
+
+    private func extractRequiredParams(from tool: BaseTool) -> [String] {
+        guard case .object(_, _, let required) = tool.parametersSchema else {
+            return []
+        }
+        return required ?? []
+    }
+
+    private func extractOptionalParams(from tool: BaseTool) -> [String] {
+        guard case .object(let properties, _, let required) = tool.parametersSchema else {
+            return []
+        }
+        let requiredSet = Set(required ?? [])
+        return Array(properties.keys.filter { !requiredSet.contains($0) })
+    }
+}
+
+// Usage
+let inspector = IntrospectableAgent(agent: myAgent)
+let tools = await inspector.inspectTools()
+
+for tool in tools {
+    print("Tool: \(tool.name)")
+    print("  Description: \(tool.description)")
+    print("  Required: \(tool.requiredParams)")
+    print("  Optional: \(tool.optionalParams)")
+}
+```
+
+### Tool Versioning
+
+Support multiple versions of the same tool:
+
+```swift
+final class WebSearchToolV1: BaseTool {
+    override var name: String { "web_search" }
+    // V1 implementation
+}
+
+final class WebSearchToolV2: BaseTool {
+    override var name: String { "web_search_v2" }
+    // V2 implementation with enhanced features
+}
+
+// Register both versions
+await toolsHandler.registerTool(WebSearchToolV1())
+await toolsHandler.registerTool(WebSearchToolV2())
+
+// Use specific version in agent
+let modernAgent = Agent(
+    role: "Researcher",
+    tools: ["web_search_v2"]  // Use latest version
+)
+
+let legacyAgent = Agent(
+    role: "Legacy Researcher",
+    tools: ["web_search"]  // Use V1 for compatibility
+)
+```
+
+## Usage and Metrics
+
+### Tool Usage Tracking
+
+OrbitAI automatically tracks tool usage with detailed metrics:
+
+```swift
+public struct ToolUsage: Codable, Sendable {
+    public let toolName: String           // Name of the tool used
+    public let executionTime: TimeInterval // Execution duration
+    public let success: Bool              // Execution success status
+    public let inputSize: Int             // Size of input parameters
+    public let outputSize: Int            // Size of output data
+}
+```
+
+### Accessing Tool Metrics
+
+```swift
+// From TaskOutput after task completion
+let output = try await orbit.run()
+
+print("Task completed with \(output.toolsUsed.count) tool executions")
+
+for toolUsage in output.toolsUsed {
+    print("""
+    Tool: \(toolUsage.toolName)
+      Execution Time: \(String(format: "%.2f", toolUsage.executionTime))s
+      Success: \(toolUsage.success ? "✓" : "✗")
+      Input Size: \(toolUsage.inputSize) bytes
+      Output Size: \(toolUsage.outputSize) bytes
+    """)
+}
+
+// Aggregate metrics
+let totalExecutionTime = output.toolsUsed.reduce(0) { $0 + $1.executionTime }
+let successRate = Double(output.toolsUsed.filter { $0.success }.count) /
+                  Double(output.toolsUsed.count)
+
+print("Total tool execution time: \(totalExecutionTime)s")
+print("Success rate: \(Int(successRate * 100))%")
+```
+
+### Performance Monitoring
+
+Create custom monitoring for tool performance:
+
+```swift
+final class MonitoredTool: BaseTool {
+    private var executionHistory: [ExecutionRecord] = []
+
+    struct ExecutionRecord {
+        let timestamp: Date
+        let parameters: Metadata
+        let success: Bool
+        let duration: TimeInterval
+        let error: String?
+    }
+
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        let startTime = Date()
+        var record = ExecutionRecord(
+            timestamp: startTime,
+            parameters: parameters,
+            success: false,
+            duration: 0,
+            error: nil
+        )
+
+        do {
+            let result = try await performOperation(parameters)
+
+            record = ExecutionRecord(
+                timestamp: startTime,
+                parameters: parameters,
+                success: true,
+                duration: Date().timeIntervalSince(startTime),
+                error: nil
+            )
+
+            executionHistory.append(record)
+            return result
+
+        } catch {
+            record = ExecutionRecord(
+                timestamp: startTime,
+                parameters: parameters,
+                success: false,
+                duration: Date().timeIntervalSince(startTime),
+                error: error.localizedDescription
+            )
+
+            executionHistory.append(record)
+            throw error
+        }
+    }
+
+    func getPerformanceStats() -> (avgDuration: TimeInterval, successRate: Double) {
+        guard !executionHistory.isEmpty else {
+            return (0, 0)
+        }
+
+        let avgDuration = executionHistory.reduce(0.0) { $0 + $1.duration } /
+                         Double(executionHistory.count)
+        let successCount = executionHistory.filter { $0.success }.count
+        let successRate = Double(successCount) / Double(executionHistory.count)
+
+        return (avgDuration, successRate)
+    }
+}
+```
+
+### Cost Tracking for External APIs
+
+Track costs for tools that call paid APIs:
+
+```swift
+final class PaidAPITool: BaseTool {
+    private let costPerCall: Decimal
+    private var totalCost: Decimal = 0
+    private var callCount: Int = 0
+
+    init(costPerCall: Decimal) {
+        self.costPerCall = costPerCall
+    }
+
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        let result = try await callExternalAPI(parameters)
+
+        // Track costs
+        callCount += 1
+        totalCost += costPerCall
+
+        // Include cost in result metadata
+        var resultData = result.data
+        resultData?["cost"] = .string("\(costPerCall)")
+        resultData?["total_cost"] = .string("\(totalCost)")
+        resultData?["call_count"] = .int(callCount)
+
+        return ToolResult(success: result.success, data: resultData, error: result.error)
+    }
+
+    func resetCosts() {
+        totalCost = 0
+        callCount = 0
+    }
+
+    func getCostSummary() -> (calls: Int, totalCost: Decimal) {
+        return (callCount, totalCost)
+    }
+}
+```
+
+## Error Handling
+
+### Common Tool Errors
+
+<AccordionGroup>
+  <Accordion title="Invalid Parameters" icon="xmark-circle">
+    **Cause**: Parameters don't match the schema or fail validation.
+
+    **Solution**:
+    ```swift
+    // Validate early and provide clear error messages
+    guard let query = parameters["query"]?.stringValue,
+          !query.isEmpty else {
+        return ToolResult(
+            success: false,
+            error: "Parameter 'query' is required and cannot be empty"
+        )
+    }
+
+    guard query.count >= 2 && query.count <= 200 else {
+        return ToolResult(
+            success: false,
+            error: "Query must be between 2 and 200 characters"
+        )
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Tool Not Registered" icon="question-circle">
+    **Cause**: Agent references a tool that hasn't been registered with `ToolsHandler`.
+
+    **Solution**:
+    ```swift
+    // Verify registration before orbit creation
+    let requiredTools = ["custom_tool", "web_search"]
+    let toolsHandler = ToolsHandler.shared
+
+    for toolName in requiredTools {
+        let isAvailable = await toolsHandler.isToolAvailable(named: toolName)
+        if !isAvailable {
+            print("Warning: Tool '\(toolName)' not registered")
+            // Register it
+            if toolName == "custom_tool" {
+                await toolsHandler.registerTool(CustomTool())
+            }
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Execution Timeout" icon="clock">
+    **Cause**: Tool operation takes too long to complete.
+
+    **Solution**:
+    ```swift
+    // Implement timeout handling
+    let timeout: TimeInterval = 30.0
+
+    do {
+        let result = try await withThrowingTaskGroup(of: ToolResult.self) { group in
+            group.addTask {
+                try await self.performOperation(parameters)
+            }
+
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw ToolError.timeout
+            }
+
+            let result = try await group.next()!
+            group.cancelAll()
+            return result
+        }
+        return result
+    } catch {
+        return ToolResult(
+            success: false,
+            error: "Operation timed out after \(timeout) seconds"
+        )
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="External API Failures" icon="plug-circle-xmark">
+    **Cause**: External service is unavailable or returns an error.
+
+    **Solution**:
+    ```swift
+    // Implement retry logic with exponential backoff
+    func executeWithRetry(
+        parameters: Metadata,
+        maxAttempts: Int = 3
+    ) async throws -> ToolResult {
+        var lastError: Error?
+
+        for attempt in 1...maxAttempts {
+            do {
+                return try await callExternalAPI(parameters)
+            } catch {
+                lastError = error
+
+                if attempt < maxAttempts {
+                    let delay = pow(2.0, Double(attempt - 1))
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+            }
+        }
+
+        return ToolResult(
+            success: false,
+            error: "Failed after \(maxAttempts) attempts: \(lastError?.localizedDescription ?? "Unknown error")"
+        )
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Permission Denied" icon="lock">
+    **Cause**: Tool lacks necessary permissions (file access, location, etc.).
+
+    **Solution**:
+    ```swift
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        // Check permissions before execution
+        guard hasRequiredPermissions() else {
+            return ToolResult(
+                success: false,
+                error: """
+                Permission denied: This tool requires location access.
+                Please enable location services in System Settings.
+                """
+            )
+        }
+
+        return try await performOperation(parameters)
+    }
+
+    private func hasRequiredPermissions() -> Bool {
+        // Check actual permissions
+        return CLLocationManager.locationServicesEnabled() &&
+               CLLocationManager.authorizationStatus() == .authorizedWhenInUse
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Error Handling Patterns
+
+```swift
+final class RobustTool: BaseTool {
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        do {
+            // Validate parameters
+            try validateParameters(parameters)
+
+            // Execute operation
+            let result = try await performOperation(parameters)
+
+            // Validate result
+            try validateResult(result)
+
+            return ToolResult(success: true, data: result)
+
+        } catch let error as ValidationError {
+            // Specific error handling
+            return ToolResult(
+                success: false,
+                error: "Validation failed: \(error.message)"
+            )
+
+        } catch let error as NetworkError {
+            // Network-specific handling
+            return ToolResult(
+                success: false,
+                error: "Network error: \(error.localizedDescription). Please check your connection."
+            )
+
+        } catch {
+            // Generic error handling
+            return ToolResult(
+                success: false,
+                error: "Unexpected error: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    private func validateParameters(_ parameters: Metadata) throws {
+        // Parameter validation logic
+    }
+
+    private func validateResult(_ result: Metadata) throws {
+        // Result validation logic
+    }
+}
+```
+
+## Best Practices
+
+### Tool Design
+
+<CardGroup cols={2}>
+  <Card title="Clear Naming" icon="signature">
+    Use descriptive, action-oriented names
+
+    **Good**: `send_email`, `analyze_sentiment`, `fetch_stock_price`
+    **Bad**: `tool1`, `helper`, `process`
+  </Card>
+
+  <Card title="Detailed Descriptions" icon="file-lines">
+    Write comprehensive descriptions that guide LLM usage
+
+    ```swift
+    description: """
+    Search the web for current information.
+    Use when you need real-time data, news,
+    or information not in your training data.
+    Returns up to 10 results with URLs and snippets.
+    """
+    ```
+  </Card>
+
+  <Card title="Schema Validation" icon="shield-check">
+    Define strict schemas with constraints
+
+    ```swift
+    "limit": JSONSchema(
+        type: .integer,
+        description: "Results (1-100)",
+        minimum: 1,
+        maximum: 100
+    )
+    ```
+  </Card>
+
+  <Card title="Single Responsibility" icon="bullseye">
+    Each tool should do one thing well
+
+    **Good**: Separate `read_file` and `write_file` tools
+    **Bad**: One `file_operations` tool that does everything
+  </Card>
+
+  <Card title="Idempotency" icon="repeat">
+    Design tools to be safely re-executable
+
+    ```swift
+    // Safe to call multiple times
+    func createDirectory(path: String) {
+        if !FileManager.default.fileExists(atPath: path) {
+            try FileManager.default.createDirectory(...)
+        }
+    }
+    ```
+  </Card>
+
+  <Card title="Error Messages" icon="message-exclamation">
+    Return actionable error messages
+
+    **Good**: "File not found at '/path/to/file.txt'. Check the path and try again."
+    **Bad**: "Error 404"
+  </Card>
+</CardGroup>
+
+### Performance Optimization
+
+<Tabs>
+  <Tab title="Caching">
+    Cache frequently accessed data:
+
+    ```swift
+    final class CachedWebSearchTool: BaseTool {
+        private var cache: [String: ToolResult] = [:]
+        private let cacheExpiry: TimeInterval = 3600 // 1 hour
+
+        override func execute(
+            with parameters: Metadata
+        ) async throws -> ToolResult {
+            guard let query = parameters["query"]?.stringValue else {
+                throw OrbitAIError.invalidToolParameters("Missing query")
+            }
+
+            // Check cache
+            if let cached = cache[query],
+               let timestamp = cached.data?["timestamp"]?.doubleValue,
+               Date().timeIntervalSince1970 - timestamp < cacheExpiry {
+                return cached
+            }
+
+            // Fetch fresh data
+            let result = try await performWebSearch(query)
+
+            // Cache result
+            var resultWithTimestamp = result
+            resultWithTimestamp.data?["timestamp"] = .double(Date().timeIntervalSince1970)
+            cache[query] = resultWithTimestamp
+
+            return resultWithTimestamp
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Batching">
+    Batch multiple operations:
+
+    ```swift
+    final class BatchEmailTool: BaseTool {
+        override func execute(
+            with parameters: Metadata
+        ) async throws -> ToolResult {
+            guard let recipients = parameters["recipients"]?.arrayValue else {
+                throw OrbitAIError.invalidToolParameters("Missing recipients")
+            }
+
+            // Send in batches of 50
+            let batchSize = 50
+            var results: [String] = []
+
+            for batch in recipients.chunked(into: batchSize) {
+                let batchResults = try await sendBatch(batch)
+                results.append(contentsOf: batchResults)
+            }
+
+            var resultData = Metadata()
+            resultData["sent_count"] = .int(results.count)
+            resultData["message_ids"] = .array(results.map { .string($0) })
+
+            return ToolResult(success: true, data: resultData)
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Parallel Execution">
+    Execute independent operations in parallel:
+
+    ```swift
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        let urls = extractURLs(from: parameters)
+
+        // Fetch all URLs in parallel
+        let results = try await withThrowingTaskGroup(of: (URL, Data).self) { group in
+            for url in urls {
+                group.addTask {
+                    let data = try await URLSession.shared.data(from: url).0
+                    return (url, data)
+                }
+            }
+
+            var fetchedData: [(URL, Data)] = []
+            for try await result in group {
+                fetchedData.append(result)
+            }
+            return fetchedData
+        }
+
+        return formatResults(results)
+    }
+    ```
+  </Tab>
+
+  <Tab title="Streaming">
+    Stream large results:
+
+    ```swift
+    final class StreamingTool: BaseTool {
+        override func execute(
+            with parameters: Metadata
+        ) async throws -> ToolResult {
+            let fileURL = extractFileURL(from: parameters)
+
+            // Process file in chunks
+            let chunkSize = 1024 * 1024 // 1MB chunks
+            var processedData = Metadata()
+
+            for try await chunk in fileURL.lines {
+                // Process each chunk
+                let processed = processChunk(chunk)
+                // Accumulate results
+                updateResults(&processedData, with: processed)
+            }
+
+            return ToolResult(success: true, data: processedData)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Security Considerations
+
+<Warning>
+**Always validate and sanitize tool inputs to prevent security vulnerabilities.**
+</Warning>
+
+```swift
+final class SecureDatabaseTool: BaseTool {
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        guard let query = parameters["query"]?.stringValue else {
+            return ToolResult(success: false, error: "Missing query")
+        }
+
+        // 1. Validate query (prevent SQL injection)
+        guard isValidQuery(query) else {
+            return ToolResult(
+                success: false,
+                error: "Invalid query: Only SELECT statements are allowed"
+            )
+        }
+
+        // 2. Use parameterized queries
+        let safeQuery = sanitizeQuery(query)
+
+        // 3. Implement rate limiting
+        guard await checkRateLimit() else {
+            return ToolResult(
+                success: false,
+                error: "Rate limit exceeded. Try again later."
+            )
+        }
+
+        // 4. Execute with limited permissions
+        let results = try await executeWithReadOnlyAccess(safeQuery)
+
+        // 5. Sanitize output (remove sensitive data)
+        let sanitized = sanitizeResults(results)
+
+        return ToolResult(success: true, data: sanitized)
+    }
+
+    private func isValidQuery(_ query: String) -> Bool {
+        // Only allow SELECT statements
+        let trimmed = query.trimmingCharacters(in: .whitespaces).uppercased()
+        return trimmed.hasPrefix("SELECT") &&
+               !trimmed.contains("DROP") &&
+               !trimmed.contains("DELETE") &&
+               !trimmed.contains("UPDATE") &&
+               !trimmed.contains("INSERT")
+    }
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Tool Not Found" icon="magnifying-glass-minus">
+    **Symptom**: Agent reports tool is unavailable or not found.
+
+    **Diagnosis**:
+    ```swift
+    // Check if tool is registered
+    let toolsHandler = ToolsHandler.shared
+    let isRegistered = await toolsHandler.isToolAvailable(named: "my_tool")
+    print("Tool registered: \(isRegistered)")
+
+    // List all registered tools
+    let allTools = await toolsHandler.registeredToolNames()
+    print("Available tools: \(allTools)")
+    ```
+
+    **Solutions**:
+    1. Register the tool before creating the orbit
+    2. Check for typos in tool name (names are case-sensitive)
+    3. Verify tool is imported and compiled
+    4. For built-in tools, ensure OrbitAI version is up to date
+  </Accordion>
+
+  <Accordion title="Parameter Validation Failures" icon="circle-exclamation">
+    **Symptom**: Tool execution fails with parameter errors.
+
+    **Diagnosis**:
+    ```swift
+    // Log parameters in tool
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        print("Received parameters: \(parameters)")
+
+        // Check parameter types
+        for (key, value) in parameters {
+            print("\(key): \(type(of: value)) = \(value)")
+        }
+
+        // Validate against schema
+        // ...
+    }
+    ```
+
+    **Solutions**:
+    1. Ensure parameter names match schema exactly
+    2. Check parameter types (string vs int vs array)
+    3. Verify required parameters are provided
+    4. Add default values for optional parameters
+    5. Improve error messages in tool description
+  </Accordion>
+
+  <Accordion title="Slow Tool Execution" icon="hourglass">
+    **Symptom**: Tools take too long to execute.
+
+    **Diagnosis**:
+    ```swift
+    // Add timing logs
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        let startTime = Date()
+        defer {
+            let duration = Date().timeIntervalSince(startTime)
+            print("Tool execution took \(duration)s")
+        }
+
+        return try await performOperation(parameters)
+    }
+    ```
+
+    **Solutions**:
+    1. Implement caching for repeated queries
+    2. Use parallel execution for independent operations
+    3. Add timeouts to prevent hanging
+    4. Optimize database queries or API calls
+    5. Consider batch processing
+  </Accordion>
+
+  <Accordion title="Tool Returns Incorrect Data" icon="triangle-exclamation">
+    **Symptom**: Tool executes successfully but returns wrong results.
+
+    **Diagnosis**:
+    ```swift
+    // Add detailed logging
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        print("Input parameters: \(parameters)")
+
+        let intermediateResult = try await step1(parameters)
+        print("After step 1: \(intermediateResult)")
+
+        let finalResult = try await step2(intermediateResult)
+        print("Final result: \(finalResult)")
+
+        return ToolResult(success: true, data: finalResult)
+    }
+    ```
+
+    **Solutions**:
+    1. Verify parameter parsing logic
+    2. Check data transformations
+    3. Validate external API responses
+    4. Add unit tests for tool logic
+    5. Review LLM's parameter generation
+  </Accordion>
+
+  <Accordion title="Agent Doesn't Use Expected Tool" icon="robot">
+    **Symptom**: Agent doesn't select the tool you expect for a task.
+
+    **Diagnosis**:
+    ```swift
+    // Check tool availability to agent
+    print("Agent tools: \(agent.tools)")
+    print("Task tools: \(task.tools ?? [])")
+
+    // Review tool description
+    let tool = await ToolsHandler.shared.tool(named: "my_tool")
+    print("Tool description: \(tool?.description ?? "Not found")")
+    ```
+
+    **Solutions**:
+    1. Improve tool description to clarify when to use it
+    2. Verify tool is in agent's or task's tool list
+    3. Add examples in tool description
+    4. Adjust task description to hint at tool usage
+    5. Check if multiple tools overlap in functionality
+  </Accordion>
+</AccordionGroup>
+
+### Debugging Tools
+
+Create a debugging wrapper for tools:
+
+```swift
+final class DebugToolWrapper: BaseTool {
+    private let wrappedTool: BaseTool
+    private let verbose: Bool
+
+    init(wrapping tool: BaseTool, verbose: Bool = true) {
+        self.wrappedTool = tool
+        self.verbose = verbose
+    }
+
+    override var name: String { wrappedTool.name }
+    override var description: String { wrappedTool.description }
+    override var parametersSchema: JSONSchema { wrappedTool.parametersSchema }
+
+    override func execute(
+        with parameters: Metadata
+    ) async throws -> ToolResult {
+        if verbose {
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("🔧 Tool: \(name)")
+            print("📥 Input Parameters:")
+            for (key, value) in parameters {
+                print("   \(key): \(value)")
+            }
+            print("⏱️  Started at: \(Date())")
+        }
+
+        let startTime = Date()
+
+        do {
+            let result = try await wrappedTool.execute(with: parameters)
+            let duration = Date().timeIntervalSince(startTime)
+
+            if verbose {
+                print("✅ Success: \(result.success)")
+                print("⏱️  Duration: \(String(format: "%.3f", duration))s")
+                print("📤 Output:")
+                if let data = result.data {
+                    for (key, value) in data {
+                        print("   \(key): \(value)")
+                    }
+                }
+                if let error = result.error {
+                    print("❌ Error: \(error)")
+                }
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            }
+
+            return result
+
+        } catch {
+            let duration = Date().timeIntervalSince(startTime)
+
+            if verbose {
+                print("❌ Exception thrown")
+                print("⏱️  Duration: \(String(format: "%.3f", duration))s")
+                print("💥 Error: \(error)")
+                print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            }
+
+            throw error
+        }
+    }
+}
+
+// Usage
+let debugTool = DebugToolWrapper(wrapping: MyCustomTool())
+await ToolsHandler.shared.registerTool(debugTool)
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Explore Built-in Tools" icon="screwdriver-wrench" href="/apple-calendar">
+    Learn about specific built-in tools and their capabilities
+  </Card>
+
+  <Card title="Agent Configuration" icon="user-gear" href="/agents">
+    Understand how to configure agents with tools
+  </Card>
+
+  <Card title="Task Orchestration" icon="list-check" href="/tasks">
+    Learn how tasks leverage tools for execution
+  </Card>
+
+  <Card title="LLM Integration" icon="microchip" href="/LLMs">
+    Understand how LLMs interact with tools
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Start with built-in tools and only create custom tools when you need domain-specific functionality or external integrations not covered by the built-in suite.
+</Tip>

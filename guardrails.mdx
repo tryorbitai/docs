@@ -1,0 +1,2385 @@
+---
+title: "Guardrails"
+description: "Ensure safe, compliant, and reliable agent behavior with comprehensive validation and safety mechanisms."
+---
+
+## Overview
+
+Guardrails in OrbitAI provide a safety and validation framework that ensures agents operate within defined boundaries. They act as automated checkpoints that validate inputs, filter outputs, enforce resource limits, and maintain compliance with content policies and regulations.
+
+<CardGroup cols={3}>
+  <Card title="Input Validation" icon="shield-check">
+    Validate and sanitize inputs before processing
+  </Card>
+  <Card title="Output Filtering" icon="filter">
+    Filter harmful, sensitive, or inappropriate content
+  </Card>
+  <Card title="Content Safety" icon="shield-halved">
+    Block harmful, offensive, or inappropriate content
+  </Card>
+  <Card title="Compliance" icon="scale-balanced">
+    Enforce regulatory requirements and policies
+  </Card>
+  <Card title="Resource Control" icon="gauge-high">
+    Limit token usage, rate limits, and resource consumption
+  </Card>
+  <Card title="Customizable" icon="sliders">
+    Create custom guardrails for specific requirements
+  </Card>
+</CardGroup>
+
+### Key Capabilities
+
+<AccordionGroup>
+  <Accordion title="Automatic Enforcement" icon="bolt">
+    Guardrails are automatically enforced during task execution. All agent outputs pass through guardrail validation before task completion, ensuring consistent safety without manual intervention.
+  </Accordion>
+
+  <Accordion title="Multi-Layer Protection" icon="layer-group">
+    Combine multiple guardrails for comprehensive protection. Stack content filtering, PII detection, token limits, and rate limiting to create defense-in-depth security.
+  </Accordion>
+
+  <Accordion title="Flexible Validation" icon="slider">
+    Configure validation strictness from lenient (for development) to strict (for production). Partial approvals allow iterative refinement of agent outputs.
+  </Accordion>
+
+  <Accordion title="Custom Rules" icon="code">
+    Implement domain-specific validation logic with custom guardrails. Extend the OrbitGuardrail protocol to enforce business rules, compliance requirements, or quality standards.
+  </Accordion>
+</AccordionGroup>
+
+## Guardrails Architecture
+
+```
+Guardrails Execution Pipeline
+    ├── 1. Task Initialization
+    │   ├── Input Validation
+    │   ├── Parameter Sanitization
+    │   └── Pre-Execution Checks
+    │
+    ├── 2. Agent Execution
+    │   ├── Resource Monitoring
+    │   ├── Rate Limit Tracking
+    │   └── Progress Validation
+    │
+    ├── 3. Output Generation
+    │   ├── Content Generation
+    │   └── Initial Output
+    │
+    ├── 4. Guardrail Validation ← All outputs validated
+    │   ├── Content Safety Checks
+    │   ├── PII Detection
+    │   ├── Token Limit Enforcement
+    │   ├── Custom Validations
+    │   └── Compliance Checks
+    │
+    ├── 5. Validation Result
+    │   ├── Approved → Task Complete
+    │   ├── Partially Approved → Refinement
+    │   ├── Needs Revision → Retry
+    │   └── Failed → Error
+    │
+    └── 6. Task Completion
+        └── Return Validated Output
+```
+
+## Built-in Guardrails
+
+OrbitAI provides several built-in guardrails for common safety and compliance requirements:
+
+### Content Safety Guardrails
+
+<Tabs>
+  <Tab title="No Harmful Content">
+    **Guardrail**: `NoHarmfulContentGuardrail`
+
+    Prevents generation of harmful, offensive, or dangerous content.
+
+    **Configuration**:
+    ```swift
+    guardrails: [.noHarmfulContent]
+    ```
+
+    **What it blocks**:
+    - Violence and graphic content
+    - Hate speech and discrimination
+    - Self-harm and dangerous activities
+    - Illegal activities
+    - Adult/NSFW content
+    - Harassment and bullying
+
+    **Example**:
+    ```swift
+    let contentTask = ORTask(
+        description: "Generate blog post about healthy living",
+        expectedOutput: "Informative health blog post",
+        guardrails: [.noHarmfulContent]
+    )
+    // Blocks: Dangerous health advice, extreme diets, etc.
+    ```
+
+    **Use cases**:
+    - User-facing content generation
+    - Educational content
+    - Public communications
+    - Customer interactions
+  </Tab>
+
+  <Tab title="Content Filter">
+    **Guardrail**: `ContentFilterGuardrail`
+
+    General-purpose content filtering with customizable rules.
+
+    **Configuration**:
+    ```swift
+    guardrails: [.contentFilter]
+
+    // Or with custom configuration
+    let filter = ContentFilterGuardrail(
+        blockedKeywords: ["spam", "scam", "clickbait"],
+        sensitivityLevel: .medium
+    )
+
+    guardrails: [filter]
+    ```
+
+    **Features**:
+    - Keyword blocking
+    - Pattern matching
+    - Sentiment analysis
+    - Language detection
+    - Profanity filtering
+
+    **Example**:
+    ```swift
+    let marketingAgent = Agent(
+        role: "Marketing Content Writer",
+        purpose: "Create marketing materials",
+        context: "Professional marketing expert",
+        guardrails: [.contentFilter]
+    )
+    // Ensures professional, appropriate marketing content
+    ```
+  </Tab>
+
+  <Tab title="No PII">
+    **Guardrail**: `NoPIIGuardrail`
+
+    Prevents leakage of Personally Identifiable Information.
+
+    **Configuration**:
+    ```swift
+    guardrails: [.noPII]
+
+    // Or with custom configuration
+    let piiGuardrail = NoPIIGuardrail(
+        detectTypes: [
+            .email,
+            .phone,
+            .ssn,
+            .creditCard,
+            .address,
+            .name
+        ],
+        action: .redact  // or .block, .warn
+    )
+
+    guardrails: [piiGuardrail]
+    ```
+
+    **Detects**:
+    - Email addresses
+    - Phone numbers
+    - Social Security Numbers
+    - Credit card numbers
+    - Physical addresses
+    - Names (when configured)
+    - Dates of birth
+    - Driver's license numbers
+
+    **Example**:
+    ```swift
+    let customerServiceAgent = Agent(
+        role: "Customer Service Agent",
+        purpose: "Handle customer inquiries",
+        context: "Privacy-conscious support agent",
+        guardrails: [.noPII]
+    )
+
+    // Input: "My email is john@example.com and SSN is 123-45-6789"
+    // Output: "My email is [EMAIL] and SSN is [SSN]"
+    ```
+
+    **Actions**:
+    - **Redact**: Replace with placeholders `[EMAIL]`, `[SSN]`
+    - **Block**: Fail validation, prevent output
+    - **Warn**: Log warning but allow output
+  </Tab>
+</Tabs>
+
+### Resource Control Guardrails
+
+<Tabs>
+  <Tab title="Token Limit">
+    **Guardrail**: `TokenLimitGuardrail`
+
+    Enforces maximum token limits for generated content.
+
+    **Configuration**:
+    ```swift
+    let tokenGuardrail = TokenLimitGuardrail(
+        maxTokens: 8000,
+        model: "gpt-4o"
+    )
+
+    let task = ORTask(
+        description: "Generate comprehensive report",
+        expectedOutput: "Detailed analysis report",
+        guardrails: [tokenGuardrail]
+    )
+    ```
+
+    **Parameters**:
+    - `maxTokens`: Maximum token count allowed
+    - `model`: Model name for accurate token counting
+    - `action`: What to do when exceeded (truncate, fail, warn)
+
+    **Use cases**:
+    - Prevent excessive LLM costs
+    - Ensure outputs fit within constraints
+    - Control response sizes
+    - Manage context window usage
+
+    **Example with truncation**:
+    ```swift
+    let limitedGuardrail = TokenLimitGuardrail(
+        maxTokens: 2000,
+        model: "gpt-4o",
+        action: .truncate,  // Auto-truncate to limit
+        preservePriority: .beginning  // or .ending
+    )
+    ```
+  </Tab>
+
+  <Tab title="Rate Limit">
+    **Guardrail**: `RateLimitGuardrail`
+
+    Prevents excessive API requests and resource usage.
+
+    **Configuration**:
+    ```swift
+    let rateLimitGuardrail = RateLimitGuardrail(
+        maxRequestsPerMinute: 60,
+        maxRequestsPerHour: 1000,
+        maxRequestsPerDay: 10000
+    )
+
+    let agent = Agent(
+        role: "API Worker",
+        purpose: "Process API requests",
+        context: "Rate-limited worker",
+        guardrails: [rateLimitGuardrail]
+    )
+    ```
+
+    **Parameters**:
+    - `maxRequestsPerMinute`: Requests per minute limit
+    - `maxRequestsPerHour`: Requests per hour limit
+    - `maxRequestsPerDay`: Requests per day limit
+    - `burstAllowance`: Allow temporary bursts
+
+    **Features**:
+    - Sliding window rate limiting
+    - Per-agent or per-orbit limits
+    - Burst allowance for spikes
+    - Automatic backoff
+
+    **Example with backoff**:
+    ```swift
+    let smartRateLimit = RateLimitGuardrail(
+        maxRequestsPerMinute: 60,
+        enableBackoff: true,
+        backoffStrategy: .exponential,
+        maxBackoffSeconds: 300
+    )
+    ```
+  </Tab>
+
+  <Tab title="Resource Limit">
+    **Guardrail**: `ResourceLimitGuardrail`
+
+    Controls memory and computational resource usage.
+
+    **Configuration**:
+    ```swift
+    let resourceGuardrail = ResourceLimitGuardrail(
+        maxMemoryMB: 500,
+        maxCPUPercent: 80,
+        maxExecutionTimeSeconds: 300
+    )
+
+    let task = ORTask(
+        description: "Process large dataset",
+        expectedOutput: "Analysis results",
+        guardrails: [resourceGuardrail]
+    )
+    ```
+
+    **Limits**:
+    - **Memory**: Maximum RAM usage
+    - **CPU**: Maximum CPU utilization
+    - **Time**: Maximum execution duration
+    - **Disk**: Temporary file limits
+
+    **Use cases**:
+    - Prevent resource exhaustion
+    - Ensure fair resource sharing
+    - Protect system stability
+    - Detect runaway processes
+  </Tab>
+</Tabs>
+
+## Input Validation
+
+Guardrails validate inputs before processing to prevent injection attacks, malformed data, and security issues.
+
+### Input Validation Guardrails
+
+<Steps>
+  <Step title="Parameter Validation">
+    Validate task and agent parameters:
+
+    ```swift
+    final class ParameterValidationGuardrail: OrbitGuardrail {
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            // Validate required parameters
+            guard let input = context.inputs["query"],
+                  !input.isEmpty else {
+                return .needsRevision(
+                    feedback: "Query parameter is required and cannot be empty"
+                )
+            }
+
+            // Validate parameter format
+            if input.count < 2 {
+                return .needsRevision(
+                    feedback: "Query must be at least 2 characters"
+                )
+            }
+
+            if input.count > 500 {
+                return .needsRevision(
+                    feedback: "Query cannot exceed 500 characters"
+                )
+            }
+
+            return .approved
+        }
+    }
+
+    // Usage
+    let task = ORTask(
+        description: "Process user query",
+        expectedOutput: "Query results",
+        guardrails: [ParameterValidationGuardrail()]
+    )
+    ```
+  </Step>
+
+  <Step title="Input Sanitization">
+    Sanitize user inputs to prevent injection:
+
+    ```swift
+    final class InputSanitizationGuardrail: OrbitGuardrail {
+        private let dangerousPatterns: [String] = [
+            "<script",
+            "javascript:",
+            "onerror=",
+            "onclick=",
+            "<?php",
+            "${",  // Template injection
+            "{{",  // Template injection
+        ]
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let input = context.inputs["user_input"] else {
+                return .approved
+            }
+
+            // Check for injection patterns
+            let lowercased = input.lowercased()
+            for pattern in dangerousPatterns {
+                if lowercased.contains(pattern) {
+                    return .needsRevision(
+                        feedback: "Input contains potentially dangerous pattern: \(pattern)"
+                    )
+                }
+            }
+
+            // Check for SQL injection
+            let sqlPatterns = ["';", "--", "/*", "*/", "xp_", "sp_", "exec ", "execute "]
+            for pattern in sqlPatterns {
+                if lowercased.contains(pattern) {
+                    return .needsRevision(
+                        feedback: "Input contains SQL injection pattern"
+                    )
+                }
+            }
+
+            return .approved
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Schema Validation">
+    Validate structured inputs:
+
+    ```swift
+    final class SchemaValidationGuardrail: OrbitGuardrail {
+        let requiredFields: [String]
+        let schema: JSONSchema
+
+        init(schema: JSONSchema, requiredFields: [String]) {
+            self.schema = schema
+            self.requiredFields = requiredFields
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let data = context.inputs["data"] else {
+                return .needsRevision(feedback: "Missing data field")
+            }
+
+            // Parse JSON
+            guard let jsonData = data.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+                return .needsRevision(feedback: "Invalid JSON format")
+            }
+
+            // Validate required fields
+            for field in requiredFields {
+                if json[field] == nil {
+                    return .needsRevision(
+                        feedback: "Missing required field: \(field)"
+                    )
+                }
+            }
+
+            // Validate against schema
+            let validationErrors = validateAgainstSchema(json, schema: schema)
+            if !validationErrors.isEmpty {
+                return .needsRevision(
+                    feedback: "Schema validation failed: \(validationErrors.joined(separator: ", "))"
+                )
+            }
+
+            return .approved
+        }
+
+        private func validateAgainstSchema(
+            _ data: [String: Any],
+            schema: JSONSchema
+        ) -> [String] {
+            // Schema validation logic
+            var errors: [String] = []
+            // ... implementation
+            return errors
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="File Upload Validation">
+    Validate file uploads:
+
+    ```swift
+    final class FileUploadGuardrail: OrbitGuardrail {
+        let allowedExtensions: Set<String>
+        let maxSizeMB: Int
+        let scanForMalware: Bool
+
+        init(
+            allowedExtensions: Set<String>,
+            maxSizeMB: Int = 10,
+            scanForMalware: Bool = true
+        ) {
+            self.allowedExtensions = allowedExtensions
+            self.maxSizeMB = maxSizeMB
+            self.scanForMalware = scanForMalware
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let filePath = context.inputs["file_path"] else {
+                return .approved
+            }
+
+            // Check file exists
+            guard FileManager.default.fileExists(atPath: filePath) else {
+                return .needsRevision(feedback: "File not found")
+            }
+
+            // Check extension
+            let ext = (filePath as NSString).pathExtension.lowercased()
+            guard allowedExtensions.contains(ext) else {
+                return .needsRevision(
+                    feedback: "File type .\(ext) not allowed. Allowed: \(allowedExtensions)"
+                )
+            }
+
+            // Check size
+            let attrs = try FileManager.default.attributesOfItem(atPath: filePath)
+            let sizeMB = (attrs[.size] as? Int64 ?? 0) / 1024 / 1024
+
+            if sizeMB > maxSizeMB {
+                return .needsRevision(
+                    feedback: "File size \(sizeMB)MB exceeds limit of \(maxSizeMB)MB"
+                )
+            }
+
+            // Scan for malware (if enabled)
+            if scanForMalware {
+                let isSafe = try await scanFile(filePath)
+                if !isSafe {
+                    return .needsRevision(
+                        feedback: "File failed security scan"
+                    )
+                }
+            }
+
+            return .approved
+        }
+
+        private func scanFile(_ path: String) async throws -> Bool {
+            // Malware scanning logic
+            return true
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Input Validation Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Validate Early" icon="forward">
+    Validate inputs before they reach agents:
+
+    ```swift
+    // Apply at task level
+    let task = ORTask(
+        description: "Process input",
+        guardrails: [
+            InputSanitizationGuardrail(),
+            ParameterValidationGuardrail()
+        ]
+    )
+    ```
+  </Card>
+
+  <Card title="Whitelist Over Blacklist" icon="list-check">
+    Define allowed inputs rather than blocked ones:
+
+    ```swift
+    // Good: Whitelist allowed characters
+    let allowedChars = CharacterSet.alphanumerics
+        .union(.whitespaces)
+        .union(CharacterSet(charactersIn: ".,!?"))
+
+    // Bad: Blacklist dangerous characters
+    let blockedChars = CharacterSet(
+        charactersIn: "<>\"';"
+    )
+    ```
+  </Card>
+
+  <Card title="Provide Clear Feedback" icon="message">
+    Help users understand validation failures:
+
+    ```swift
+    return .needsRevision(
+        feedback: """
+        Email format invalid.
+        Expected: user@example.com
+        Received: \(input)
+        """
+    )
+    ```
+  </Card>
+
+  <Card title="Layer Validation" icon="layer-group">
+    Use multiple validation layers:
+
+    ```swift
+    guardrails: [
+        ParameterValidationGuardrail(),  // 1. Structure
+        InputSanitizationGuardrail(),    // 2. Security
+        SchemaValidationGuardrail(),     // 3. Format
+        BusinessRuleGuardrail()          // 4. Logic
+    ]
+    ```
+  </Card>
+</CardGroup>
+
+## Output Validation
+
+Output guardrails filter and validate agent-generated content before returning results.
+
+### Output Validation Strictness
+
+Configure how strictly outputs are validated:
+
+```swift
+public enum ValidationStrictness: String, Codable {
+    case lenient   // Partial approvals accepted
+    case standard  // Balanced validation (default)
+    case strict    // Even partial approvals require revision
+}
+```
+
+<Tabs>
+  <Tab title="Lenient">
+    **Use case**: Development, testing, experimentation
+
+    ```swift
+    let task = ORTask(
+        description: "Generate draft content",
+        expectedOutput: "Draft document",
+        validationStrictness: .lenient,
+        guardrails: [.noHarmfulContent]
+    )
+    ```
+
+    **Behavior**:
+    - Partial approvals are accepted
+    - Warnings don't block output
+    - Faster iteration
+    - More permissive filtering
+
+    **When to use**:
+    - Prototyping
+    - Internal tools
+    - Development environments
+    - Creative exploration
+  </Tab>
+
+  <Tab title="Standard">
+    **Use case**: Production, general applications
+
+    ```swift
+    let task = ORTask(
+        description: "Generate content",
+        expectedOutput: "Final document",
+        validationStrictness: .standard,  // Default
+        guardrails: [.noHarmfulContent, .noPII]
+    )
+    ```
+
+    **Behavior**:
+    - Balanced approach
+    - Partial approvals allowed with feedback
+    - Standard filtering
+    - Reasonable performance
+
+    **When to use**:
+    - Most production applications
+    - Customer-facing features
+    - Standard compliance needs
+  </Tab>
+
+  <Tab title="Strict">
+    **Use case**: High-security, regulated industries
+
+    ```swift
+    let task = ORTask(
+        description: "Generate regulated content",
+        expectedOutput: "Compliant document",
+        validationStrictness: .strict,
+        guardrails: [
+            .noHarmfulContent,
+            .noPII,
+            .contentFilter,
+            ComplianceGuardrail()
+        ]
+    )
+    ```
+
+    **Behavior**:
+    - Even partial approvals require revision
+    - Strict filtering
+    - Zero-tolerance for violations
+    - Slowest but safest
+
+    **When to use**:
+    - Healthcare (HIPAA)
+    - Finance (PCI-DSS)
+    - Legal applications
+    - Children's content
+  </Tab>
+</Tabs>
+
+### Validation Results
+
+```swift
+public enum TaskValidationResult {
+    case approved
+    case partiallyApproved(feedback: String)
+    case needsRevision(feedback: String)
+    case validationFailed
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Approved" icon="circle-check">
+    Output passes all guardrails.
+
+    ```swift
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        // All checks passed
+        return .approved
+    }
+    ```
+
+    **What happens**:
+    - Task completes successfully
+    - Output returned to user
+    - No retries needed
+  </Accordion>
+
+  <Accordion title="Partially Approved" icon="circle-half-stroke">
+    Output is acceptable but has minor issues.
+
+    ```swift
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        if hasMinorIssues {
+            return .partiallyApproved(
+                feedback: "Output is acceptable but could be improved: \(issues)"
+            )
+        }
+        return .approved
+    }
+    ```
+
+    **What happens**:
+    - **Lenient/Standard**: Output accepted with feedback
+    - **Strict**: Retry required
+    - Feedback provided for improvement
+  </Accordion>
+
+  <Accordion title="Needs Revision" icon="rotate">
+    Output has issues that must be fixed.
+
+    ```swift
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        if hasViolations {
+            return .needsRevision(
+                feedback: "Output contains prohibited content: \(violations)"
+            )
+        }
+        return .approved
+    }
+    ```
+
+    **What happens**:
+    - Task retries if retries available
+    - Feedback sent to agent for revision
+    - Previous output discarded
+  </Accordion>
+
+  <Accordion title="Validation Failed" icon="circle-xmark">
+    Output cannot be validated (technical error).
+
+    ```swift
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        guard let output = context.output else {
+            return .validationFailed
+        }
+
+        do {
+            try await performValidation(output)
+            return .approved
+        } catch {
+            return .validationFailed
+        }
+    }
+    ```
+
+    **What happens**:
+    - Task fails immediately
+    - Error logged
+    - No retries (technical failure)
+  </Accordion>
+</AccordionGroup>
+
+## Safety and Compliance
+
+### Content Safety
+
+Implement comprehensive content safety with multiple layers:
+
+```swift
+import OrbitAI
+
+// Content safety configuration
+let contentSafetyAgent = Agent(
+    role: "Content Moderator",
+    purpose: "Generate safe, appropriate content",
+    context: """
+    Expert content creator who:
+    - Avoids harmful, offensive, or inappropriate content
+    - Respects cultural sensitivities
+    - Maintains professional tone
+    - Follows community guidelines
+    """,
+    guardrails: [
+        .noHarmfulContent,
+        .contentFilter,
+        CustomSensitivityGuardrail(level: .high)
+    ]
+)
+
+// Custom sensitivity guardrail
+final class CustomSensitivityGuardrail: OrbitGuardrail {
+    enum SensitivityLevel {
+        case low, medium, high
+    }
+
+    let level: SensitivityLevel
+
+    init(level: SensitivityLevel) {
+        self.level = level
+    }
+
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        guard let output = context.output else {
+            return .validationFailed
+        }
+
+        // Check sentiment
+        let sentiment = analyzeSentiment(output)
+
+        switch level {
+        case .high:
+            if sentiment.negativity > 0.2 || sentiment.controversy > 0.1 {
+                return .needsRevision(
+                    feedback: "Content tone is too negative or controversial"
+                )
+            }
+
+        case .medium:
+            if sentiment.negativity > 0.4 || sentiment.controversy > 0.3 {
+                return .partiallyApproved(
+                    feedback: "Consider adjusting tone for broader audience"
+                )
+            }
+
+        case .low:
+            if sentiment.negativity > 0.6 {
+                return .partiallyApproved(
+                    feedback: "Content may benefit from more positive framing"
+                )
+            }
+        }
+
+        return .approved
+    }
+
+    private func analyzeSentiment(_ text: String) -> (negativity: Double, controversy: Double) {
+        // Sentiment analysis implementation
+        return (0.0, 0.0)
+    }
+}
+```
+
+### Privacy Compliance
+
+Ensure GDPR, CCPA, and privacy regulation compliance:
+
+```swift
+final class PrivacyComplianceGuardrail: OrbitGuardrail {
+    let regulations: Set<PrivacyRegulation>
+
+    enum PrivacyRegulation {
+        case gdpr      // EU General Data Protection Regulation
+        case ccpa      // California Consumer Privacy Act
+        case hipaa     // Health Insurance Portability and Accountability Act
+        case coppa     // Children's Online Privacy Protection Act
+    }
+
+    init(regulations: Set<PrivacyRegulation>) {
+        self.regulations = regulations
+    }
+
+    func check(context: GuardrailContext) async throws -> GuardrailResult {
+        guard let output = context.output else {
+            return .validationFailed
+        }
+
+        var violations: [String] = []
+
+        // GDPR compliance
+        if regulations.contains(.gdpr) {
+            let gdprIssues = checkGDPRCompliance(output)
+            violations.append(contentsOf: gdprIssues)
+        }
+
+        // HIPAA compliance
+        if regulations.contains(.hipaa) {
+            let hipaaIssues = checkHIPAACompliance(output)
+            violations.append(contentsOf: hipaaIssues)
+        }
+
+        // COPPA compliance
+        if regulations.contains(.coppa) {
+            let coppaIssues = checkCOPPACompliance(output)
+            violations.append(contentsOf: coppaIssues)
+        }
+
+        if !violations.isEmpty {
+            return .needsRevision(
+                feedback: "Privacy violations detected: \(violations.joined(separator: "; "))"
+            )
+        }
+
+        return .approved
+    }
+
+    private func checkGDPRCompliance(_ output: String) -> [String] {
+        var issues: [String] = []
+
+        // Check for PII
+        if detectsPII(output) {
+            issues.append("Contains PII without consent")
+        }
+
+        // Check for data minimization
+        if containsExcessiveData(output) {
+            issues.append("Violates data minimization principle")
+        }
+
+        // Check for right to erasure
+        if containsUndeletableReferences(output) {
+            issues.append("Contains data that cannot be erased")
+        }
+
+        return issues
+    }
+
+    private func checkHIPAACompliance(_ output: String) -> [String] {
+        var issues: [String] = []
+
+        // Protected Health Information (PHI) detection
+        let phiPatterns = [
+            "medical record",
+            "diagnosis:",
+            "prescription:",
+            "treatment plan",
+            "lab results"
+        ]
+
+        for pattern in phiPatterns {
+            if output.lowercased().contains(pattern) {
+                // Check if properly encrypted/secured
+                if !isProperlySecured(output, pattern: pattern) {
+                    issues.append("Unsecured PHI: \(pattern)")
+                }
+            }
+        }
+
+        return issues
+    }
+
+    private func checkCOPPACompliance(_ output: String) -> [String] {
+        var issues: [String] = []
+
+        // Age-inappropriate content
+        if containsAgeInappropriateContent(output) {
+            issues.append("Contains content inappropriate for children")
+        }
+
+        // Personal info collection
+        if requestsPersonalInfo(output) {
+            issues.append("Requests personal information from minors")
+        }
+
+        return issues
+    }
+
+    private func detectsPII(_ text: String) -> Bool {
+        // PII detection logic
+        return false
+    }
+
+    private func containsExcessiveData(_ text: String) -> Bool {
+        // Data minimization check
+        return false
+    }
+
+    private func containsUndeletableReferences(_ text: String) -> Bool {
+        // Erasure compliance check
+        return false
+    }
+
+    private func isProperlySecured(_ text: String, pattern: String) -> Bool {
+        // Security check for PHI
+        return true
+    }
+
+    private func containsAgeInappropriateContent(_ text: String) -> Bool {
+        // Age appropriateness check
+        return false
+    }
+
+    private func requestsPersonalInfo(_ text: String) -> Bool {
+        // Personal info request detection
+        return false
+    }
+}
+
+// Usage
+let healthcareAgent = Agent(
+    role: "Medical Information Assistant",
+    purpose: "Provide health information",
+    context: "HIPAA-compliant medical assistant",
+    guardrails: [
+        .noPII,
+        PrivacyComplianceGuardrail(regulations: [.hipaa, .gdpr])
+    ]
+)
+```
+
+### Industry-Specific Compliance
+
+<Tabs>
+  <Tab title="Financial Services">
+    **Regulations**: PCI-DSS, SOX, GLBA
+
+    ```swift
+    final class FinancialComplianceGuardrail: OrbitGuardrail {
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var violations: [String] = []
+
+            // PCI-DSS: No credit card data
+            if detectsCreditCardData(output) {
+                violations.append("Credit card data detected (PCI-DSS violation)")
+            }
+
+            // SOX: Financial data accuracy
+            if containsFinancialData(output) && !isAuditable(output) {
+                violations.append("Financial data not auditable (SOX compliance)")
+            }
+
+            // GLBA: Customer financial information
+            if containsCustomerFinancialInfo(output) && !isEncrypted(output) {
+                violations.append("Unencrypted customer financial info (GLBA)")
+            }
+
+            // Investment advice disclaimer
+            if appearsToBeInvestmentAdvice(output) && !hasDisclaimer(output) {
+                violations.append("Investment advice missing required disclaimers")
+            }
+
+            if !violations.isEmpty {
+                return .needsRevision(
+                    feedback: violations.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+
+        private func detectsCreditCardData(_ text: String) -> Bool {
+            // Credit card pattern detection
+            let ccPattern = #"\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}"#
+            return text.range(of: ccPattern, options: .regularExpression) != nil
+        }
+
+        private func containsFinancialData(_ text: String) -> Bool {
+            let keywords = ["revenue", "profit", "loss", "earnings", "balance sheet"]
+            return keywords.contains { text.lowercased().contains($0) }
+        }
+
+        private func isAuditable(_ text: String) -> Bool {
+            // Check for audit trail metadata
+            return true
+        }
+
+        private func containsCustomerFinancialInfo(_ text: String) -> Bool {
+            let patterns = ["account balance", "transaction history", "credit score"]
+            return patterns.contains { text.lowercased().contains($0) }
+        }
+
+        private func isEncrypted(_ text: String) -> Bool {
+            // Check encryption status
+            return true
+        }
+
+        private func appearsToBeInvestmentAdvice(_ text: String) -> Bool {
+            let advisoryKeywords = ["should invest", "recommend buying", "stock tip"]
+            return advisoryKeywords.contains { text.lowercased().contains($0) }
+        }
+
+        private func hasDisclaimer(_ text: String) -> Bool {
+            let disclaimers = ["not financial advice", "consult a financial advisor"]
+            return disclaimers.contains { text.lowercased().contains($0) }
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Healthcare">
+    **Regulations**: HIPAA, HITECH, FDA
+
+    ```swift
+    final class HealthcareComplianceGuardrail: OrbitGuardrail {
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var violations: [String] = []
+
+            // HIPAA: Protected Health Information
+            if containsPHI(output) && !isHIPAACompliant(output) {
+                violations.append("Contains unsecured PHI (HIPAA violation)")
+            }
+
+            // Medical advice disclaimer
+            if appearsToBeMedicalAdvice(output) && !hasMedicalDisclaimer(output) {
+                violations.append("Medical advice missing required disclaimer")
+            }
+
+            // FDA regulations
+            if containsDrugInformation(output) && !hasFDACompliance(output) {
+                violations.append("Drug information not FDA compliant")
+            }
+
+            // Age appropriateness
+            if context.metadata["age_range"] == "pediatric" {
+                if !isPediatricAppropriate(output) {
+                    violations.append("Content not appropriate for pediatric patients")
+                }
+            }
+
+            if !violations.isEmpty {
+                return .needsRevision(
+                    feedback: violations.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+
+        private func containsPHI(_ text: String) -> Bool {
+            // PHI detection
+            return false
+        }
+
+        private func isHIPAACompliant(_ text: String) -> Bool {
+            // HIPAA compliance check
+            return true
+        }
+
+        private func appearsToBeMedicalAdvice(_ text: String) -> Bool {
+            let advicePatterns = ["you should take", "recommended dosage", "treatment plan"]
+            return advicePatterns.contains { text.lowercased().contains($0) }
+        }
+
+        private func hasMedicalDisclaimer(_ text: String) -> Bool {
+            let disclaimers = [
+                "not medical advice",
+                "consult your doctor",
+                "healthcare provider"
+            ]
+            return disclaimers.contains { text.lowercased().contains($0) }
+        }
+
+        private func containsDrugInformation(_ text: String) -> Bool {
+            // Drug information detection
+            return false
+        }
+
+        private func hasFDACompliance(_ text: String) -> Bool {
+            // FDA compliance check
+            return true
+        }
+
+        private func isPediatricAppropriate(_ text: String) -> Bool {
+            // Age appropriateness check
+            return true
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Education">
+    **Regulations**: FERPA, COPPA, CIPA
+
+    ```swift
+    final class EducationComplianceGuardrail: OrbitGuardrail {
+        let ageGroup: AgeGroup
+
+        enum AgeGroup {
+            case under13    // COPPA applies
+            case k12        // FERPA applies
+            case higher     // FERPA applies
+        }
+
+        init(ageGroup: AgeGroup) {
+            self.ageGroup = ageGroup
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var violations: [String] = []
+
+            // FERPA: Student records protection
+            if containsStudentRecords(output) {
+                violations.append("Contains student records (FERPA violation)")
+            }
+
+            // COPPA: Children under 13
+            if ageGroup == .under13 {
+                if requestsPersonalInfo(output) {
+                    violations.append("Requests personal info from children (COPPA)")
+                }
+
+                if !isChildSafe(output) {
+                    violations.append("Content not appropriate for children")
+                }
+            }
+
+            // CIPA: Internet safety
+            if containsInappropriateLinks(output) {
+                violations.append("Contains inappropriate web links (CIPA)")
+            }
+
+            // Educational appropriateness
+            if !isEducationallyAppropriate(output, for: ageGroup) {
+                violations.append("Content not educationally appropriate")
+            }
+
+            if !violations.isEmpty {
+                return .needsRevision(
+                    feedback: violations.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+
+        private func containsStudentRecords(_ text: String) -> Bool {
+            let recordIndicators = ["grade", "GPA", "student ID", "enrollment"]
+            return recordIndicators.contains { text.lowercased().contains($0) }
+        }
+
+        private func requestsPersonalInfo(_ text: String) -> Bool {
+            let requests = ["what is your name", "where do you live", "phone number"]
+            return requests.contains { text.lowercased().contains($0) }
+        }
+
+        private func isChildSafe(_ text: String) -> Bool {
+            // Child safety content check
+            return true
+        }
+
+        private func containsInappropriateLinks(_ text: String) -> Bool {
+            // URL filtering
+            return false
+        }
+
+        private func isEducationallyAppropriate(_ text: String, for ageGroup: AgeGroup) -> Bool {
+            // Educational content validation
+            return true
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Custom Guardrails
+
+Create custom guardrails for domain-specific requirements:
+
+### OrbitGuardrail Protocol
+
+```swift
+public protocol OrbitGuardrail {
+    func check(context: GuardrailContext) async throws -> GuardrailResult
+}
+
+public struct GuardrailContext {
+    public let inputs: [String: String]
+    public let output: String?
+    public let metadata: [String: String]
+    public let agent: Agent?
+    public let task: ORTask?
+}
+
+public enum GuardrailResult {
+    case approved
+    case partiallyApproved(feedback: String)
+    case needsRevision(feedback: String)
+    case validationFailed
+}
+```
+
+### Custom Guardrail Examples
+
+<Tabs>
+  <Tab title="Business Rules">
+    Enforce business logic and domain rules:
+
+    ```swift
+    final class BusinessRulesGuardrail: OrbitGuardrail {
+        let rules: [BusinessRule]
+
+        struct BusinessRule {
+            let name: String
+            let condition: (String) -> Bool
+            let errorMessage: String
+        }
+
+        init(rules: [BusinessRule]) {
+            self.rules = rules
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var violations: [String] = []
+
+            for rule in rules {
+                if !rule.condition(output) {
+                    violations.append("\(rule.name): \(rule.errorMessage)")
+                }
+            }
+
+            if !violations.isEmpty {
+                return .needsRevision(
+                    feedback: "Business rule violations:\n" + violations.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+    }
+
+    // Usage: E-commerce rules
+    let ecommerceRules = BusinessRulesGuardrail(rules: [
+        BusinessRule(
+            name: "Price Validity",
+            condition: { output in
+                // Check prices are in valid range
+                let pricePattern = #"\$(\d+\.?\d*)"#
+                if let regex = try? NSRegularExpression(pattern: pricePattern) {
+                    let matches = regex.matches(
+                        in: output,
+                        range: NSRange(output.startIndex..., in: output)
+                    )
+
+                    for match in matches {
+                        if let range = Range(match.range(at: 1), in: output) {
+                            let priceStr = String(output[range])
+                            if let price = Double(priceStr), price < 0 || price > 999999 {
+                                return false  // Invalid price
+                            }
+                        }
+                    }
+                }
+                return true
+            },
+            errorMessage: "Prices must be between $0 and $999,999"
+        ),
+
+        BusinessRule(
+            name: "Discount Limits",
+            condition: { output in
+                // Check discounts don't exceed 70%
+                let discountPattern = #"(\d+)%\s+off"#
+                if let regex = try? NSRegularExpression(pattern: discountPattern, options: .caseInsensitive) {
+                    let matches = regex.matches(
+                        in: output,
+                        range: NSRange(output.startIndex..., in: output)
+                    )
+
+                    for match in matches {
+                        if let range = Range(match.range(at: 1), in: output) {
+                            let discountStr = String(output[range])
+                            if let discount = Int(discountStr), discount > 70 {
+                                return false  // Excessive discount
+                            }
+                        }
+                    }
+                }
+                return true
+            },
+            errorMessage: "Discounts cannot exceed 70%"
+        ),
+
+        BusinessRule(
+            name: "Stock Availability",
+            condition: { output in
+                // Don't promise availability without checking
+                let promisePatterns = [
+                    "in stock",
+                    "available now",
+                    "ships immediately"
+                ]
+
+                for pattern in promisePatterns {
+                    if output.lowercased().contains(pattern) {
+                        // Check if includes disclaimer
+                        if !output.lowercased().contains("while supplies last") &&
+                           !output.lowercased().contains("subject to availability") {
+                            return false
+                        }
+                    }
+                }
+                return true
+            },
+            errorMessage: "Availability claims must include disclaimers"
+        )
+    ])
+
+    let productAgent = Agent(
+        role: "Product Description Writer",
+        purpose: "Create product descriptions",
+        context: "E-commerce content expert",
+        guardrails: [ecommerceRules]
+    )
+    ```
+  </Tab>
+
+  <Tab title="Quality Standards">
+    Enforce content quality requirements:
+
+    ```swift
+    final class QualityStandardsGuardrail: OrbitGuardrail {
+        let minWords: Int
+        let maxWords: Int
+        let requireCompleteSentences: Bool
+        let requireProperGrammar: Bool
+        let minReadabilityScore: Double
+
+        init(
+            minWords: Int = 100,
+            maxWords: Int = 1000,
+            requireCompleteSentences: Bool = true,
+            requireProperGrammar: Bool = true,
+            minReadabilityScore: Double = 60.0
+        ) {
+            self.minWords = minWords
+            self.maxWords = maxWords
+            self.requireCompleteSentences = requireCompleteSentences
+            self.requireProperGrammar = requireProperGrammar
+            self.minReadabilityScore = minReadabilityScore
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var issues: [String] = []
+            var warnings: [String] = []
+
+            // Word count
+            let wordCount = output.split(separator: " ").count
+
+            if wordCount < minWords {
+                issues.append("Content too short: \(wordCount) words (minimum: \(minWords))")
+            }
+
+            if wordCount > maxWords {
+                issues.append("Content too long: \(wordCount) words (maximum: \(maxWords))")
+            }
+
+            // Complete sentences
+            if requireCompleteSentences {
+                let sentences = output.split(separator: ".")
+                for sentence in sentences {
+                    let trimmed = sentence.trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty {
+                        // Check sentence starts with capital
+                        if let first = trimmed.first, !first.isUppercase {
+                            warnings.append("Sentence doesn't start with capital: \(trimmed.prefix(30))...")
+                        }
+                    }
+                }
+            }
+
+            // Readability
+            let readability = calculateReadabilityScore(output)
+            if readability < minReadabilityScore {
+                warnings.append("Readability score \(Int(readability)) below minimum \(Int(minReadabilityScore))")
+            }
+
+            // Grammar check (simplified)
+            if requireProperGrammar {
+                let grammarIssues = checkGrammar(output)
+                if !grammarIssues.isEmpty {
+                    warnings.append("Grammar issues found: \(grammarIssues.count)")
+                }
+            }
+
+            // Return result
+            if !issues.isEmpty {
+                return .needsRevision(
+                    feedback: issues.joined(separator: "\n")
+                )
+            }
+
+            if !warnings.isEmpty {
+                return .partiallyApproved(
+                    feedback: "Quality warnings:\n" + warnings.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+
+        private func calculateReadabilityScore(_ text: String) -> Double {
+            // Flesch Reading Ease calculation (simplified)
+            let sentences = text.split(separator: ".").count
+            let words = text.split(separator: " ").count
+            let syllables = countSyllables(text)
+
+            guard sentences > 0, words > 0 else { return 0 }
+
+            let avgWordsPerSentence = Double(words) / Double(sentences)
+            let avgSyllablesPerWord = Double(syllables) / Double(words)
+
+            let score = 206.835 - 1.015 * avgWordsPerSentence - 84.6 * avgSyllablesPerWord
+            return max(0, min(100, score))
+        }
+
+        private func countSyllables(_ text: String) -> Int {
+            // Simplified syllable counting
+            let vowels = CharacterSet(charactersIn: "aeiouAEIOU")
+            var count = 0
+
+            for char in text {
+                if char.unicodeScalars.allSatisfy({ vowels.contains($0) }) {
+                    count += 1
+                }
+            }
+
+            return max(1, count)
+        }
+
+        private func checkGrammar(_ text: String) -> [String] {
+            // Simplified grammar checking
+            var issues: [String] = []
+
+            // Check for common issues
+            if text.contains("  ") {
+                issues.append("Double spaces found")
+            }
+
+            // Check for incomplete sentences
+            if text.hasSuffix(",") || text.hasSuffix(";") {
+                issues.append("Text ends with comma or semicolon")
+            }
+
+            return issues
+        }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Brand Guidelines">
+    Ensure content follows brand voice and style:
+
+    ```swift
+    final class BrandGuidelinesGuardrail: OrbitGuardrail {
+        let brandVoice: BrandVoice
+        let prohibitedWords: Set<String>
+        let requiredTerminology: [String: String]  // Wrong -> Right
+        let toneRequirements: ToneRequirements
+
+        struct BrandVoice {
+            let adjectives: [String]  // professional, friendly, innovative
+            let avoidWords: [String]  // cheap, basic, simple
+        }
+
+        struct ToneRequirements {
+            let formality: FormalityLevel
+            let perspective: Perspective
+
+            enum FormalityLevel {
+                case casual, professional, formal
+            }
+
+            enum Perspective {
+                case firstPerson, secondPerson, thirdPerson
+            }
+        }
+
+        init(
+            brandVoice: BrandVoice,
+            prohibitedWords: Set<String>,
+            requiredTerminology: [String: String],
+            toneRequirements: ToneRequirements
+        ) {
+            self.brandVoice = brandVoice
+            self.prohibitedWords = prohibitedWords
+            self.requiredTerminology = requiredTerminology
+            self.toneRequirements = toneRequirements
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            var violations: [String] = []
+            var suggestions: [String] = []
+
+            let lowercased = output.lowercased()
+
+            // Check prohibited words
+            for word in prohibitedWords {
+                if lowercased.contains(word.lowercased()) {
+                    violations.append("Prohibited word used: '\(word)'")
+                }
+            }
+
+            // Check terminology
+            for (wrong, right) in requiredTerminology {
+                if lowercased.contains(wrong.lowercased()) {
+                    suggestions.append("Use '\(right)' instead of '\(word)'")
+                }
+            }
+
+            // Check tone
+            let actualTone = analyzeTone(output)
+            if actualTone.formality != toneRequirements.formality {
+                suggestions.append("Adjust formality to \(toneRequirements.formality)")
+            }
+
+            // Check perspective
+            if !matchesPerspective(output, toneRequirements.perspective) {
+                violations.append("Use \(toneRequirements.perspective) perspective")
+            }
+
+            // Check brand voice
+            let voiceScore = calculateBrandVoiceScore(output)
+            if voiceScore < 0.7 {
+                suggestions.append("Content doesn't match brand voice (score: \(Int(voiceScore * 100))%)")
+            }
+
+            if !violations.isEmpty {
+                return .needsRevision(
+                    feedback: violations.joined(separator: "\n")
+                )
+            }
+
+            if !suggestions.isEmpty {
+                return .partiallyApproved(
+                    feedback: suggestions.joined(separator: "\n")
+                )
+            }
+
+            return .approved
+        }
+
+        private func analyzeTone(_ text: String) -> ToneRequirements {
+            // Simplified tone analysis
+            return ToneRequirements(
+                formality: .professional,
+                perspective: .secondPerson
+            )
+        }
+
+        private func matchesPerspective(_ text: String, _ perspective: ToneRequirements.Perspective) -> Bool {
+            let lowercased = text.lowercased()
+
+            switch perspective {
+            case .firstPerson:
+                return lowercased.contains("we ") || lowercased.contains("our ")
+            case .secondPerson:
+                return lowercased.contains("you ") || lowercased.contains("your ")
+            case .thirdPerson:
+                return !lowercased.contains("we ") && !lowercased.contains("you ")
+            }
+        }
+
+        private func calculateBrandVoiceScore(_ text: String) -> Double {
+            // Calculate alignment with brand voice
+            var score = 0.0
+            let lowercased = text.lowercased()
+
+            // Positive: contains brand adjectives
+            for adjective in brandVoice.adjectives {
+                if lowercased.contains(adjective.lowercased()) {
+                    score += 0.2
+                }
+            }
+
+            // Negative: contains avoid words
+            for word in brandVoice.avoidWords {
+                if lowercased.contains(word.lowercased()) {
+                    score -= 0.3
+                }
+            }
+
+            return max(0, min(1, score + 0.5))  // Base score of 0.5
+        }
+    }
+
+    // Usage
+    let brandGuidelines = BrandGuidelinesGuardrail(
+        brandVoice: BrandGuidelinesGuardrail.BrandVoice(
+            adjectives: ["innovative", "reliable", "professional", "cutting-edge"],
+            avoidWords: ["cheap", "basic", "simple", "ordinary"]
+        ),
+        prohibitedWords: ["guarantee", "best", "perfect", "flawless"],
+        requiredTerminology: [
+            "clients": "partners",
+            "users": "customers",
+            "product": "solution"
+        ],
+        toneRequirements: BrandGuidelinesGuardrail.ToneRequirements(
+            formality: .professional,
+            perspective: .secondPerson
+        )
+    )
+    ```
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### Guardrail Configuration
+
+<CardGroup cols={2}>
+  <Card title="Layer Guardrails" icon="layer-group">
+    Use multiple guardrails for defense-in-depth:
+
+    ```swift
+    let secureTask = ORTask(
+        description: "Process customer data",
+        expectedOutput: "Customer report",
+        guardrails: [
+            // Layer 1: Input validation
+            InputSanitizationGuardrail(),
+
+            // Layer 2: Security
+            .noPII,
+            .noHarmfulContent,
+
+            // Layer 3: Compliance
+            PrivacyComplianceGuardrail(
+                regulations: [.gdpr, .ccpa]
+            ),
+
+            // Layer 4: Quality
+            QualityStandardsGuardrail(),
+
+            // Layer 5: Business rules
+            BusinessRulesGuardrail(rules: rules)
+        ]
+    )
+    ```
+  </Card>
+
+  <Card title="Environment-Specific" icon="flask">
+    Adjust strictness by environment:
+
+    ```swift
+    #if DEBUG
+    let strictness: ValidationStrictness = .lenient
+    let guardrails: [any OrbitGuardrail] = [
+        .noHarmfulContent
+    ]
+    #else
+    let strictness: ValidationStrictness = .strict
+    let guardrails: [any OrbitGuardrail] = [
+        .noHarmfulContent,
+        .noPII,
+        .contentFilter,
+        ComplianceGuardrail()
+    ]
+    #endif
+
+    let task = ORTask(
+        description: "Generate content",
+        expectedOutput: "Content output",
+        validationStrictness: strictness,
+        guardrails: guardrails
+    )
+    ```
+  </Card>
+
+  <Card title="Monitor Violations" icon="chart-line">
+    Track guardrail violations:
+
+    ```swift
+    final class GuardrailMonitor {
+        static let shared = GuardrailMonitor()
+
+        private var violations: [ViolationRecord] = []
+
+        struct ViolationRecord {
+            let timestamp: Date
+            let guardrail: String
+            let task: String
+            let feedback: String
+        }
+
+        func recordViolation(
+            guardrail: String,
+            task: String,
+            feedback: String
+        ) {
+            let record = ViolationRecord(
+                timestamp: Date(),
+                guardrail: guardrail,
+                task: task,
+                feedback: feedback
+            )
+
+            violations.append(record)
+
+            // Alert if too many violations
+            if recentViolationCount() > 10 {
+                alertSecurityTeam()
+            }
+        }
+
+        private func recentViolationCount() -> Int {
+            let hourAgo = Date().addingTimeInterval(-3600)
+            return violations.filter { $0.timestamp > hourAgo }.count
+        }
+
+        private func alertSecurityTeam() {
+            // Send alert
+        }
+    }
+    ```
+  </Card>
+
+  <Card title="Test Guardrails" icon="vial">
+    Unit test custom guardrails:
+
+    ```swift
+    import XCTest
+    @testable import MyApp
+
+    final class GuardrailTests: XCTestCase {
+        func testNoPIIGuardrail() async throws {
+            let guardrail = NoPIIGuardrail()
+
+            // Test: Should block email
+            let emailContext = GuardrailContext(
+                inputs: [:],
+                output: "Contact me at john@example.com",
+                metadata: [:],
+                agent: nil,
+                task: nil
+            )
+
+            let result = try await guardrail.check(
+                context: emailContext
+            )
+
+            XCTAssertEqual(
+                result,
+                .needsRevision(
+                    feedback: "Contains PII: email address"
+                )
+            )
+
+            // Test: Should approve clean content
+            let cleanContext = GuardrailContext(
+                inputs: [:],
+                output: "This is clean content",
+                metadata: [:],
+                agent: nil,
+                task: nil
+            )
+
+            let cleanResult = try await guardrail.check(
+                context: cleanContext
+            )
+
+            XCTAssertEqual(cleanResult, .approved)
+        }
+    }
+    ```
+  </Card>
+</CardGroup>
+
+### Performance Optimization
+
+<AccordionGroup>
+  <Accordion title="Cache Validation Results" icon="database">
+    Cache expensive validation operations:
+
+    ```swift
+    final class CachedGuardrail: OrbitGuardrail {
+        private let underlying: OrbitGuardrail
+        private var cache: [String: GuardrailResult] = [:]
+
+        init(wrapping guardrail: OrbitGuardrail) {
+            self.underlying = guardrail
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            // Create cache key
+            let key = cacheKey(for: context)
+
+            // Check cache
+            if let cached = cache[key] {
+                return cached
+            }
+
+            // Execute validation
+            let result = try await underlying.check(context: context)
+
+            // Cache result
+            cache[key] = result
+
+            return result
+        }
+
+        private func cacheKey(for context: GuardrailContext) -> String {
+            // Create unique key from context
+            return "\(context.output?.hashValue ?? 0)"
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Parallel Validation" icon="gauge">
+    Run independent guardrails in parallel:
+
+    ```swift
+    func validateInParallel(
+        context: GuardrailContext,
+        guardrails: [any OrbitGuardrail]
+    ) async throws -> GuardrailResult {
+        try await withThrowingTaskGroup(of: GuardrailResult.self) { group in
+            // Add all guardrail checks
+            for guardrail in guardrails {
+                group.addTask {
+                    try await guardrail.check(context: context)
+                }
+            }
+
+            // Collect results
+            var results: [GuardrailResult] = []
+            for try await result in group {
+                results.append(result)
+            }
+
+            // Aggregate results
+            return aggregateResults(results)
+        }
+    }
+
+    func aggregateResults(_ results: [GuardrailResult]) -> GuardrailResult {
+        // If any failed, return first failure
+        for result in results {
+            if case .needsRevision(let feedback) = result {
+                return .needsRevision(feedback: feedback)
+            }
+        }
+
+        // If any partial, return first partial
+        for result in results {
+            if case .partiallyApproved(let feedback) = result {
+                return .partiallyApproved(feedback: feedback)
+            }
+        }
+
+        // All approved
+        return .approved
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Short-Circuit Evaluation" icon="forward-fast">
+    Stop on first failure for performance:
+
+    ```swift
+    func validateWithShortCircuit(
+        context: GuardrailContext,
+        guardrails: [any OrbitGuardrail]
+    ) async throws -> GuardrailResult {
+        for guardrail in guardrails {
+            let result = try await guardrail.check(context: context)
+
+            // Stop on first failure
+            switch result {
+            case .needsRevision, .validationFailed:
+                return result
+            case .partiallyApproved, .approved:
+                continue
+            }
+        }
+
+        return .approved
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Security Best Practices
+
+<Warning>
+**Critical**: Guardrails are your last line of defense. Always enable guardrails in production environments.
+</Warning>
+
+```swift
+// Enable guardrails in environment
+// .env file
+ORBIT_ENABLE_GUARDRAILS=true
+
+// Verify guardrails are enabled
+guard ProcessInfo.processInfo.environment["ORBIT_ENABLE_GUARDRAILS"] == "true" else {
+    fatalError("Guardrails must be enabled in production")
+}
+
+// Use strict validation
+let productionTask = ORTask(
+    description: "Production task",
+    expectedOutput: "Production output",
+    validationStrictness: .strict,  // Always strict in production
+    guardrails: [
+        .noHarmfulContent,
+        .noPII,
+        .contentFilter,
+        ComplianceGuardrail()
+    ]
+)
+
+// Log all guardrail violations
+extension OrbitGuardrail {
+    func checkWithLogging(
+        context: GuardrailContext
+    ) async throws -> GuardrailResult {
+        let result = try await check(context: context)
+
+        // Log violations
+        switch result {
+        case .needsRevision(let feedback),
+             .partiallyApproved(let feedback):
+            logger.warning("Guardrail violation: \(feedback)")
+            GuardrailMonitor.shared.recordViolation(
+                guardrail: String(describing: type(of: self)),
+                task: context.task?.description ?? "Unknown",
+                feedback: feedback
+            )
+        case .validationFailed:
+            logger.error("Guardrail validation failed")
+        case .approved:
+            break
+        }
+
+        return result
+    }
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Guardrail Violations" icon="triangle-exclamation">
+    **Symptom**: Tasks repeatedly fail guardrail validation.
+
+    **Causes**:
+    - Overly strict guardrails
+    - Poorly configured thresholds
+    - Agent generating inappropriate content
+    - Conflicting guardrails
+
+    **Diagnosis**:
+    ```swift
+    // Enable detailed logging
+    let task = ORTask(
+        description: "Test task",
+        expectedOutput: "Test output",
+        guardrails: [
+            VerboseGuardrail(wrapping: .noHarmfulContent)
+        ]
+    )
+
+    final class VerboseGuardrail: OrbitGuardrail {
+        let wrapped: any OrbitGuardrail
+
+        init(wrapping guardrail: any OrbitGuardrail) {
+            self.wrapped = guardrail
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            print("Checking guardrail: \(type(of: wrapped))")
+            print("Output: \(context.output ?? "nil")")
+
+            let result = try await wrapped.check(context: context)
+
+            print("Result: \(result)")
+
+            return result
+        }
+    }
+    ```
+
+    **Solutions**:
+    ```swift
+    // 1. Adjust strictness for development
+    let task = ORTask(
+        description: "Development task",
+        expectedOutput: "Output",
+        validationStrictness: .lenient  // Less strict
+    )
+
+    // 2. Increase token limit
+    let tokenGuardrail = TokenLimitGuardrail(
+        maxTokens: 12000,  // Increased from 8000
+        model: "gpt-4o"
+    )
+
+    // 3. Improve agent instructions
+    let agent = Agent(
+        role: "Content Writer",
+        purpose: "Generate safe, appropriate content",
+        context: """
+        Important guidelines:
+        - Use professional, respectful language
+        - Avoid controversial topics
+        - Do not include personal information
+        - Keep content factual and balanced
+        """
+    )
+
+    // 4. Customize guardrail behavior
+    let customPIIGuardrail = NoPIIGuardrail(
+        detectTypes: [.email, .phone],  // Only these types
+        action: .redact  // Redact instead of block
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="False Positives" icon="circle-exclamation">
+    **Symptom**: Guardrails block legitimate content.
+
+    **Causes**:
+    - Overly sensitive detection
+    - Pattern matching too broad
+    - Context not considered
+
+    **Solutions**:
+    ```swift
+    // 1. Add context-aware validation
+    final class ContextAwarePIIGuardrail: OrbitGuardrail {
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            // Check context
+            if context.metadata["content_type"] == "example" {
+                // Allow example emails in documentation
+                return .approved
+            }
+
+            // Normal PII detection
+            return try await detectPII(output)
+        }
+
+        private func detectPII(_ text: String) async throws -> GuardrailResult {
+            // PII detection logic
+            return .approved
+        }
+    }
+
+    // 2. Use allowlists
+    final class AllowlistGuardrail: OrbitGuardrail {
+        let allowedPatterns: [String]
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            // Check if matches allowed pattern
+            for pattern in allowedPatterns {
+                if output.range(of: pattern, options: .regularExpression) != nil {
+                    return .approved
+                }
+            }
+
+            // Normal validation
+            return .needsRevision(feedback: "Does not match allowed patterns")
+        }
+    }
+
+    // 3. Adjust sensitivity
+    let sensitiveContentFilter = ContentFilterGuardrail(
+        sensitivityLevel: .medium  // Reduced from .high
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Performance Issues" icon="hourglass">
+    **Symptom**: Guardrail validation is slow.
+
+    **Causes**:
+    - Too many guardrails
+    - Expensive operations (API calls, ML models)
+    - Sequential validation
+    - No caching
+
+    **Solutions**:
+    ```swift
+    // 1. Run guardrails in parallel
+    let parallelValidation = ParallelGuardrailValidator(
+        guardrails: [
+            .noHarmfulContent,
+            .noPII,
+            .contentFilter
+        ]
+    )
+
+    // 2. Implement caching
+    let cachedGuardrail = CachedGuardrail(
+        wrapping: ExpensiveAPIGuardrail()
+    )
+
+    // 3. Use lightweight guardrails for common cases
+    final class QuickCheckGuardrail: OrbitGuardrail {
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            // Quick regex checks
+            if output.isEmpty {
+                return .needsRevision(feedback: "Output is empty")
+            }
+
+            if output.count > 100000 {
+                return .needsRevision(feedback: "Output too long")
+            }
+
+            return .approved
+        }
+    }
+
+    // 4. Short-circuit on first failure
+    for guardrail in guardrails {
+        let result = try await guardrail.check(context: context)
+        if case .needsRevision = result {
+            return result  // Stop early
+        }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Inconsistent Validation" icon="shuffle">
+    **Symptom**: Same content passes sometimes, fails other times.
+
+    **Causes**:
+    - Non-deterministic validation
+    - Race conditions
+    - Stateful guardrails
+    - External API inconsistency
+
+    **Solutions**:
+    ```swift
+    // 1. Make guardrails deterministic
+    final class DeterministicGuardrail: OrbitGuardrail {
+        // Don't use random numbers, timestamps, or external APIs
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            // Deterministic validation
+            let hash = output.hashValue
+            let isValid = hash % 2 == 0  // Always same for same input
+
+            return isValid ? .approved : .needsRevision(feedback: "Validation failed")
+        }
+    }
+
+    // 2. Use immutable state
+    final class StatelessGuardrail: OrbitGuardrail {
+        let config: Config  // Immutable configuration
+
+        struct Config {
+            let threshold: Double
+            let patterns: [String]
+        }
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            // No mutable state, same input = same output
+            return .approved
+        }
+    }
+
+    // 3. Cache external API calls
+    final class CachedAPIGuardrail: OrbitGuardrail {
+        private var cache: [String: GuardrailResult] = [:]
+
+        func check(context: GuardrailContext) async throws -> GuardrailResult {
+            guard let output = context.output else {
+                return .validationFailed
+            }
+
+            // Check cache first
+            if let cached = cache[output] {
+                return cached
+            }
+
+            // Call API
+            let result = try await callExternalAPI(output)
+
+            // Cache result
+            cache[output] = result
+
+            return result
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tasks" icon="list-check" href="/tasks">
+    Configure tasks with guardrails and validation
+  </Card>
+
+  <Card title="Agents" icon="user-gear" href="/agents">
+    Set up agent-level guardrails for security
+  </Card>
+
+  <Card title="Compliance" icon="scale-balanced" href="/compliance">
+    Learn about regulatory compliance features
+  </Card>
+
+  <Card title="Security" icon="shield" href="/security">
+    Implement comprehensive security measures
+  </Card>
+</CardGroup>
+
+---
+
+<Tip>
+**Pro Tip**: Start with lenient validation during development to iterate quickly, then gradually increase strictness as you refine your content. Always use strict validation in production environments to ensure safety and compliance.
+</Tip>
