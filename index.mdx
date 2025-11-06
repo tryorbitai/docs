@@ -40,60 +40,6 @@ The **OrbitAI** architecture is built around the concept of **Orbits** - coordin
 4. **Execution**: The system coordinates agent collaboration, tool usage, and task completion.
 5. **Results**: Receive structured outputs with full execution context and metrics.
 
-```swift
-// Initialize **OrbitAI**
-OrbitAI.configure()
-
-// Create specialized agents
-let recipeExtractor = Agent(
-    role: "Recipe Extractor",
-    purpose: "Extract recipe content from URLs",
-    context: "Expert in web scraping and recipe data extraction",
-    tools: ["webScraper", "urlFetcher"]
-)
-
-let recipeFormatter = Agent(
-    role: "Recipe Formatter", 
-    purpose: "Convert plain text recipes into concise markdown format",
-    context: "Expert in recipe formatting and markdown syntax"
-)
-
-// Define tasks
-let extractTask = Task(
-    description: "Extract recipe from https://example.com/chocolate-chip-cookies",
-    expectedOutput: "Plain text recipe with ingredients and instructions",
-    agent: recipeExtractor
-)
-
-let formatTask = Task(
-    description: "Convert the extracted plain text into a clean, concise markdown recipe", 
-    expectedOutput: "Well-formatted markdown with sections for ingredients, instructions, prep time",
-    agent: recipeFormatter
-)
-
-// Create and execute orbit
-let orbit = try Orbit(
-    agents: [recipeExtractor, recipeFormatter],
-    tasks: [extractTask, formatTask], 
-    process: .sequential
-)
-
-let results = try await orbit.start()
-```
-
-## Setting up
-
-Get started with **OrbitAI** in your Swift project.
-
-<Card
-  title="Installation Guide"
-  icon="download"
-  href="/installation"
-  horizontal
->
-  Install **OrbitAI** and configure your development environment.
-</Card>
-
 ## Core Components
 
 **OrbitAI**'s architecture consists of nine primary components that work together to create a powerful AI application platform:
@@ -103,80 +49,12 @@ Get started with **OrbitAI** in your Swift project.
 | **Orbits** | Orchestration engine that coordinates agent teams and task execution | Sequential/hierarchical processes, multi-agent coordination, execution management |
 | **Agents** | Autonomous AI entities with specific roles and capabilities | Role-based behavior, tool integration, memory systems, delegation support |
 | **Tasks** | Structured units of work with defined objectives and constraints | Flexible execution, dependency management, output formatting, validation |
-| **LLMs** | Large Language Model providers and management system | Multi-provider support (OpenAI, Anthropic, etc.), model selection, token management |
-| **Tools** | External capabilities and integrations available to agents | File operations, web search, calculations, API integrations, system tools |
+| **LLMs** | Large Language Model providers and management system | Support (OpenAI), model selection, token management |
+| **Tools** | External capabilities and integrations available to agents | System tools, file operations, web search, API integrations, etc |
 | **Process** | Execution strategies that determine how agents collaborate | Sequential (one-by-one) or hierarchical (manager-coordinated) workflows |
 | **KnowledgeBase** | Semantic information storage and retrieval system | Document ingestion, embedding-based search, RAG (Retrieval Augmented Generation) |
 | **Memory** | Persistent storage for agent learning and context retention | Short-term, long-term, entity, and contextual memory types |
 | **Guardrails** | Safety and validation framework for agent behavior | Content filtering, behavior constraints, output validation, compliance checks |
-
-### Detailed Component Analysis
-
-<Columns cols={2}>
-  <Card
-    title="Orbits"
-    icon="satellite"
-    href="/components/orbits"
-  >
-    Central orchestration component managing teams of agents and coordinating task execution.
-  </Card>
-  <Card
-    title="Agents"
-    icon="robot"
-    href="/components/agents"
-  >
-    Autonomous workers with unique roles, capabilities, and the ability to collaborate.
-  </Card>
-  <Card
-    title="Tasks"
-    icon="list-check"
-    href="/components/tasks"
-  >
-    Structured work units with clear objectives, dependencies, and validation.
-  </Card>
-  <Card
-    title="LLMs"
-    icon="brain"
-    href="/components/llms"
-  >
-    Provider abstraction and management for Large Language Models.
-  </Card>
-  <Card
-    title="Tools"
-    icon="wrench"
-    href="/components/tools"
-  >
-    External capabilities extending agent functionality with integrations.
-  </Card>
-  <Card
-    title="Process"
-    icon="diagram-project"
-    href="/components/process"
-  >
-    Collaboration patterns defining how agents work together.
-  </Card>
-  <Card
-    title="KnowledgeBase"
-    icon="database"
-    href="/components/knowledgebase"
-  >
-    Semantic information storage with vector-based search and RAG.
-  </Card>
-  <Card
-    title="Memory"
-    icon="brain-circuit"
-    href="/components/memory"
-  >
-    Persistent storage enabling agent learning across sessions.
-  </Card>
-  <Card
-    title="Guardrails"
-    icon="shield"
-    href="/components/guardrails"
-  >
-    Safety framework ensuring appropriate agent behavior.
-  </Card>
-</Columns>
 
 ## System Integration
 
@@ -186,7 +64,6 @@ The **OrbitAI** system creates powerful AI applications through seamless integra
 
 #### 1. Initialization & Configuration
 ```swift
-OrbitAI.configure()
 let llmManager = LLMManager()
 try llmManager.addProvider(OpenAIProvider(apiKey: "your-key"))
 ```
@@ -198,7 +75,7 @@ let recipeExtractor = Agent(
     role: "Recipe Extractor",
     purpose: "Extract recipe content from URLs", 
     context: "Expert in web scraping and recipe data extraction",
-    tools: ["webScraper", "urlFetcher"]
+    tools: ["webScraper"]
 )
 ```
 
@@ -208,7 +85,6 @@ Tasks are created with clear objectives and can leverage all system components:
 let extractTask = Task(
     description: "Extract recipe from https://example.com/chocolate-chip-cookies",
     expectedOutput: "Plain text recipe with ingredients and instructions",
-    tools: ["webScraper", "urlFetcher"],
     agent: recipeExtractor
 )
 ```
@@ -242,7 +118,7 @@ During execution, components interact dynamically:
 - **Tool Integration**: Agents invoke tools as needed for task completion.  
 - **Memory Access**: Agents store and retrieve relevant information.
 - **Knowledge Query**: Agents search knowledge bases for additional context.
-- **Guardrail Checking**: All outputs are validated against configured guardrails.
+- **Guardrail Checking**: All inputs and outputs are validated against configured guardrails.
 - **Task Coordination**: The process manages task dependencies and agent collaboration.
 
 #### 7. Result Integration
@@ -272,13 +148,15 @@ let results = try await orbit.start()
 
 This enables **OrbitAI** to handle complex, multi-step workflows while maintaining safety, efficiency, and adaptability. The modular design allows developers to configure and extend the system for specific use cases while leveraging the full power of autonomous agent collaboration.
 
-## Need inspiration?
+## Setting up
+
+Get started with **OrbitAI** in your Swift project.
 
 <Card
-  title="Explore Agent Examples"
-  icon="stars"
-  href="/examples/agents"
+  title="Installation Guide"
+  icon="download"
+  href="/installation"
   horizontal
 >
-  Browse practical examples of agents in action and learn best practices.
+  Install **OrbitAI** and configure your development environment.
 </Card>
